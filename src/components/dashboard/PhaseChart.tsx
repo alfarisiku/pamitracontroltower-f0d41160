@@ -2,21 +2,19 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { phaseDistribution } from "@/data/projectData";
 
 export function PhaseChart() {
-  const total = phaseDistribution.reduce((s, d) => s + d.value, 0);
-
   return (
-    <div className="glass-card rounded-lg p-5 animate-slide-up">
+    <div className="glass-card rounded-lg p-5 animate-slide-up shadow-card">
       <h3 className="text-sm font-semibold text-foreground mb-1">Distribusi Fase</h3>
       <p className="text-xs text-muted-foreground mb-4">Proyek per fase EPC</p>
-      <div className="h-[200px]">
+      <div className="h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={phaseDistribution}
               cx="50%"
               cy="50%"
-              innerRadius={55}
-              outerRadius={80}
+              innerRadius={50}
+              outerRadius={75}
               paddingAngle={4}
               dataKey="value"
               stroke="none"
@@ -27,11 +25,11 @@ export function PhaseChart() {
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: "hsl(220, 18%, 13%)",
-                border: "1px solid hsl(220, 14%, 20%)",
+                backgroundColor: "hsl(0, 0%, 100%)",
+                border: "1px solid hsl(214, 20%, 90%)",
                 borderRadius: "8px",
-                color: "hsl(210, 20%, 92%)",
                 fontSize: "12px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               }}
             />
           </PieChart>

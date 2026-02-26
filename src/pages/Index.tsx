@@ -1,12 +1,18 @@
+import { useState } from "react";
 import { Briefcase, AlertTriangle, CheckCircle2, DollarSign } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { ProjectTable } from "@/components/dashboard/ProjectTable";
 import { PhaseChart } from "@/components/dashboard/PhaseChart";
 import { BudgetChart } from "@/components/dashboard/BudgetChart";
-import { projects } from "@/data/projectData";
+import { IndonesiaMap } from "@/components/dashboard/IndonesiaMap";
+import { OverallSummary } from "@/components/dashboard/OverallSummary";
+import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
+import { projects, Project, formatRupiah } from "@/data/projectData";
 
 const Index = () => {
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
   const active = projects.filter((p) => p.status !== "completed").length;
   const atRisk = projects.filter((p) => p.status === "at-risk" || p.status === "delayed").length;
   const completed = projects.filter((p) => p.status === "completed").length;
@@ -16,7 +22,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
-      <div className="max-w-[1400px] mx-auto">
+      <div className="max-w-[1440px] mx-auto">
         <DashboardHeader />
 
         {/* KPI Cards */}
@@ -44,12 +50,20 @@ const Index = () => {
             variant="success"
           />
           <KPICard
-            title="Budget Utilization"
+            title="Utilisasi Anggaran"
             value={`${budgetPct}%`}
-            subtitle={`$${(totalSpent / 1000000).toFixed(1)}M / $${(totalBudget / 1000000).toFixed(1)}M`}
+            subtitle={`${formatRupiah(totalSpent)} / ${formatRupiah(totalBudget)}`}
             icon={DollarSign}
             variant={budgetPct > 85 ? "destructive" : "default"}
           />
+        </div>
+
+        {/* Map + Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+          <div className="lg:col-span-3">
+            <IndonesiaMap onSelectProject={setSelectedProject} />
+          </div>
+          <OverallSummary />
         </div>
 
         {/* Charts Row */}
@@ -61,8 +75,13 @@ const Index = () => {
         </div>
 
         {/* Project Table */}
-        <ProjectTable />
+        <ProjectTable onSelectProject={setSelectedProject} />
       </div>
+
+      {/* Project Detail Modal */}
+      {selectedProject && (
+        <ProjectOverviewModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+      )}
     </div>
   );
 };

@@ -10,11 +10,11 @@ interface KPICardProps {
 }
 
 const variantStyles = {
-  default: "border-border/50",
-  primary: "border-primary/30 glow-primary",
-  warning: "border-warning/30",
-  success: "border-success/30",
-  destructive: "border-destructive/30",
+  default: "border-border",
+  primary: "border-primary/20",
+  warning: "border-warning/20",
+  success: "border-success/20",
+  destructive: "border-destructive/20",
 };
 
 const iconVariantStyles = {
@@ -27,7 +27,7 @@ const iconVariantStyles = {
 
 export function KPICard({ title, value, subtitle, icon: Icon, trend, variant = "default" }: KPICardProps) {
   return (
-    <div className={`glass-card rounded-lg p-5 animate-slide-up ${variantStyles[variant]}`}>
+    <div className={`glass-card rounded-lg p-5 animate-slide-up shadow-card hover:shadow-card-hover transition-shadow ${variantStyles[variant]}`}>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
