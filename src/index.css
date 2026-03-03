@@ -2,63 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 12%;
+    --background: 220 30% 10%;
+    --foreground: 210 20% 92%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 12%;
+    --card: 220 28% 14%;
+    --card-foreground: 210 20% 92%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 12%;
+    --popover: 220 28% 14%;
+    --popover-foreground: 210 20% 92%;
 
-    --primary: 210 80% 45%;
+    --primary: 210 80% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 15% 93%;
-    --secondary-foreground: 220 20% 25%;
+    --secondary: 220 25% 20%;
+    --secondary-foreground: 210 20% 85%;
 
-    --muted: 210 15% 95%;
-    --muted-foreground: 215 12% 50%;
+    --muted: 220 25% 18%;
+    --muted-foreground: 215 15% 55%;
 
-    --accent: 210 80% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 38 92% 55%;
+    --accent-foreground: 220 30% 10%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 220 30% 10%;
 
-    --success: 152 55% 40%;
+    --success: 152 55% 45%;
     --success-foreground: 0 0% 100%;
 
-    --info: 200 75% 45%;
+    --info: 200 75% 50%;
     --info-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 210 80% 45%;
+    --border: 220 25% 22%;
+    --input: 220 25% 22%;
+    --ring: 210 80% 55%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --chart-1: 210 80% 45%;
-    --chart-2: 38 92% 50%;
-    --chart-3: 152 55% 40%;
+    --chart-1: 210 80% 55%;
+    --chart-2: 38 92% 55%;
+    --chart-3: 152 55% 45%;
     --chart-4: 0 72% 55%;
     --chart-5: 270 55% 55%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 20% 25%;
-    --sidebar-primary: 210 80% 45%;
+    --sidebar-background: 220 32% 8%;
+    --sidebar-foreground: 210 20% 75%;
+    --sidebar-primary: 210 80% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 15% 95%;
-    --sidebar-accent-foreground: 220 20% 12%;
-    --sidebar-border: 214 20% 92%;
-    --sidebar-ring: 210 80% 45%;
+    --sidebar-accent: 220 28% 16%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 220 25% 18%;
+    --sidebar-ring: 210 80% 55%;
   }
 }
 
@@ -73,7 +73,7 @@
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
   ::-webkit-scrollbar-track {
     background: hsl(var(--background));
@@ -89,18 +89,28 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card border border-border shadow-sm;
+    @apply bg-card border border-border;
+    background: linear-gradient(135deg, hsl(220, 28%, 15%) 0%, hsl(220, 28%, 12%) 100%);
   }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-[hsl(200,75%,50%)];
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
   }
   .font-mono-data {
     font-family: 'JetBrains Mono', monospace;
   }
+  .font-display {
+    font-family: 'Orbitron', sans-serif;
+  }
   .shadow-card {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.2);
   }
   .shadow-card-hover {
-    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), 0 2px 8px -2px rgba(0, 0, 0, 0.3);
+  }
+  .glow-primary {
+    box-shadow: 0 0 15px hsl(210, 80%, 55%, 0.3);
+  }
+  .glow-accent {
+    box-shadow: 0 0 15px hsl(38, 92%, 55%, 0.3);
   }
 }

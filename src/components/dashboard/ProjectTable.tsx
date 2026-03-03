@@ -1,12 +1,14 @@
-import { projects, ProjectStatus, formatRupiah } from "@/data/projectData";
+import { DbProject } from "@/lib/supabase";
+import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
-import { Project } from "@/data/projectData";
+
+type ProjectStatus = DbProject["status"];
 
 const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
-  "on-track": { label: "On Track", className: "bg-success/10 text-success border-success/30" },
-  "at-risk": { label: "At Risk", className: "bg-warning/10 text-warning border-warning/30" },
-  "delayed": { label: "Delayed", className: "bg-destructive/10 text-destructive border-destructive/30" },
-  "completed": { label: "Selesai", className: "bg-primary/10 text-primary border-primary/30" },
+  "on-track": { label: "On Track", className: "bg-success/15 text-success border-success/30" },
+  "at-risk": { label: "At Risk", className: "bg-warning/15 text-warning border-warning/30" },
+  "delayed": { label: "Delayed", className: "bg-destructive/15 text-destructive border-destructive/30" },
+  "completed": { label: "Selesai", className: "bg-primary/15 text-primary border-primary/30" },
 };
 
 const phaseColors: Record<string, string> = {
@@ -16,62 +18,58 @@ const phaseColors: Record<string, string> = {
   Commissioning: "text-success",
 };
 
-export function ProjectTable({ onSelectProject }: { onSelectProject: (p: Project) => void }) {
+export function ProjectTable({ projects, onSelectProject }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void }) {
   return (
     <div className="glass-card rounded-lg overflow-hidden animate-slide-up shadow-card">
-      <div className="p-5 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground">Daftar Proyek EPC</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Klik proyek untuk melihat detail, foto & video</p>
+      <div className="p-4 border-b border-border">
+        <h2 className="text-sm font-semibold text-foreground">Daftar Proyek EPC</h2>
+        <p className="text-[11px] text-muted-foreground mt-0.5">Klik proyek untuk melihat detail, foto & video</p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">ID</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Nama Proyek</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Lokasi</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Fase</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Status</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Progress</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Anggaran</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">PM</th>
+            <tr className="border-b border-border bg-muted/30">
+              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">P#</th>
+              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Project</th>
+              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
+              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Value</th>
+              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">End Date</th>
+              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress</th>
             </tr>
           </thead>
           <tbody>
-            {projects.map((p) => {
+            {projects.map((p, i) => {
               const st = statusConfig[p.status];
-              const budgetPct = Math.round((p.spent / p.budget) * 100);
               return (
                 <tr
                   key={p.id}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                  className="border-b border-border/30 hover:bg-muted/20 transition-colors cursor-pointer"
                   onClick={() => onSelectProject(p)}
                 >
-                  <td className="py-3 px-4 font-mono-data text-xs text-muted-foreground">{p.id}</td>
-                  <td className="py-3 px-4 font-medium text-foreground">{p.name}</td>
-                  <td className="py-3 px-4 text-muted-foreground text-xs">{p.location}</td>
-                  <td className={`py-3 px-4 font-medium text-xs ${phaseColors[p.phase]}`}>{p.phase}</td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${st.className}`}>
+                  <td className="py-2 px-3 font-mono-data text-muted-foreground">{i + 1}</td>
+                  <td className="py-2 px-3">
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-mono-data font-bold">
+                        {p.project_code.replace("EPC-", "")}
+                      </span>
+                      <span className="font-medium text-foreground truncate max-w-[160px]">{p.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-2 px-3">
+                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${st.className}`}>
                       {st.label}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2 min-w-[120px]">
-                      <Progress value={p.progress} className="h-1.5 flex-1" />
-                      <span className="font-mono-data text-xs text-muted-foreground w-8 text-right">{p.progress}%</span>
+                  <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.budget)}</td>
+                  <td className="py-2 px-3 text-muted-foreground">
+                    {new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                  </td>
+                  <td className="py-2 px-3">
+                    <div className="flex items-center gap-2 min-w-[80px]">
+                      <Progress value={p.progress} className="h-1 flex-1" />
+                      <span className="font-mono-data text-muted-foreground w-7 text-right">{p.progress}%</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="text-xs">
-                      <span className="font-mono-data text-foreground">{formatRupiah(p.spent)}</span>
-                      <span className="text-muted-foreground"> / {formatRupiah(p.budget)}</span>
-                      <span className={`ml-1 ${budgetPct > 85 ? "text-destructive" : budgetPct > 70 ? "text-warning" : "text-success"}`}>
-                        ({budgetPct}%)
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-muted-foreground text-xs">{p.manager}</td>
                 </tr>
               );
             })}
