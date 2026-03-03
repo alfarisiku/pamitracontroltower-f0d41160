@@ -1,37 +1,47 @@
-import { Activity, Bell } from "lucide-react";
+import { Bell, Building2 } from "lucide-react";
 
 export function DashboardHeader() {
-  const today = new Date().toLocaleDateString("id-ID", {
-    weekday: "long",
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("id-ID", {
+    weekday: "short",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+  const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <header className="flex items-center justify-between pb-6 border-b border-border mb-6">
-      <div>
-        <div className="flex items-center gap-2.5 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <Activity className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">PMO Dashboard</h1>
-            <p className="text-xs text-muted-foreground">Project Management Office — Divisi EPC</p>
-          </div>
+    <header className="flex items-center justify-between pb-5 mb-5 border-b border-border">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center glow-primary">
+          <Building2 className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">
+            Pamitra Control Tower
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Strategic Project Dashboard · PT Pamitra Jaya Konstruksi
+          </p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground hidden md:block">{today}</span>
+      <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+          <span className="text-xs text-muted-foreground">{dateStr}</span>
+          <span className="text-xs text-primary font-mono-data font-medium">{timeStr}</span>
+        </div>
         <button className="relative p-2 rounded-lg hover:bg-muted transition-colors border border-border">
           <Bell className="h-4 w-4 text-muted-foreground" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
         </button>
         <div className="flex items-center gap-2 pl-3 border-l border-border">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
-            PM
+          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent text-xs font-bold">
+            AD
           </div>
-          <span className="text-sm font-medium text-foreground hidden sm:block">Admin PMO</span>
+          <div className="hidden sm:block">
+            <p className="text-xs text-muted-foreground">Welcome</p>
+            <p className="text-sm font-medium text-foreground">Mr. Aditya</p>
+          </div>
         </div>
       </div>
     </header>
