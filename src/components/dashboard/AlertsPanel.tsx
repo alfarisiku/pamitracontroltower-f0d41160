@@ -1,5 +1,6 @@
 import { useAlerts } from "@/hooks/useProjects";
 import { AlertTriangle, AlertCircle, Info, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const severityConfig = {
   critical: { label: "Critical", className: "bg-destructive text-destructive-foreground", icon: AlertCircle },
@@ -59,9 +60,9 @@ export function AlertsPanel() {
         </div>
       )}
 
-      <button className="flex items-center justify-center gap-1 text-xs text-primary hover:text-primary/80 mt-3 pt-2 border-t border-border transition-colors">
+      <Link to="/risk" className="flex items-center justify-center gap-1 text-xs text-primary hover:text-primary/80 mt-3 pt-2 border-t border-border transition-colors">
         All Alerts <ChevronRight className="h-3 w-3" />
-      </button>
+      </Link>
     </div>
   );
 }
