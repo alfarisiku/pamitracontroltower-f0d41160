@@ -17,7 +17,7 @@ export function Sidebar() {
     <aside className="w-56 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
       <div className="p-5 border-b border-sidebar-border">
-        <h1 className="font-display text-xl font-bold tracking-wider text-foreground">
+        <h1 className="font-display text-xl font-bold tracking-wider text-primary">
           Pamitra
         </h1>
         <p className="text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground mt-0.5">
