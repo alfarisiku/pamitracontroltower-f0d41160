@@ -5,7 +5,7 @@ import { useProjects, useMonthlyBudgets } from "@/hooks/useProjects";
 import { DbProject, formatRupiah } from "@/lib/supabase";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { Progress } from "@/components/ui/progress";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 
 const CostPerformance = () => {
@@ -28,9 +28,7 @@ const CostPerformance = () => {
   const totalSpent = projects.reduce((s, p) => s + p.spent, 0);
   const remaining = totalBudget - totalSpent;
   const overBudget = projects.filter((p) => (p.spent / p.budget) > 0.9);
-  const underBudget = projects.filter((p) => (p.spent / p.budget) < 0.5 && p.status !== "completed");
 
-  // Bar chart data per project
   const barData = projects.map((p) => ({
     name: p.project_code,
     fullName: p.name,
@@ -38,6 +36,14 @@ const CostPerformance = () => {
     spent: p.spent,
     remaining: p.budget - p.spent,
   }));
+
+  const chartTooltipStyle = {
+    backgroundColor: "hsl(0, 0%, 100%)",
+    border: "1px solid hsl(215, 20%, 88%)",
+    borderRadius: "6px",
+    fontSize: "11px",
+    color: "hsl(220, 25%, 15%)",
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -87,28 +93,23 @@ const CostPerformance = () => {
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-            {/* Budget vs Spent per project */}
             <div className="glass-card rounded-lg p-4 shadow-card">
               <h3 className="text-sm font-semibold text-foreground mb-1">Anggaran vs Pengeluaran per Proyek</h3>
               <p className="text-[11px] text-muted-foreground mb-3">Perbandingan budget dan actual spending (Juta Rupiah)</p>
               <div className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barData} layout="vertical" margin={{ left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 25%, 18%)" />
-                    <XAxis type="number" tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="name" type="category" width={55} tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "hsl(220, 28%, 14%)", border: "1px solid hsl(220, 25%, 22%)", borderRadius: "6px", fontSize: "11px", color: "hsl(210, 20%, 92%)" }}
-                      formatter={(value: number) => formatRupiah(value)}
-                    />
-                    <Bar dataKey="budget" fill="hsl(210, 80%, 55%)" radius={[0, 2, 2, 0]} name="Anggaran" />
-                    <Bar dataKey="spent" fill="hsl(38, 92%, 55%)" radius={[0, 2, 2, 0]} name="Terpakai" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                    <XAxis type="number" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={55} tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => formatRupiah(value)} />
+                    <Bar dataKey="budget" fill="hsl(215, 80%, 48%)" radius={[0, 2, 2, 0]} name="Anggaran" />
+                    <Bar dataKey="spent" fill="hsl(30, 85%, 50%)" radius={[0, 2, 2, 0]} name="Terpakai" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Monthly Cashflow */}
             <div className="glass-card rounded-lg p-4 shadow-card">
               <h3 className="text-sm font-semibold text-foreground mb-1">Arus Kas Bulanan</h3>
               <p className="text-[11px] text-muted-foreground mb-3">Planned vs Actual (Juta Rupiah)</p>
@@ -117,22 +118,20 @@ const CostPerformance = () => {
                   <AreaChart data={budgets}>
                     <defs>
                       <linearGradient id="costGradPlanned" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(200, 75%, 50%)" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="hsl(200, 75%, 50%)" stopOpacity={0} />
+                        <stop offset="0%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="costGradActual" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
+                        <stop offset="0%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 25%, 18%)" />
-                    <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "hsl(220, 28%, 14%)", border: "1px solid hsl(220, 25%, 22%)", borderRadius: "6px", fontSize: "11px", color: "hsl(210, 20%, 92%)" }}
-                    />
-                    <Area type="monotone" dataKey="planned" stroke="hsl(200, 75%, 50%)" fill="url(#costGradPlanned)" strokeWidth={2} name="Planned" />
-                    <Area type="monotone" dataKey="actual" stroke="hsl(38, 92%, 55%)" fill="url(#costGradActual)" strokeWidth={2} name="Actual" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                    <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={chartTooltipStyle} />
+                    <Area type="monotone" dataKey="planned" stroke="hsl(200, 75%, 45%)" fill="url(#costGradPlanned)" strokeWidth={2} name="Planned" />
+                    <Area type="monotone" dataKey="actual" stroke="hsl(30, 85%, 50%)" fill="url(#costGradActual)" strokeWidth={2} name="Actual" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -147,7 +146,7 @@ const CostPerformance = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-muted/30 border-b border-border">
+                  <tr className="bg-muted/50 border-b border-border">
                     <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Kode</th>
                     <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Proyek</th>
                     <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Anggaran</th>
@@ -162,7 +161,7 @@ const CostPerformance = () => {
                     const pct = Math.round((p.spent / p.budget) * 100);
                     const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
                     return (
-                      <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 cursor-pointer" onClick={() => setSelectedProject(p)}>
+                      <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => setSelectedProject(p)}>
                         <td className="py-2 px-3 font-mono-data text-primary">{p.project_code}</td>
                         <td className="py-2 px-3 font-medium text-foreground">{p.name}</td>
                         <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah(p.budget)}</td>

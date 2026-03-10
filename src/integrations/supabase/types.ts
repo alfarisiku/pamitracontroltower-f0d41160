@@ -83,6 +83,7 @@ export type Database = {
         Row: {
           budget: number
           category: string | null
+          cctv_url: string | null
           client: string
           created_at: string
           description: string | null
@@ -106,6 +107,7 @@ export type Database = {
         Insert: {
           budget?: number
           category?: string | null
+          cctv_url?: string | null
           client: string
           created_at?: string
           description?: string | null
@@ -129,6 +131,7 @@ export type Database = {
         Update: {
           budget?: number
           category?: string | null
+          cctv_url?: string | null
           client?: string
           created_at?: string
           description?: string | null

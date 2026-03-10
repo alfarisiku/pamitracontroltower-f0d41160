@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DbProject } from "@/lib/supabase";
 import { formatRupiah } from "@/lib/supabase";
-import { X, MapPin, Calendar, User, Play } from "lucide-react";
+import { X, MapPin, Calendar, User, Play, Camera, Video, Cctv } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 type ProjectStatus = DbProject["status"];
@@ -13,18 +13,31 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
   "completed": { label: "Selesai", className: "bg-primary/15 text-primary border-primary/30" },
 };
 
+type MediaTab = "photo" | "video" | "cctv";
+
 export function ProjectOverviewModal({ project, onClose }: { project: DbProject; onClose: () => void }) {
-  const [showVideo, setShowVideo] = useState(false);
+  const [activeMedia, setActiveMedia] = useState<MediaTab>("photo");
   const st = statusConfig[project.status];
   const budgetPct = Math.round((project.spent / project.budget) * 100);
 
+  const mediaTabs: { key: MediaTab; label: string; icon: typeof Camera; available: boolean }[] = [
+    { key: "photo", label: "Foto", icon: Camera, available: !!project.image_url },
+    { key: "video", label: "Video", icon: Video, available: !!project.video_url },
+    { key: "cctv", label: "CCTV Live", icon: Cctv, available: !!project.cctv_url },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-foreground/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card border border-border rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-slide-up">
-        {/* Header */}
-        <div className="relative h-48 overflow-hidden rounded-t-xl" style={{ background: "linear-gradient(135deg, hsl(220, 35%, 18%) 0%, hsl(210, 40%, 12%) 100%)" }}>
-          <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+        {/* Header with image */}
+        <div className="relative h-48 overflow-hidden rounded-t-xl">
+          {project.image_url ? (
+            <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
           <button
             onClick={onClose}
             className="absolute top-3 right-3 p-1.5 bg-card/80 backdrop-blur rounded-full hover:bg-card transition-colors z-10"
@@ -81,7 +94,7 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
           </div>
 
           {/* Budget */}
-          <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+          <div className="bg-muted/50 rounded-lg p-3 border border-border">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-foreground">Anggaran Proyek</span>
               <span className={`text-xs font-mono-data ${budgetPct > 85 ? "text-destructive" : budgetPct > 70 ? "text-warning" : "text-success"}`}>
@@ -95,27 +108,55 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
             <Progress value={budgetPct} className="h-1.5 mt-2" />
           </div>
 
-          {/* Video */}
-          {project.video_url && (
+          {/* Media Tabs */}
+          {mediaTabs.some(t => t.available) && (
             <div>
-              <h3 className="text-xs font-semibold text-foreground mb-2">Video Overview</h3>
-              {!showVideo ? (
-                <button
-                  onClick={() => setShowVideo(true)}
-                  className="relative w-full h-36 rounded-lg overflow-hidden group border border-border"
-                  style={{ background: "linear-gradient(135deg, hsl(220, 35%, 18%) 0%, hsl(210, 40%, 12%) 100%)" }}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/20 group-hover:bg-background/30 transition-colors">
-                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg glow-primary">
-                      <Play className="h-5 w-5 text-primary-foreground ml-0.5" />
-                    </div>
-                  </div>
-                </button>
-              ) : (
+              <div className="flex items-center gap-1 mb-3 border-b border-border pb-2">
+                {mediaTabs.filter(t => t.available).map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveMedia(tab.key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      activeMedia === tab.key
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <tab.icon className="h-3.5 w-3.5" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {activeMedia === "photo" && project.image_url && (
+                <div className="rounded-lg overflow-hidden border border-border">
+                  <img src={project.image_url} alt={project.name} className="w-full h-48 object-cover" />
+                </div>
+              )}
+
+              {activeMedia === "video" && project.video_url && (
                 <div className="w-full aspect-video rounded-lg overflow-hidden border border-border">
                   <iframe src={project.video_url} title={`Video ${project.name}`} className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen />
+                </div>
+              )}
+
+              {activeMedia === "cctv" && project.cctv_url && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                    </span>
+                    <span className="text-xs font-medium text-destructive">LIVE</span>
+                    <span className="text-[10px] text-muted-foreground">CCTV Monitoring — {project.location}</span>
+                  </div>
+                  <div className="w-full aspect-video rounded-lg overflow-hidden border border-border">
+                    <iframe src={project.cctv_url} title={`CCTV ${project.name}`} className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen />
+                  </div>
                 </div>
               )}
             </div>

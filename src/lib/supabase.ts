@@ -18,6 +18,7 @@ export type DbProject = {
   map_y: number;
   image_url: string | null;
   video_url: string | null;
+  cctv_url: string | null;
   description: string | null;
   category: string | null;
   created_at: string;

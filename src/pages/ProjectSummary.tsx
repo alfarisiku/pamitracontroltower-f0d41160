@@ -5,7 +5,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { DbProject, formatRupiah } from "@/lib/supabase";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { Progress } from "@/components/ui/progress";
-import { Search, Filter, MapPin, User, Calendar, ChevronDown } from "lucide-react";
+import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv } from "lucide-react";
 
 type ProjectStatus = DbProject["status"];
 type ProjectPhase = DbProject["phase"];
@@ -105,10 +105,17 @@ const ProjectSummary = () => {
                   className="glass-card rounded-lg overflow-hidden shadow-card hover:shadow-card-hover transition-all cursor-pointer group"
                   onClick={() => setSelectedProject(project)}
                 >
-                  {/* Card Header */}
-                  <div className="h-28 relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(220, 35%, 18%) 0%, hsl(210, 40%, 12%) 100%)" }}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
-                    <div className="absolute top-3 right-3">
+                  {/* Card Header with Image */}
+                  <div className="h-32 relative overflow-hidden">
+                    {project.image_url ? (
+                      <img src={project.image_url} alt={project.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/10 to-accent/10" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                      {project.video_url && <div className="p-1 rounded bg-card/80 backdrop-blur-sm"><Video className="h-3 w-3 text-primary" /></div>}
+                      {project.cctv_url && <div className="p-1 rounded bg-card/80 backdrop-blur-sm"><Cctv className="h-3 w-3 text-destructive" /></div>}
                       <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
                     </div>
                     <div className="absolute bottom-3 left-4 right-4">
@@ -148,7 +155,7 @@ const ProjectSummary = () => {
                     </div>
 
                     {/* Budget */}
-                    <div className="flex justify-between text-xs pt-2 border-t border-border/50">
+                    <div className="flex justify-between text-xs pt-2 border-t border-border">
                       <div>
                         <p className="text-muted-foreground">Nilai Kontrak</p>
                         <p className="font-mono-data font-medium text-accent">{formatRupiah(project.budget)}</p>
