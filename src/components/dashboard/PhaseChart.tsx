@@ -2,10 +2,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { DbProject } from "@/lib/supabase";
 
 const phaseColors: Record<string, string> = {
-  Engineering: "hsl(210, 80%, 55%)",
-  Procurement: "hsl(38, 92%, 55%)",
-  Construction: "hsl(200, 75%, 50%)",
-  Commissioning: "hsl(152, 55%, 45%)",
+  Engineering: "hsl(215, 80%, 48%)",
+  Procurement: "hsl(30, 85%, 50%)",
+  Construction: "hsl(200, 75%, 45%)",
+  Commissioning: "hsl(152, 55%, 40%)",
 };
 
 export function PhaseChart({ projects }: { projects: DbProject[] }) {
@@ -16,7 +16,7 @@ export function PhaseChart({ projects }: { projects: DbProject[] }) {
   const data = Object.entries(phaseCounts).map(([name, value]) => ({
     name,
     value,
-    fill: phaseColors[name] || "hsl(210, 80%, 55%)",
+    fill: phaseColors[name] || "hsl(215, 80%, 48%)",
   }));
 
   return (
@@ -33,11 +33,11 @@ export function PhaseChart({ projects }: { projects: DbProject[] }) {
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: "hsl(220, 28%, 14%)",
-                border: "1px solid hsl(220, 25%, 22%)",
+                backgroundColor: "hsl(0, 0%, 100%)",
+                border: "1px solid hsl(215, 20%, 88%)",
                 borderRadius: "6px",
                 fontSize: "11px",
-                color: "hsl(210, 20%, 92%)",
+                color: "hsl(220, 25%, 15%)",
               }}
             />
           </PieChart>

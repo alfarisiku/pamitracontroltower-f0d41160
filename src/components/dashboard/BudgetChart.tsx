@@ -18,7 +18,7 @@ export function BudgetChart() {
             className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
               activeTab === tab
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             {tab}
@@ -30,28 +30,28 @@ export function BudgetChart() {
           <AreaChart data={budgets}>
             <defs>
               <linearGradient id="gradPlanned" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(200, 75%, 50%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(200, 75%, 50%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 25%, 18%)" />
-            <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+            <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{
-                backgroundColor: "hsl(220, 28%, 14%)",
-                border: "1px solid hsl(220, 25%, 22%)",
+                backgroundColor: "hsl(0, 0%, 100%)",
+                border: "1px solid hsl(215, 20%, 88%)",
                 borderRadius: "6px",
                 fontSize: "11px",
-                color: "hsl(210, 20%, 92%)",
+                color: "hsl(220, 25%, 15%)",
               }}
             />
-            <Area type="monotone" dataKey="planned" stroke="hsl(200, 75%, 50%)" fill="url(#gradPlanned)" strokeWidth={2} />
-            <Area type="monotone" dataKey="actual" stroke="hsl(38, 92%, 55%)" fill="url(#gradActual)" strokeWidth={2} />
+            <Area type="monotone" dataKey="planned" stroke="hsl(200, 75%, 45%)" fill="url(#gradPlanned)" strokeWidth={2} />
+            <Area type="monotone" dataKey="actual" stroke="hsl(30, 85%, 50%)" fill="url(#gradActual)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
