@@ -1,4 +1,5 @@
-import { Bell, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 export function DashboardHeader() {
   const now = new Date();
@@ -30,10 +31,7 @@ export function DashboardHeader() {
           <span className="text-xs text-muted-foreground">{dateStr}</span>
           <span className="text-xs text-primary font-mono-data font-medium">{timeStr}</span>
         </div>
-        <button className="relative p-2 rounded-lg hover:bg-muted transition-colors border border-border">
-          <Bell className="h-4 w-4 text-muted-foreground" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-        </button>
+        <NotificationDropdown />
         <div className="flex items-center gap-2 pl-3 border-l border-border">
           <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent text-xs font-bold">
             AD
