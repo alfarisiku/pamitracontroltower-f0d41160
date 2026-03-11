@@ -43,6 +43,70 @@ export type DbMonthlyBudget = {
   actual: number;
 };
 
+export type DbWorkArea = {
+  id: string;
+  project_id: string;
+  name: string;
+  code: string;
+  weight: number;
+  progress: number;
+  sort_order: number;
+  created_at: string;
+};
+
+export type DbWorkItem = {
+  id: string;
+  work_area_id: string;
+  name: string;
+  code: string;
+  unit: string;
+  qty_total: number;
+  qty_completed: number;
+  weight: number;
+  progress: number;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  sort_order: number;
+  created_at: string;
+};
+
+export type DbSubTask = {
+  id: string;
+  work_item_id: string;
+  name: string;
+  unit: string;
+  qty_total: number;
+  qty_completed: number;
+  progress: number;
+  status: string;
+  sort_order: number;
+  created_at: string;
+};
+
+export type DbMilestone = {
+  id: string;
+  project_id: string;
+  name: string;
+  phase: string;
+  target_date: string;
+  actual_date: string | null;
+  status: string;
+  weight: number;
+  sort_order: number;
+  created_at: string;
+};
+
+export type DbNotification = {
+  id: string;
+  title: string;
+  message: string | null;
+  type: string;
+  project_id: string | null;
+  is_read: boolean;
+  created_at: string;
+};
+
 export function formatRupiah(jutaRupiah: number): string {
   if (jutaRupiah >= 1000000) return `Rp ${(jutaRupiah / 1000000).toFixed(1)}T`;
   if (jutaRupiah >= 1000) return `Rp ${(jutaRupiah / 1000).toFixed(1)}M`;
