@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 
@@ -8,6 +8,7 @@ const menuItems = [
   { icon: CalendarClock, label: "Schedule", path: "/schedule" },
   { icon: DollarSign, label: "Cost Performance", path: "/cost" },
   { icon: AlertTriangle, label: "Risk Monitoring", path: "/risk" },
+  { icon: Database, label: "Data Entry", path: "/data-entry" },
 ];
 
 export function Sidebar() {
@@ -28,7 +29,7 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-1">
         {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || (item.path === "/projects" && location.pathname.startsWith("/project/"));
           return (
             <NavLink
               key={item.label}

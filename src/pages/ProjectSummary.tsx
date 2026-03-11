@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
 import { DbProject, formatRupiah } from "@/lib/supabase";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { Progress } from "@/components/ui/progress";
-import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv } from "lucide-react";
+import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv, ExternalLink } from "lucide-react";
 
 type ProjectStatus = DbProject["status"];
 type ProjectPhase = DbProject["phase"];
@@ -18,6 +19,7 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
 };
 
 const ProjectSummary = () => {
+  const navigate = useNavigate();
   const { data: projects = [], isLoading } = useProjects();
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const [search, setSearch] = useState("");
@@ -118,6 +120,13 @@ const ProjectSummary = () => {
                       {project.cctv_url && <div className="p-1 rounded bg-card/80 backdrop-blur-sm"><Cctv className="h-3 w-3 text-destructive" /></div>}
                       <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/project/${project.id}`); }}
+                      className="absolute top-3 left-3 p-1 rounded bg-card/80 backdrop-blur-sm hover:bg-primary/20 transition-colors"
+                      title="Detail WBS"
+                    >
+                      <ExternalLink className="h-3 w-3 text-primary" />
+                    </button>
                     <div className="absolute bottom-3 left-4 right-4">
                       <p className="text-[10px] font-mono-data text-primary">{project.project_code}</p>
                       <h3 className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">{project.name}</h3>
