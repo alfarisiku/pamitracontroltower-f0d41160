@@ -19,6 +19,7 @@ const statusConfig: Record<ProjectStatus, { label: string; className: string }> 
 };
 
 const ProjectSummary = () => {
+  const navigate = useNavigate();
   const { data: projects = [], isLoading } = useProjects();
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const [search, setSearch] = useState("");
