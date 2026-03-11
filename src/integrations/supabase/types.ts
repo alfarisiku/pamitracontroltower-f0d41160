@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      milestones: {
+        Row: {
+          actual_date: string | null
+          created_at: string
+          id: string
+          name: string
+          phase: string
+          project_id: string
+          sort_order: number
+          status: string
+          target_date: string
+          weight: number
+        }
+        Insert: {
+          actual_date?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phase?: string
+          project_id: string
+          sort_order?: number
+          status?: string
+          target_date: string
+          weight?: number
+        }
+        Update: {
+          actual_date?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phase?: string
+          project_id?: string
+          sort_order?: number
+          status?: string
+          target_date?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_budgets: {
         Row: {
           actual: number
@@ -40,6 +87,44 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string | null
+          project_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          project_id?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          project_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_alerts: {
         Row: {
@@ -153,6 +238,153 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      sub_tasks: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          progress: number
+          qty_completed: number
+          qty_total: number
+          sort_order: number
+          status: string
+          unit: string
+          work_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          progress?: number
+          qty_completed?: number
+          qty_total?: number
+          sort_order?: number
+          status?: string
+          unit?: string
+          work_item_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          progress?: number
+          qty_completed?: number
+          qty_total?: number
+          sort_order?: number
+          status?: string
+          unit?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_tasks_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_areas: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          progress: number
+          project_id: string
+          sort_order: number
+          weight: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          progress?: number
+          project_id: string
+          sort_order?: number
+          weight?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          progress?: number
+          project_id?: string
+          sort_order?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_areas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_items: {
+        Row: {
+          code: string
+          created_at: string
+          end_date: string | null
+          id: string
+          name: string
+          progress: number
+          qty_completed: number
+          qty_total: number
+          sort_order: number
+          start_date: string | null
+          status: string
+          unit: string
+          weight: number
+          work_area_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          progress?: number
+          qty_completed?: number
+          qty_total?: number
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          unit?: string
+          weight?: number
+          work_area_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          progress?: number
+          qty_completed?: number
+          qty_total?: number
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          unit?: string
+          weight?: number
+          work_area_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_items_work_area_id_fkey"
+            columns: ["work_area_id"]
+            isOneToOne: false
+            referencedRelation: "work_areas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
