@@ -16,9 +16,9 @@ const severityConfig: Record<Severity, { label: string; icon: typeof AlertCircle
 };
 
 const RiskMonitoring = () => {
+  const navigate = useNavigate();
   const { data: projects = [], isLoading: loadingProjects } = useProjects();
   const { data: alerts = [], isLoading: loadingAlerts } = useAlerts();
-  const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
 
   const isLoading = loadingProjects || loadingAlerts;
