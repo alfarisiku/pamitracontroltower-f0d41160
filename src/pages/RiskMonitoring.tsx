@@ -205,13 +205,9 @@ const RiskMonitoring = () => {
             </div>
           </div>
         </div>
-      </main>
-
-      {selectedProject && (
-        <ProjectOverviewModal project={selectedProject} onClose={() => setSelectedProject(null)} />
-      )}
     </div>
   );
+};
 };
 
 export default RiskMonitoring;
