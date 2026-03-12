@@ -205,9 +205,9 @@ const RiskMonitoring = () => {
             </div>
           </div>
         </div>
+      </main>
     </div>
   );
-};
 };
 
 export default RiskMonitoring;
