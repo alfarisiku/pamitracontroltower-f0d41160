@@ -118,7 +118,7 @@ const RiskMonitoring = () => {
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Proyek Berisiko</p>
                   <div className="space-y-1.5">
                     {atRiskProjects.map((p) => (
-                      <button key={p.id} className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted/30 transition-colors text-left" onClick={() => setSelectedProject(p)}>
+                      <button key={p.id} className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted/30 transition-colors text-left" onClick={() => navigate(`/project/${p.id}`)}>
                         <div className={`w-2 h-2 rounded-full ${p.status === "delayed" ? "bg-destructive" : "bg-warning"}`} />
                         <span className="text-xs text-foreground truncate flex-1">{p.name}</span>
                         <span className="text-[10px] font-mono-data text-muted-foreground">{p.progress}%</span>
