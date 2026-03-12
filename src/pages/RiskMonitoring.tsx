@@ -3,8 +3,8 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
 import { DbProject } from "@/lib/supabase";
-import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { AlertCircle, AlertTriangle, Info, CheckCircle2, Shield, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type Severity = "critical" | "high" | "medium" | "low";
 
@@ -16,9 +16,9 @@ const severityConfig: Record<Severity, { label: string; icon: typeof AlertCircle
 };
 
 const RiskMonitoring = () => {
+  const navigate = useNavigate();
   const { data: projects = [], isLoading: loadingProjects } = useProjects();
   const { data: alerts = [], isLoading: loadingAlerts } = useAlerts();
-  const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
 
   const isLoading = loadingProjects || loadingAlerts;
@@ -118,7 +118,7 @@ const RiskMonitoring = () => {
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Proyek Berisiko</p>
                   <div className="space-y-1.5">
                     {atRiskProjects.map((p) => (
-                      <button key={p.id} className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted/30 transition-colors text-left" onClick={() => setSelectedProject(p)}>
+                      <button key={p.id} className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted/30 transition-colors text-left" onClick={() => navigate(`/project/${p.id}`)}>
                         <div className={`w-2 h-2 rounded-full ${p.status === "delayed" ? "bg-destructive" : "bg-warning"}`} />
                         <span className="text-xs text-foreground truncate flex-1">{p.name}</span>
                         <span className="text-[10px] font-mono-data text-muted-foreground">{p.progress}%</span>
@@ -163,8 +163,7 @@ const RiskMonitoring = () => {
                       key={alert.id}
                       className="p-4 hover:bg-muted/20 transition-colors cursor-pointer"
                       onClick={() => {
-                        const proj = projects.find((p) => p.id === alert.project_id);
-                        if (proj) setSelectedProject(proj);
+                        if (alert.project_id) navigate(`/project/${alert.project_id}`);
                       }}
                     >
                       <div className="flex items-start gap-3">
@@ -207,10 +206,6 @@ const RiskMonitoring = () => {
           </div>
         </div>
       </main>
-
-      {selectedProject && (
-        <ProjectOverviewModal project={selectedProject} onClose={() => setSelectedProject(null)} />
-      )}
     </div>
   );
 };

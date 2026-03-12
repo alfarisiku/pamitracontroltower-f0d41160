@@ -9,6 +9,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Schedule from "./pages/Schedule";
 import CostPerformance from "./pages/CostPerformance";
 import RiskMonitoring from "./pages/RiskMonitoring";
+import Reporting from "./pages/Reporting";
 import DataEntry from "./pages/DataEntry";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/cost" element={<CostPerformance />} />
           <Route path="/risk" element={<RiskMonitoring />} />
+          <Route path="/reporting" element={<Reporting />} />
           <Route path="/data-entry" element={<DataEntry />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
