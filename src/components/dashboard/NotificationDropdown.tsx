@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, CheckCheck, AlertTriangle, AlertCircle, Info, CheckCircle2, X } from "lucide-react";
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/useProjects";
+import { useNavigate } from "react-router-dom";
 
 const typeConfig: Record<string, { icon: typeof Info; className: string }> = {
   critical: { icon: AlertCircle, className: "text-destructive" },
@@ -12,6 +13,7 @@ const typeConfig: Record<string, { icon: typeof Info; className: string }> = {
 export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const { data: notifications = [] } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -34,6 +36,14 @@ export function NotificationDropdown() {
     if (hrs < 24) return `${hrs}j lalu`;
     return `${Math.floor(hrs / 24)}h lalu`;
   }
+
+  const handleNotificationClick = (n: typeof notifications[0]) => {
+    if (!n.is_read) markRead.mutate(n.id);
+    if (n.project_id) {
+      navigate(`/project/${n.project_id}`);
+      setOpen(false);
+    }
+  };
 
   return (
     <div className="relative" ref={ref}>
@@ -78,10 +88,10 @@ export function NotificationDropdown() {
                 const tc = typeConfig[n.type] || typeConfig.info;
                 const Icon = tc.icon;
                 return (
-                  <div
+                  <button
                     key={n.id}
-                    onClick={() => !n.is_read && markRead.mutate(n.id)}
-                    className={`flex items-start gap-3 p-3 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${
+                    onClick={() => handleNotificationClick(n)}
+                    className={`w-full text-left flex items-start gap-3 p-3 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${
                       !n.is_read ? "bg-primary/5" : ""
                     }`}
                   >
@@ -94,12 +104,12 @@ export function NotificationDropdown() {
                       {n.message && <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
                       <div className="flex items-center gap-2 mt-1">
                         {n.projects && (
-                          <span className="text-[9px] font-mono-data text-primary">{n.projects.project_code}</span>
+                          <span className="text-[9px] font-mono-data text-primary">{n.projects.project_code} →</span>
                         )}
                         <span className="text-[9px] text-muted-foreground">{timeAgo(n.created_at)}</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}

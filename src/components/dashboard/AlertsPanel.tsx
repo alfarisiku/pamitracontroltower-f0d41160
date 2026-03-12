@@ -1,6 +1,6 @@
 import { useAlerts } from "@/hooks/useProjects";
 import { AlertTriangle, AlertCircle, Info, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const severityConfig = {
   critical: { label: "Critical", className: "bg-destructive text-destructive-foreground", icon: AlertCircle },
@@ -11,6 +11,13 @@ const severityConfig = {
 
 export function AlertsPanel() {
   const { data: alerts = [], isLoading } = useAlerts();
+  const navigate = useNavigate();
+
+  const handleAlertClick = (alert: typeof alerts[0]) => {
+    if (alert.project_id) {
+      navigate(`/project/${alert.project_id}`);
+    }
+  };
 
   return (
     <div className="glass-card rounded-lg p-4 animate-slide-up shadow-card h-full flex flex-col">
@@ -31,7 +38,11 @@ export function AlertsPanel() {
             const config = severityConfig[alert.severity];
             const IconComp = config.icon;
             return (
-              <div key={alert.id} className="p-2.5 rounded-md bg-muted/30 border border-border/50 hover:border-border transition-colors">
+              <button
+                key={alert.id}
+                onClick={() => handleAlertClick(alert)}
+                className="w-full text-left p-2.5 rounded-md bg-muted/30 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+              >
                 <div className="flex items-start gap-2">
                   <IconComp className={`h-3.5 w-3.5 mt-0.5 flex-shrink-0 ${
                     alert.severity === "critical" ? "text-destructive" :
@@ -48,13 +59,13 @@ export function AlertsPanel() {
                       <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{alert.description}</p>
                     )}
                     {alert.projects && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {alert.projects.project_code} · {alert.projects.name}
+                      <p className="text-[10px] text-primary mt-0.5">
+                        {alert.projects.project_code} · {alert.projects.name} →
                       </p>
                     )}
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
