@@ -163,8 +163,7 @@ const RiskMonitoring = () => {
                       key={alert.id}
                       className="p-4 hover:bg-muted/20 transition-colors cursor-pointer"
                       onClick={() => {
-                        const proj = projects.find((p) => p.id === alert.project_id);
-                        if (proj) setSelectedProject(proj);
+                        if (alert.project_id) navigate(`/project/${alert.project_id}`);
                       }}
                     >
                       <div className="flex items-start gap-3">
