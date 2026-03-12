@@ -3,8 +3,8 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
 import { DbProject } from "@/lib/supabase";
-import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { AlertCircle, AlertTriangle, Info, CheckCircle2, Shield, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type Severity = "critical" | "high" | "medium" | "low";
 
