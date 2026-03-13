@@ -32,6 +32,10 @@ export type DbAlert = {
   description: string | null;
   severity: "critical" | "high" | "medium" | "low";
   is_resolved: boolean;
+  probability: string | null;
+  impact: string | null;
+  risk_owner: string | null;
+  mitigation_plan: string | null;
   created_at: string;
 };
 
