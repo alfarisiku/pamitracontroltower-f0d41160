@@ -131,8 +131,12 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          impact: string | null
           is_resolved: boolean
+          mitigation_plan: string | null
+          probability: string | null
           project_id: string
+          risk_owner: string | null
           severity: Database["public"]["Enums"]["alert_severity"]
           title: string
         }
@@ -140,8 +144,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          impact?: string | null
           is_resolved?: boolean
+          mitigation_plan?: string | null
+          probability?: string | null
           project_id: string
+          risk_owner?: string | null
           severity?: Database["public"]["Enums"]["alert_severity"]
           title: string
         }
@@ -149,8 +157,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          impact?: string | null
           is_resolved?: boolean
+          mitigation_plan?: string | null
+          probability?: string | null
           project_id?: string
+          risk_owner?: string | null
           severity?: Database["public"]["Enums"]["alert_severity"]
           title?: string
         }
