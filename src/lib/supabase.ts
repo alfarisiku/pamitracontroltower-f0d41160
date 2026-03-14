@@ -111,6 +111,21 @@ export type DbNotification = {
   created_at: string;
 };
 
+export type DbAddendum = {
+  id: string;
+  project_id: string;
+  addendum_code: string;
+  description: string;
+  scope_change: string;
+  cost_impact: number;
+  schedule_impact_days: number;
+  approval_status: string;
+  approved_by: string;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export function formatRupiah(jutaRupiah: number): string {
   if (jutaRupiah >= 1000000) return `Rp ${(jutaRupiah / 1000000).toFixed(1)}T`;
   if (jutaRupiah >= 1000) return `Rp ${(jutaRupiah / 1000).toFixed(1)}M`;
