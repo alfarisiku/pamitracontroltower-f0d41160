@@ -5,8 +5,9 @@ import { useProjects, useMonthlyBudgets, useWorkAreas, useMilestones } from "@/h
 import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 
 const CostPerformance = () => {
   const navigate = useNavigate();
@@ -32,7 +33,6 @@ const CostPerformance = () => {
     margin: Math.round((p.budget - p.spent) / p.budget * 100),
   }));
 
-  // Group budgets by year
   const years = [...new Set(budgets.map(b => b.year))].sort();
   const cashflowData = budgets.sort((a, b) => a.year - b.year || a.month.localeCompare(b.month)).map(b => ({
     ...b, label: `${b.month.slice(0, 3)}'${String(b.year).slice(-2)}`,
@@ -45,6 +45,58 @@ const CostPerformance = () => {
     if (navigator.share) await navigator.share({ title: "Cost Performance", url: window.location.href });
     else { await navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }
   };
+
+  const handleExportPDF = () => {
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    pdf.setFontSize(16);
+    pdf.text("Cost Performance Report", 14, 20);
+    pdf.setFontSize(9);
+    pdf.text(`Generated: ${new Date().toLocaleString("id-ID")}`, 14, 27);
+    pdf.text(`Total Budget: ${formatRupiah(totalBudget)} | Spent: ${formatRupiah(totalSpent)} | Remaining: ${formatRupiah(remaining)}`, 14, 33);
+
+    let y = 42;
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    ["Code", "Project", "Budget", "Spent", "Remaining", "Used%", "CPI", "Margin"].forEach((h, i) => {
+      pdf.text(h, 14 + i * 33, y);
+    });
+    y += 5;
+    pdf.setFont("helvetica", "normal");
+    filteredProjects.forEach(p => {
+      if (y > 190) { pdf.addPage(); y = 20; }
+      const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
+      const margin = Math.round((p.budget - p.spent) / p.budget * 100);
+      pdf.text(p.project_code, 14, y);
+      pdf.text(p.name.slice(0, 18), 47, y);
+      pdf.text(formatRupiah(p.budget), 80, y);
+      pdf.text(formatRupiah(p.spent), 113, y);
+      pdf.text(formatRupiah(p.budget - p.spent), 146, y);
+      pdf.text(`${Math.round(p.spent / p.budget * 100)}%`, 179, y);
+      pdf.text(cpi.toFixed(2), 212, y);
+      pdf.text(`${margin}%`, 245, y);
+      y += 5;
+    });
+    pdf.save(`Cost_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  const handlePrint = () => {
+    const printW = window.open("", "_blank");
+    if (!printW) return;
+    printW.document.write(`<html><head><title>Cost Report</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:4px 8px;text-align:left}th{background:#f5f5f5;font-size:10px;text-transform:uppercase}</style></head><body>`);
+    printW.document.write(`<h2>Cost Performance Report</h2><p>Total Budget: ${formatRupiah(totalBudget)} | Spent: ${formatRupiah(totalSpent)}</p>`);
+    printW.document.write(`<table><thead><tr><th>Code</th><th>Project</th><th>Budget</th><th>Spent</th><th>Remaining</th><th>CPI</th><th>Margin</th></tr></thead><tbody>`);
+    filteredProjects.forEach(p => {
+      const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
+      const margin = Math.round((p.budget - p.spent) / p.budget * 100);
+      printW.document.write(`<tr><td>${p.project_code}</td><td>${p.name}</td><td>${formatRupiah(p.budget)}</td><td>${formatRupiah(p.spent)}</td><td>${formatRupiah(p.budget - p.spent)}</td><td>${cpi.toFixed(2)}</td><td>${margin}%</td></tr>`);
+    });
+    printW.document.write(`</tbody></table><p style="margin-top:20px;font-size:9px;color:#888">© 2026 PT Pamitra Jaya Konstruksi</p></body></html>`);
+    printW.document.close();
+    printW.print();
+  };
+
+  // Calculate cashflow chart pixel width for scrolling
+  const cashflowPxWidth = Math.max(600, cashflowData.length * 60);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -67,6 +119,8 @@ const CostPerformance = () => {
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               </div>
+              <button onClick={handleExportPDF} className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90"><Download className="h-3.5 w-3.5" /> Export PDF</button>
+              <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Printer className="h-3.5 w-3.5" /> Print</button>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
             </div>
           </div>
@@ -124,23 +178,25 @@ const CostPerformance = () => {
                   {years.map(y => <span key={y} className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono-data">{y}</span>)}
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground mb-3">Planned vs Actual</p>
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={cashflowData}>
-                    <defs>
-                      <linearGradient id="cGP" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0.2} /><stop offset="100%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0} /></linearGradient>
-                      <linearGradient id="cGA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0.2} /><stop offset="100%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0} /></linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                    <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={chartTooltip} />
-                    <Legend iconSize={8} wrapperStyle={{ fontSize: "10px" }} />
-                    <Area type="monotone" dataKey="planned" stroke="hsl(200, 75%, 45%)" fill="url(#cGP)" strokeWidth={2} name="Planned" />
-                    <Area type="monotone" dataKey="actual" stroke="hsl(30, 85%, 50%)" fill="url(#cGA)" strokeWidth={2} name="Actual" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <p className="text-[11px] text-muted-foreground mb-3">Planned vs Actual — scroll horizontal untuk data lengkap</p>
+              <div className="h-[280px] overflow-x-auto">
+                <div style={{ width: `${cashflowPxWidth}px`, height: "100%" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={cashflowData}>
+                      <defs>
+                        <linearGradient id="cGP" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0.2} /><stop offset="100%" stopColor="hsl(200, 75%, 45%)" stopOpacity={0} /></linearGradient>
+                        <linearGradient id="cGA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0.2} /><stop offset="100%" stopColor="hsl(30, 85%, 50%)" stopOpacity={0} /></linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                      <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={chartTooltip} />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: "10px" }} />
+                      <Area type="monotone" dataKey="planned" stroke="hsl(200, 75%, 45%)" fill="url(#cGP)" strokeWidth={2} name="Planned" />
+                      <Area type="monotone" dataKey="actual" stroke="hsl(30, 85%, 50%)" fill="url(#cGA)" strokeWidth={2} name="Actual" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>

@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      addendums: {
+        Row: {
+          addendum_code: string
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          cost_impact: number
+          created_at: string
+          description: string
+          id: string
+          project_id: string
+          schedule_impact_days: number
+          scope_change: string | null
+          updated_at: string
+        }
+        Insert: {
+          addendum_code: string
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          cost_impact?: number
+          created_at?: string
+          description?: string
+          id?: string
+          project_id: string
+          schedule_impact_days?: number
+          scope_change?: string | null
+          updated_at?: string
+        }
+        Update: {
+          addendum_code?: string
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          cost_impact?: number
+          created_at?: string
+          description?: string
+          id?: string
+          project_id?: string
+          schedule_impact_days?: number
+          scope_change?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addendums_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       milestones: {
         Row: {
           actual_date: string | null

@@ -3,8 +3,9 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
-import { AlertCircle, AlertTriangle, Info, CheckCircle2, Shield, ChevronDown, Share2, TrendingDown, Clock } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info, CheckCircle2, Shield, ChevronDown, Share2, TrendingDown, Clock, Download, Printer, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 
 type Severity = "critical" | "high" | "medium" | "low";
 
@@ -15,7 +16,11 @@ const severityConfig: Record<Severity, { label: string; icon: typeof AlertCircle
   low: { label: "Low", icon: Info, color: "text-muted-foreground", bgColor: "bg-muted/30", borderColor: "border-border" },
 };
 
-const probImpactLevels = ["low", "medium", "high", "very-high"];
+const probLevels = ["low", "medium", "high", "very-high"];
+const impactLevels = ["low", "medium", "high", "very-high"];
+const probLabels: Record<string, string> = { "low": "Low", "medium": "Medium", "high": "High", "very-high": "Very High" };
+const impactLabels: Record<string, string> = { "low": "Low", "medium": "Medium", "high": "High", "very-high": "Very High" };
+
 const matrixColors: Record<string, string> = {
   "0-0": "bg-success/20", "0-1": "bg-success/20", "0-2": "bg-warning/20", "0-3": "bg-warning/20",
   "1-0": "bg-success/20", "1-1": "bg-warning/20", "1-2": "bg-warning/20", "1-3": "bg-destructive/20",
@@ -23,11 +28,19 @@ const matrixColors: Record<string, string> = {
   "3-0": "bg-warning/20", "3-1": "bg-destructive/20", "3-2": "bg-destructive/20", "3-3": "bg-destructive/30",
 };
 
+const matrixRiskLevel: Record<string, string> = {
+  "0-0": "Low", "0-1": "Low", "0-2": "Medium", "0-3": "Medium",
+  "1-0": "Low", "1-1": "Medium", "1-2": "Medium", "1-3": "High",
+  "2-0": "Medium", "2-1": "Medium", "2-2": "High", "2-3": "Critical",
+  "3-0": "Medium", "3-1": "High", "3-2": "Critical", "3-3": "Critical",
+};
+
 const RiskMonitoring = () => {
   const navigate = useNavigate();
   const { data: projects = [], isLoading: lp } = useProjects();
   const { data: alerts = [], isLoading: la } = useAlerts();
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
+  const [selectedCell, setSelectedCell] = useState<string | null>(null);
 
   if (lp || la) {
     return <div className="flex min-h-screen"><Sidebar /><div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div></div>;
@@ -36,24 +49,72 @@ const RiskMonitoring = () => {
   const filteredAlerts = severityFilter === "all" ? alerts : alerts.filter(a => a.severity === severityFilter);
   const counts = { critical: alerts.filter(a => a.severity === "critical").length, high: alerts.filter(a => a.severity === "high").length, medium: alerts.filter(a => a.severity === "medium").length, low: alerts.filter(a => a.severity === "low").length };
 
-  // Critical Issues Overview
   const delayedProjects = projects.filter(p => p.status === "delayed");
   const overBudgetProjects = projects.filter(p => p.spent / p.budget > 0.9);
   const atRiskProjects = projects.filter(p => p.status === "at-risk" || p.status === "delayed");
 
-  // Risk Matrix data
   const matrixData: Record<string, typeof alerts> = {};
   alerts.forEach(a => {
-    const pi = probImpactLevels.indexOf(a.probability || "medium");
-    const ii = probImpactLevels.indexOf(a.impact || "medium");
+    const pi = probLevels.indexOf(a.probability || "medium");
+    const ii = impactLevels.indexOf(a.impact || "medium");
     const key = `${Math.max(0, pi)}-${Math.max(0, ii)}`;
     if (!matrixData[key]) matrixData[key] = [];
     matrixData[key].push(a);
   });
 
+  const selectedCellAlerts = selectedCell ? (matrixData[selectedCell] || []) : [];
+  const selectedCellInfo = selectedCell ? {
+    prob: probLabels[probLevels[parseInt(selectedCell.split("-")[0])]],
+    impact: impactLabels[impactLevels[parseInt(selectedCell.split("-")[1])]],
+    level: matrixRiskLevel[selectedCell],
+  } : null;
+
   const handleShare = async () => {
     if (navigator.share) await navigator.share({ title: "Risk Monitoring", url: window.location.href });
     else { await navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }
+  };
+
+  const handleExportPDF = () => {
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    pdf.setFontSize(16);
+    pdf.text("Risk Monitoring Report", 14, 20);
+    pdf.setFontSize(9);
+    pdf.text(`Generated: ${new Date().toLocaleString("id-ID")}`, 14, 27);
+    pdf.text(`Critical: ${counts.critical} | High: ${counts.high} | Medium: ${counts.medium} | Low: ${counts.low}`, 14, 33);
+
+    let y = 42;
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    ["Risk", "Severity", "Probability", "Impact", "Owner", "Mitigation"].forEach((h, i) => {
+      pdf.text(h, 14 + i * 30, y);
+    });
+    y += 5;
+    pdf.setFont("helvetica", "normal");
+    alerts.forEach(a => {
+      if (y > 280) { pdf.addPage(); y = 20; }
+      pdf.text(a.title.slice(0, 18), 14, y);
+      pdf.text(a.severity, 44, y);
+      pdf.text(a.probability || "—", 74, y);
+      pdf.text(a.impact || "—", 104, y);
+      pdf.text((a.risk_owner || "—").slice(0, 12), 134, y);
+      pdf.text((a.mitigation_plan || "—").slice(0, 20), 164, y);
+      y += 5;
+    });
+    pdf.save(`Risk_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  const handlePrint = () => {
+    const printW = window.open("", "_blank");
+    if (!printW) return;
+    printW.document.write(`<html><head><title>Risk Report</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:4px 8px;text-align:left}th{background:#f5f5f5;font-size:10px;text-transform:uppercase}</style></head><body>`);
+    printW.document.write(`<h2>Risk Monitoring Report</h2><p>Critical: ${counts.critical} | High: ${counts.high} | Medium: ${counts.medium} | Low: ${counts.low}</p>`);
+    printW.document.write(`<table><thead><tr><th>Risk</th><th>Severity</th><th>Probability</th><th>Impact</th><th>Owner</th><th>Mitigation</th></tr></thead><tbody>`);
+    alerts.forEach(a => {
+      printW.document.write(`<tr><td>${a.title}</td><td>${a.severity}</td><td>${a.probability || "—"}</td><td>${a.impact || "—"}</td><td>${a.risk_owner || "—"}</td><td>${a.mitigation_plan || "—"}</td></tr>`);
+    });
+    printW.document.write(`</tbody></table><p style="margin-top:20px;font-size:9px;color:#888">© 2026 PT Pamitra Jaya Konstruksi</p></body></html>`);
+    printW.document.close();
+    printW.print();
   };
 
   return (
@@ -68,7 +129,11 @@ const RiskMonitoring = () => {
               <h2 className="text-lg font-bold text-foreground">Risk Monitoring</h2>
               <p className="text-xs text-muted-foreground">Manajemen risiko dan peringatan proyek EPC</p>
             </div>
-            <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={handleExportPDF} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90"><Download className="h-3.5 w-3.5" /> Export PDF</button>
+              <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Printer className="h-3.5 w-3.5" /> Print</button>
+              <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
+            </div>
           </div>
 
           {/* KPIs */}
@@ -87,7 +152,8 @@ const RiskMonitoring = () => {
 
           {/* Critical Issues Overview */}
           <div className="glass-card rounded-lg shadow-card p-4 mb-5">
-            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-destructive" /> Critical Issues Overview</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-destructive" /> Project Critical Issues Summary</h3>
+            <p className="text-[11px] text-muted-foreground mb-3">Ringkasan masalah kritis untuk identifikasi cepat area yang perlu akselerasi</p>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/20">
                 <div className="flex items-center gap-2 mb-1"><Clock className="h-4 w-4 text-destructive" /><span className="text-[10px] uppercase text-muted-foreground">Delays</span></div>
@@ -127,22 +193,34 @@ const RiskMonitoring = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
             {/* Risk Matrix */}
             <div className="glass-card rounded-lg p-4 shadow-card">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Risk Matrix</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Risk Matrix</h3>
+              <p className="text-[10px] text-muted-foreground mb-3">Klik sel untuk melihat detail risiko</p>
+              
+              {/* Matrix explanation */}
+              <div className="bg-muted/30 rounded-lg p-2 mb-3 border border-border/50">
+                <p className="text-[9px] text-muted-foreground"><strong>Probability:</strong> Kemungkinan risiko terjadi (Low → Very High)</p>
+                <p className="text-[9px] text-muted-foreground"><strong>Impact:</strong> Dampak terhadap proyek (Low → Very High)</p>
+                <p className="text-[9px] text-muted-foreground"><strong>Risk Level:</strong> <span className="text-success">Green=Low</span> · <span className="text-warning">Yellow=Medium</span> · <span className="text-destructive">Red=High/Critical</span></p>
+              </div>
+
               <div className="space-y-0.5">
                 <div className="flex items-center gap-0.5">
                   <div className="w-16 text-[8px] text-muted-foreground text-right pr-1">Impact →</div>
-                  {["Low", "Med", "High", "V.High"].map(l => <div key={l} className="flex-1 text-[8px] text-center text-muted-foreground">{l}</div>)}
+                  {impactLevels.map(l => <div key={l} className="flex-1 text-[8px] text-center text-muted-foreground">{impactLabels[l].slice(0, 4)}</div>)}
                 </div>
-                {[...probImpactLevels].reverse().map((prob, pi) => (
+                {[...probLevels].reverse().map((prob, pi) => (
                   <div key={prob} className="flex items-center gap-0.5">
-                    <div className="w-16 text-[8px] text-muted-foreground text-right pr-1 capitalize">{prob.replace("-", " ")}</div>
-                    {probImpactLevels.map((imp, ii) => {
+                    <div className="w-16 text-[8px] text-muted-foreground text-right pr-1">{probLabels[prob].slice(0, 6)}</div>
+                    {impactLevels.map((imp, ii) => {
                       const key = `${3 - pi}-${ii}`;
                       const items = matrixData[key] || [];
+                      const isSelected = selectedCell === key;
                       return (
-                        <div key={key} className={`flex-1 aspect-square rounded flex items-center justify-center text-xs font-bold ${matrixColors[key]} border border-border/30`}>
-                          {items.length > 0 ? <span className="text-foreground">{items.length}</span> : ""}
-                        </div>
+                        <button key={key}
+                          onClick={() => setSelectedCell(isSelected ? null : key)}
+                          className={`flex-1 aspect-square rounded flex items-center justify-center text-xs font-bold ${matrixColors[key]} border transition-all cursor-pointer hover:opacity-80 ${isSelected ? "border-primary ring-2 ring-primary/30 scale-105" : "border-border/30"}`}>
+                          {items.length > 0 ? <span className="text-foreground">{items.length}</span> : "·"}
+                        </button>
                       );
                     })}
                   </div>
@@ -151,6 +229,33 @@ const RiskMonitoring = () => {
                   <div className="w-16 text-[8px] text-muted-foreground text-right pr-1">Prob ↑</div>
                 </div>
               </div>
+
+              {/* Selected cell detail */}
+              {selectedCell && selectedCellInfo && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-[10px] font-medium text-foreground">Probability: {selectedCellInfo.prob} × Impact: {selectedCellInfo.impact}</p>
+                      <p className="text-[10px] text-muted-foreground">Risk Level: <span className={`font-bold ${selectedCellInfo.level === "Critical" ? "text-destructive" : selectedCellInfo.level === "High" ? "text-warning" : selectedCellInfo.level === "Medium" ? "text-accent" : "text-success"}`}>{selectedCellInfo.level}</span></p>
+                    </div>
+                    <button onClick={() => setSelectedCell(null)} className="p-1 hover:bg-muted rounded"><X className="h-3 w-3 text-muted-foreground" /></button>
+                  </div>
+                  {selectedCellAlerts.length === 0 ? (
+                    <p className="text-[10px] text-muted-foreground italic">Tidak ada risiko di kategori ini.</p>
+                  ) : (
+                    <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
+                      {selectedCellAlerts.map(a => (
+                        <div key={a.id} className="bg-muted/30 rounded p-2 border border-border/50 cursor-pointer hover:border-primary/50" onClick={() => a.project_id && navigate(`/project/${a.project_id}`)}>
+                          <p className="text-[10px] font-medium text-foreground">{a.title}</p>
+                          {a.projects && <p className="text-[9px] text-primary">{a.projects.project_code}</p>}
+                          {a.risk_owner && <p className="text-[9px] text-muted-foreground">Owner: {a.risk_owner}</p>}
+                          {a.mitigation_plan && <p className="text-[9px] text-info">⚡ {a.mitigation_plan}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Alerts List */}
