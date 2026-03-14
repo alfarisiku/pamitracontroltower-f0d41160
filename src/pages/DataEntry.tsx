@@ -107,11 +107,11 @@ const DataEntry = () => {
     if (!updateProjectId || !riskTitle) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("project_alerts").insert({
-        project_id: updateProjectId, title: riskTitle, severity: riskSeverity,
+      const { error } = await supabase.from("project_alerts").insert([{
+        project_id: updateProjectId, title: riskTitle, severity: riskSeverity as any,
         probability: riskProbability, impact: riskImpact, risk_owner: riskOwner,
         mitigation_plan: riskMitigation, description: riskDescription,
-      });
+      }]);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
       toast({ title: "✅ Berhasil", description: "Risk item ditambahkan" });
