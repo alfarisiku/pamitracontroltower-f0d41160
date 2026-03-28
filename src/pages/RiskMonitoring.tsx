@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
-import { AlertCircle, AlertTriangle, Info, CheckCircle2, Shield, ChevronDown, Share2, TrendingDown, Clock, Download, Printer, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info, CheckCircle2, Shield, ChevronDown, Share2, TrendingDown, Clock, Download, Printer, X, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
@@ -41,6 +41,7 @@ const RiskMonitoring = () => {
   const { data: alerts = [], isLoading: la } = useAlerts();
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   if (lp || la) {
     return <div className="flex min-h-screen"><Sidebar /><div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div></div>;
@@ -127,14 +128,56 @@ const RiskMonitoring = () => {
           <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
             <div>
               <h2 className="text-lg font-bold text-foreground">Risk Monitoring</h2>
-              <p className="text-xs text-muted-foreground">Manajemen risiko dan peringatan proyek EPC</p>
+              <p className="text-xs text-muted-foreground">Manajemen risiko dan peringatan proyek</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => setShowGuide(!showGuide)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${showGuide ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-foreground border-border hover:bg-muted/80"}`}><BookOpen className="h-3.5 w-3.5" /> Risk Guide</button>
               <button onClick={handleExportPDF} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90"><Download className="h-3.5 w-3.5" /> Export PDF</button>
               <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Printer className="h-3.5 w-3.5" /> Print</button>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
             </div>
           </div>
+
+          {/* Risk Guide Panel */}
+          {showGuide && (
+            <div className="glass-card rounded-lg shadow-card p-4 mb-5 border-2 border-primary/20">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> Panduan Risk Level</h3>
+                <button onClick={() => setShowGuide(false)} className="p-1 hover:bg-muted rounded"><X className="h-4 w-4 text-muted-foreground" /></button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/20">
+                  <div className="flex items-center gap-2 mb-2"><AlertCircle className="h-4 w-4 text-destructive" /><span className="text-xs font-bold text-destructive">CRITICAL</span></div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang dapat menghentikan proyek secara total. Membutuhkan eskalasi ke top management dan tindakan segera dalam 24 jam.</p>
+                  <p className="text-[10px] text-destructive mt-1 font-medium">Contoh: Kegagalan struktural, kecelakaan fatal, pembatalan kontrak</p>
+                </div>
+                <div className="bg-warning/10 rounded-lg p-3 border border-warning/20">
+                  <div className="flex items-center gap-2 mb-2"><AlertTriangle className="h-4 w-4 text-warning" /><span className="text-xs font-bold text-warning">HIGH</span></div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang menyebabkan keterlambatan signifikan atau pembengkakan biaya &gt;10%. Perlu rencana mitigasi dalam 1 minggu.</p>
+                  <p className="text-[10px] text-warning mt-1 font-medium">Contoh: Keterlambatan material utama, kekurangan SDM kritis</p>
+                </div>
+                <div className="bg-info/10 rounded-lg p-3 border border-info/20">
+                  <div className="flex items-center gap-2 mb-2"><Info className="h-4 w-4 text-info" /><span className="text-xs font-bold text-info">MEDIUM</span></div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang dapat memengaruhi jadwal atau biaya dalam batas toleransi (5-10%). Monitoring berkala diperlukan.</p>
+                  <p className="text-[10px] text-info mt-1 font-medium">Contoh: Perubahan scope minor, cuaca buruk musiman</p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3 border border-border">
+                  <div className="flex items-center gap-2 mb-2"><Info className="h-4 w-4 text-muted-foreground" /><span className="text-xs font-bold text-muted-foreground">LOW</span></div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko minor yang jarang terjadi dan dampaknya kecil (&lt;5%). Cukup dicatat dan dimonitor rutin.</p>
+                  <p className="text-[10px] text-muted-foreground mt-1 font-medium">Contoh: Keterlambatan dokumen administrasi</p>
+                </div>
+              </div>
+              <div className="bg-muted/20 rounded-lg p-3 border border-border/50">
+                <h4 className="text-xs font-semibold text-foreground mb-2">Bagaimana Risk Berkaitan dengan Proyek?</h4>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-[10px] text-muted-foreground">
+                  <div><span className="font-medium text-destructive">Delays</span> → Proyek yang melewati target deadline akan otomatis memunculkan alert keterlambatan.</div>
+                  <div><span className="font-medium text-warning">Budget Overruns</span> → Proyek dengan pengeluaran &gt;90% dari budget akan ditandai sebagai budget overrun.</div>
+                  <div><span className="font-medium text-destructive">Critical Issues</span> → Risk dengan severity "Critical" menandakan masalah yang harus segera ditangani.</div>
+                  <div><span className="font-medium text-warning">High Risk</span> → Risk dengan probability dan impact tinggi memerlukan rencana mitigasi aktif.</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -196,7 +239,6 @@ const RiskMonitoring = () => {
               <h3 className="text-sm font-semibold text-foreground mb-2">Risk Matrix</h3>
               <p className="text-[10px] text-muted-foreground mb-3">Klik sel untuk melihat detail risiko</p>
               
-              {/* Matrix explanation */}
               <div className="bg-muted/30 rounded-lg p-2 mb-3 border border-border/50">
                 <p className="text-[9px] text-muted-foreground"><strong>Probability:</strong> Kemungkinan risiko terjadi (Low → Very High)</p>
                 <p className="text-[9px] text-muted-foreground"><strong>Impact:</strong> Dampak terhadap proyek (Low → Very High)</p>

@@ -1,7 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.markercluster";
 import { DbProject } from "@/lib/supabase";
 import { formatRupiah } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
@@ -22,10 +25,9 @@ const statusLabels: Record<ProjectStatus, string> = {
   "completed": "Selesai",
 };
 
-// Map percentage coordinates to rough Indonesia lat/lng
 function mapToLatLng(mapX: number, mapY: number): [number, number] {
-  const lng = 95 + (mapX / 100) * 46; // 95E to 141E
-  const lat = 6 - (mapY / 100) * 17;  // 6N to -11S
+  const lng = 95 + (mapX / 100) * 46;
+  const lat = 6 - (mapY / 100) * 17;
   return [lat, lng];
 }
 
@@ -44,14 +46,83 @@ function createIcon(status: ProjectStatus) {
   });
 }
 
-function FitBounds({ projects }: { projects: DbProject[] }) {
+function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; navigate: (path: string) => void }) {
   const map = useMap();
+
   useEffect(() => {
-    if (projects.length > 0) {
-      const bounds = L.latLngBounds(projects.map(p => mapToLatLng(p.map_x, p.map_y)));
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 8 });
-    }
+    if (projects.length === 0) return;
+
+    const cluster = (L as any).markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      iconCreateFunction: (c: any) => {
+        const count = c.getChildCount();
+        return L.divIcon({
+          html: `<div style="
+            width: 32px; height: 32px; border-radius: 50%;
+            background: hsl(215, 80%, 48%); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">${count}</div>`,
+          className: "custom-cluster",
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+      },
+    });
+
+    projects.forEach(project => {
+      const [lat, lng] = mapToLatLng(project.map_x, project.map_y);
+      const marker = L.marker([lat, lng], { icon: createIcon(project.status) });
+      const popup = L.popup().setContent(`
+        <div style="min-width:200px;font-family:inherit">
+          <p style="font-size:10px;font-family:monospace;color:hsl(215,80%,48%)">${project.project_code}</p>
+          <p style="font-size:13px;font-weight:600;margin:2px 0">${project.name}</p>
+          <p style="font-size:11px;color:#888;margin-bottom:6px">${project.location}</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${statusColors[project.status]}20;color:${statusColors[project.status]}">${statusLabels[project.status]}</span>
+            <span style="font-size:12px;font-family:monospace;font-weight:700">${project.progress}%</span>
+          </div>
+          <p style="font-size:10px;color:#888">${formatRupiah(project.budget)}</p>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button onclick="window.__mapSelectProject('${project.id}')" style="flex:1;font-size:10px;padding:4px 8px;background:#eff6ff;color:#2563eb;border:none;border-radius:4px;cursor:pointer">Overview</button>
+            <button onclick="window.__mapNavProject('${project.id}')" style="flex:1;font-size:10px;padding:4px 8px;background:#f0fdf4;color:#16a34a;border:none;border-radius:4px;cursor:pointer">Detail WBS</button>
+          </div>
+        </div>
+      `);
+      marker.bindPopup(popup);
+      cluster.addLayer(marker);
+    });
+
+    map.addLayer(cluster);
+
+    // Fit bounds
+    const bounds = L.latLngBounds(projects.map(p => mapToLatLng(p.map_x, p.map_y)));
+    map.fitBounds(bounds, { padding: [30, 30], maxZoom: 8 });
+
+    return () => {
+      map.removeLayer(cluster);
+    };
   }, [projects, map]);
+
+  // Setup global handlers for popup buttons
+  useEffect(() => {
+    (window as any).__mapSelectProject = (id: string) => {
+      const p = projects.find(pr => pr.id === id);
+      if (p) onSelectProject(p);
+    };
+    (window as any).__mapNavProject = (id: string) => {
+      navigate(`/project/${id}`);
+    };
+    return () => {
+      delete (window as any).__mapSelectProject;
+      delete (window as any).__mapNavProject;
+    };
+  }, [projects, onSelectProject, navigate]);
+
   return null;
 }
 
@@ -63,7 +134,7 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
       <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-sm font-semibold text-foreground">Project Portfolio</h2>
-          <p className="text-xs text-muted-foreground">{projects.length} proyek EPC tersebar di Indonesia</p>
+          <p className="text-xs text-muted-foreground">{projects.length} proyek tersebar di Indonesia</p>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
           {(["on-track", "at-risk", "delayed", "completed"] as ProjectStatus[]).map((s) => (
@@ -84,6 +155,7 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
           .leaflet-container { background: hsl(210, 20%, 95%); font-family: inherit; }
           .leaflet-popup-content-wrapper { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
           .leaflet-popup-content { margin: 8px 12px; font-size: 12px; }
+          .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: transparent !important; }
         `}</style>
         <MapContainer
           center={[-2.5, 118]}
@@ -96,39 +168,7 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <FitBounds projects={projects} />
-          {projects.map((project) => {
-            const [lat, lng] = mapToLatLng(project.map_x, project.map_y);
-            return (
-              <Marker key={project.id} position={[lat, lng]} icon={createIcon(project.status)}>
-                <Popup>
-                  <div className="min-w-[200px]">
-                    <p className="text-[10px] font-mono text-primary">{project.project_code}</p>
-                    <p className="text-sm font-semibold">{project.name}</p>
-                    <p className="text-[11px] text-gray-500 mt-1">{project.location}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{
-                        background: `${statusColors[project.status]}20`,
-                        color: statusColors[project.status]
-                      }}>{statusLabels[project.status]}</span>
-                      <span className="text-xs font-mono font-bold">{project.progress}%</span>
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-1">{formatRupiah(project.budget)}</p>
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => onSelectProject(project)}
-                        className="flex-1 text-[10px] px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-                      >Overview</button>
-                      <button
-                        onClick={() => navigate(`/project/${project.id}`)}
-                        className="flex-1 text-[10px] px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 transition-colors"
-                      >Detail WBS</button>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+          <MarkerClusterGroup projects={projects} onSelectProject={onSelectProject} navigate={navigate} />
         </MapContainer>
       </div>
     </div>
