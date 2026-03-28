@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useAlerts, useMonthlyBudgets, useWorkAreas, useWorkItems, useMilestones } from "@/hooks/useProjects";
@@ -10,7 +10,6 @@ const Reporting = () => {
   const { data: projects = [] } = useProjects();
   const { data: alerts = [] } = useAlerts();
   const { data: budgets = [] } = useMonthlyBudgets();
-  const [reportType, setReportType] = useState<"general" | "detailed">("general");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [generating, setGenerating] = useState(false);
 
@@ -28,77 +27,145 @@ const Reporting = () => {
   const generatePDF = async () => {
     setGenerating(true);
     try {
-      const isLandscape = reportType === "general";
-      const pdf = new jsPDF({ orientation: isLandscape ? "landscape" : "portrait", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pW = pdf.internal.pageSize.getWidth();
       
       // Header
+      pdf.setFillColor(26, 86, 219);
+      pdf.rect(0, 0, pW, 35, "F");
+      pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(18);
-      pdf.text("PT Pamitra Jaya Konstruksi", 14, 18);
-      pdf.setFontSize(11);
-      pdf.text(reportType === "general" ? "General Project Report — Executive Summary" : "Detailed Project Report — Full Breakdown", 14, 26);
+      pdf.text("PT Pamitra Jaya Konstruksi", 14, 16);
+      pdf.setFontSize(10);
+      pdf.text("Project Performance Report", 14, 24);
       pdf.setFontSize(8);
-      pdf.text(`Generated: ${new Date().toLocaleString("id-ID")}`, 14, 32);
-      pdf.line(14, 34, pW - 14, 34);
+      pdf.text(`Generated: ${new Date().toLocaleString("id-ID")}`, 14, 31);
+      pdf.setTextColor(0, 0, 0);
       
-      let y = 40;
+      let y = 45;
 
-      // Executive Summary
-      pdf.setFontSize(12);
+      // 1. Executive Summary with highlighted metrics
+      pdf.setFontSize(13);
       pdf.setFont("helvetica", "bold");
-      pdf.text("1. Executive Summary", 14, y); y += 7;
-      pdf.setFontSize(9);
+      pdf.setTextColor(26, 86, 219);
+      pdf.text("1. Executive Summary", 14, y); y += 8;
+      pdf.setTextColor(0, 0, 0);
+      
+      // KPI boxes
+      const kpis = [
+        { label: "Projects", value: String(filteredProjects.length) },
+        { label: "Budget", value: formatRupiah(totalBudget) },
+        { label: "Spent", value: formatRupiah(totalSpent) },
+        { label: "Progress", value: `${avgProgress}%` },
+        { label: "Alerts", value: String(filteredAlerts.length) },
+        { label: "Margin", value: `${totalBudget > 0 ? Math.round((totalBudget - totalSpent) / totalBudget * 100) : 0}%` },
+      ];
+      const boxW = (pW - 28 - 10) / 3;
+      kpis.forEach((k, i) => {
+        const bx = 14 + (i % 3) * (boxW + 5);
+        const by = y + Math.floor(i / 3) * 16;
+        pdf.setFillColor(245, 247, 250);
+        pdf.roundedRect(bx, by, boxW, 13, 2, 2, "F");
+        pdf.setFontSize(7);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(120, 120, 120);
+        pdf.text(k.label, bx + 3, by + 5);
+        pdf.setFontSize(11);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(26, 86, 219);
+        pdf.text(k.value, bx + 3, by + 11);
+      });
+      pdf.setTextColor(0, 0, 0);
+      y += 38;
+
+      // 2. S-Curve / Schedule Performance
+      pdf.setFontSize(13);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(26, 86, 219);
+      pdf.text("2. Schedule Performance", 14, y); y += 7;
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(8);
       pdf.setFont("helvetica", "normal");
-      pdf.text(`Total Projects: ${filteredProjects.length}`, 14, y);
-      pdf.text(`Total Budget: ${formatRupiah(totalBudget)}`, 80, y);
-      pdf.text(`Total Spent: ${formatRupiah(totalSpent)}`, 150, y);
-      y += 5;
-      pdf.text(`Avg Progress: ${avgProgress}%`, 14, y);
-      pdf.text(`Active Alerts: ${filteredAlerts.length}`, 80, y);
-      pdf.text(`Margin: ${totalBudget > 0 ? Math.round((totalBudget - totalSpent) / totalBudget * 100) : 0}%`, 150, y);
+      const schedStats = [
+        { l: "On Track", v: filteredProjects.filter(p => p.status === "on-track").length, c: [34, 197, 94] },
+        { l: "At Risk", v: filteredProjects.filter(p => p.status === "at-risk").length, c: [234, 179, 8] },
+        { l: "Delayed", v: filteredProjects.filter(p => p.status === "delayed").length, c: [239, 68, 68] },
+        { l: "Completed", v: filteredProjects.filter(p => p.status === "completed").length, c: [59, 130, 246] },
+      ];
+      schedStats.forEach((s, i) => {
+        const bx = 14 + i * 45;
+        pdf.setFillColor(s.c[0], s.c[1], s.c[2]);
+        pdf.circle(bx + 3, y + 2, 2, "F");
+        pdf.text(`${s.l}: ${s.v}`, bx + 7, y + 3);
+      });
       y += 10;
 
-      // Project Table
-      pdf.setFontSize(12);
+      // 3. Project Table
+      pdf.setFontSize(13);
       pdf.setFont("helvetica", "bold");
-      pdf.text("2. Project Summary", 14, y); y += 7;
-      pdf.setFontSize(8);
+      pdf.setTextColor(26, 86, 219);
+      pdf.text("3. Activity Progress", 14, y); y += 7;
+      pdf.setTextColor(0, 0, 0);
+      
+      // Table header
+      pdf.setFillColor(240, 242, 245);
+      pdf.rect(14, y - 1, pW - 28, 6, "F");
+      pdf.setFontSize(7);
       pdf.setFont("helvetica", "bold");
-      const headers = reportType === "detailed" ? ["Code", "Project", "Status", "Phase", "Progress", "Budget", "Spent", "CPI", "Margin", "End Date"] : ["Code", "Project", "Status", "Progress", "Budget", "Spent", "Margin"];
-      const colW = reportType === "detailed" ? 25 : 35;
-      headers.forEach((h, i) => pdf.text(h, 14 + i * colW, y));
-      y += 1; pdf.line(14, y, pW - 14, y); y += 4;
+      const headers = ["Code", "Project", "Status", "Phase", "Progress", "Budget", "CPI", "Margin"];
+      const colX = [14, 30, 70, 88, 107, 122, 145, 162];
+      headers.forEach((h, i) => pdf.text(h, colX[i], y + 3));
+      y += 8;
       
       pdf.setFont("helvetica", "normal");
       filteredProjects.forEach(p => {
-        if (y > (isLandscape ? 190 : 280)) { pdf.addPage(); y = 20; }
+        if (y > 275) { pdf.addPage(); y = 20; }
         const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
         const margin = Math.round((p.budget - p.spent) / p.budget * 100);
-        if (reportType === "detailed") {
-          [p.project_code, p.name.slice(0, 16), p.status, p.phase, `${p.progress}%`, formatRupiah(p.budget), formatRupiah(p.spent), cpi.toFixed(2), `${margin}%`, new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" })].forEach((v, i) => pdf.text(v, 14 + i * colW, y));
-        } else {
-          [p.project_code, p.name.slice(0, 20), p.status, `${p.progress}%`, formatRupiah(p.budget), formatRupiah(p.spent), `${margin}%`].forEach((v, i) => pdf.text(v, 14 + i * colW, y));
-        }
+        pdf.setFontSize(7);
+        pdf.text(p.project_code, colX[0], y);
+        pdf.text(p.name.slice(0, 22), colX[1], y);
+        pdf.text(p.status, colX[2], y);
+        pdf.text(p.phase, colX[3], y);
+        // Progress bar
+        pdf.setFillColor(230, 230, 230);
+        pdf.rect(colX[4], y - 3, 12, 3, "F");
+        pdf.setFillColor(26, 86, 219);
+        pdf.rect(colX[4], y - 3, 12 * (p.progress / 100), 3, "F");
+        pdf.text(`${p.progress}%`, colX[4] + 13, y);
+        pdf.text(formatRupiah(p.budget), colX[5], y);
+        pdf.setTextColor(cpi >= 1 ? 34 : 239, cpi >= 1 ? 197 : 68, cpi >= 1 ? 94 : 68);
+        pdf.text(cpi.toFixed(2), colX[6], y);
+        pdf.setTextColor(margin > 10 ? 34 : 239, margin > 10 ? 197 : 68, margin > 10 ? 94 : 68);
+        pdf.text(`${margin}%`, colX[7], y);
+        pdf.setTextColor(0, 0, 0);
         y += 5;
       });
       y += 5;
 
-      // Detailed: WBS Breakdown
-      if (reportType === "detailed" && selectedProjectId !== "all" && workAreas.length > 0) {
+      // 4. WBS Breakdown (if project selected)
+      if (selectedProjectId !== "all" && workAreas.length > 0) {
         if (y > 240) { pdf.addPage(); y = 20; }
-        pdf.setFontSize(12); pdf.setFont("helvetica", "bold");
-        pdf.text("3. WBS Breakdown", 14, y); y += 7;
-        pdf.setFontSize(8); pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(13); pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(26, 86, 219);
+        pdf.text("4. WBS Breakdown", 14, y); y += 7;
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFontSize(7);
         workAreas.forEach(wa => {
           if (y > 270) { pdf.addPage(); y = 20; }
+          pdf.setFillColor(240, 242, 245);
+          pdf.rect(14, y - 2, pW - 28, 5, "F");
           pdf.setFont("helvetica", "bold");
-          pdf.text(`${wa.code} — ${wa.name} (${wa.progress}%)`, 14, y); y += 4;
+          pdf.text(`${wa.code} — ${wa.name} (${wa.progress}%)`, 16, y + 1.5);
+          y += 6;
           pdf.setFont("helvetica", "normal");
           const items = workItems.filter(wi => wi.work_area_id === wa.id);
           items.forEach(wi => {
             if (y > 275) { pdf.addPage(); y = 20; }
             pdf.text(`  ${wi.code}  ${wi.name}`, 18, y);
-            pdf.text(`${Number(wi.qty_completed)}/${Number(wi.qty_total)} ${wi.unit}  (${wi.progress}%)`, 120, y);
+            const rem = Number(wi.qty_total) - Number(wi.qty_completed);
+            pdf.text(`${Number(wi.qty_completed)}/${Number(wi.qty_total)} ${wi.unit} (rem: ${rem})`, 120, y);
+            pdf.text(`${wi.progress}%`, 175, y);
             y += 4;
           });
           y += 2;
@@ -106,12 +173,28 @@ const Reporting = () => {
         y += 5;
       }
 
-      // Detailed: Milestones
-      if (reportType === "detailed" && selectedProjectId !== "all" && milestones.length > 0) {
+      // 5. Cost Performance
+      if (y > 250) { pdf.addPage(); y = 20; }
+      const costSection = selectedProjectId !== "all" && workAreas.length > 0 ? "5" : "4";
+      pdf.setFontSize(13); pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(26, 86, 219);
+      pdf.text(`${costSection}. Cost Performance`, 14, y); y += 7;
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(9); pdf.setFont("helvetica", "normal");
+      pdf.text(`Total Budget: ${formatRupiah(totalBudget)}`, 14, y);
+      pdf.text(`Total Spent: ${formatRupiah(totalSpent)}`, 80, y);
+      pdf.text(`Remaining: ${formatRupiah(totalBudget - totalSpent)}`, 145, y);
+      y += 10;
+
+      // 6. Milestones
+      if (selectedProjectId !== "all" && milestones.length > 0) {
         if (y > 250) { pdf.addPage(); y = 20; }
-        pdf.setFontSize(12); pdf.setFont("helvetica", "bold");
-        pdf.text("4. Milestone Tracking", 14, y); y += 7;
-        pdf.setFontSize(8);
+        const msSection = parseInt(costSection) + 1;
+        pdf.setFontSize(13); pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(26, 86, 219);
+        pdf.text(`${msSection}. Milestone Tracking`, 14, y); y += 7;
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFontSize(7);
         pdf.setFont("helvetica", "bold");
         ["Milestone", "Phase", "Target", "Status", "Weight"].forEach((h, i) => pdf.text(h, 14 + i * 35, y));
         y += 4;
@@ -126,20 +209,31 @@ const Reporting = () => {
       }
 
       // Risk Summary
-      const riskSectionNum = reportType === "detailed" && selectedProjectId !== "all" ? (workAreas.length > 0 ? "5" : "3") : "3";
       if (y > 250) { pdf.addPage(); y = 20; }
-      pdf.setFontSize(12); pdf.setFont("helvetica", "bold");
-      pdf.text(`${riskSectionNum}. Risk Summary`, 14, y); y += 7;
-      pdf.setFontSize(9); pdf.setFont("helvetica", "normal");
-      ["critical", "high", "medium", "low"].forEach(sev => {
-        const cnt = filteredAlerts.filter(a => a.severity === sev).length;
-        pdf.text(`${sev.charAt(0).toUpperCase() + sev.slice(1)}: ${cnt}`, 14, y);
-        y += 4;
+      const riskSection = selectedProjectId !== "all" ? (workAreas.length > 0 ? (milestones.length > 0 ? "7" : "6") : "5") : "5";
+      pdf.setFontSize(13); pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(26, 86, 219);
+      pdf.text(`${riskSection}. Risk Summary`, 14, y); y += 7;
+      pdf.setTextColor(0, 0, 0);
+      
+      const riskKpis = [
+        { l: "Critical", v: filteredAlerts.filter(a => a.severity === "critical").length, c: [239, 68, 68] },
+        { l: "High", v: filteredAlerts.filter(a => a.severity === "high").length, c: [234, 179, 8] },
+        { l: "Medium", v: filteredAlerts.filter(a => a.severity === "medium").length, c: [59, 130, 246] },
+        { l: "Low", v: filteredAlerts.filter(a => a.severity === "low").length, c: [120, 120, 120] },
+      ];
+      pdf.setFontSize(8);
+      riskKpis.forEach((r, i) => {
+        const bx = 14 + i * 45;
+        pdf.setFillColor(r.c[0], r.c[1], r.c[2]);
+        pdf.circle(bx + 3, y + 1.5, 2, "F");
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`${r.l}: ${r.v}`, bx + 7, y + 2.5);
       });
+      y += 8;
 
-      if (reportType === "detailed" && filteredAlerts.length > 0) {
-        y += 3;
-        pdf.setFontSize(8); pdf.setFont("helvetica", "bold");
+      if (filteredAlerts.length > 0) {
+        pdf.setFontSize(7); pdf.setFont("helvetica", "bold");
         ["Risk", "Severity", "P/I", "Owner", "Mitigation"].forEach((h, i) => pdf.text(h, 14 + i * 35, y));
         y += 4;
         pdf.setFont("helvetica", "normal");
@@ -150,44 +244,31 @@ const Reporting = () => {
         });
       }
 
-      // Schedule Performance
-      y += 5;
-      if (y > 260) { pdf.addPage(); y = 20; }
-      const schedNum = parseInt(riskSectionNum) + 1;
-      pdf.setFontSize(12); pdf.setFont("helvetica", "bold");
-      pdf.text(`${schedNum}. Schedule Performance`, 14, y); y += 7;
-      pdf.setFontSize(9); pdf.setFont("helvetica", "normal");
-      pdf.text(`On Track: ${filteredProjects.filter(p => p.status === "on-track").length}`, 14, y);
-      pdf.text(`At Risk: ${filteredProjects.filter(p => p.status === "at-risk").length}`, 60, y);
-      pdf.text(`Delayed: ${filteredProjects.filter(p => p.status === "delayed").length}`, 100, y);
-      y += 10;
-
       // Footer
       pdf.setFontSize(7);
-      pdf.text(`Report generated by Pamitra Control Tower · ${new Date().toLocaleString("id-ID")} · © 2026 PT Pamitra Jaya Konstruksi — Confidential`, 14, isLandscape ? 200 : 290);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`Report generated by Pamitra Control Tower · ${new Date().toLocaleString("id-ID")} · © 2026 PT Pamitra Jaya Konstruksi — Confidential`, 14, 290);
 
-      pdf.save(`Report_${reportType}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`Report_${new Date().toISOString().slice(0, 10)}.pdf`);
     } finally { setGenerating(false); }
   };
 
   const handlePrint = () => {
     const printW = window.open("", "_blank");
     if (!printW) return;
-    const isDetailed = reportType === "detailed";
     
-    printW.document.write(`<html><head><title>${isDetailed ? "Detailed" : "General"} Report</title><style>
-      @page { size: ${isDetailed ? "portrait" : "landscape"}; margin: 15mm; }
+    printW.document.write(`<html><head><title>Project Report</title><style>
+      @page { size: portrait; margin: 15mm; }
       body{font-family:Arial,sans-serif;padding:10px;font-size:11px;color:#333}
-      h1{font-size:18px;margin:0}h2{font-size:14px;margin:15px 0 5px;border-bottom:1px solid #ccc;padding-bottom:3px}
-      table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #ddd;padding:4px 6px;text-align:left;font-size:10px}th{background:#f5f5f5;text-transform:uppercase;font-size:9px}
-      .kpi{display:inline-block;padding:8px 15px;margin:3px;background:#f8f8f8;border:1px solid #eee;border-radius:4px;text-align:center}
+      h1{font-size:18px;margin:0;color:#1a56db}h2{font-size:14px;margin:15px 0 5px;border-bottom:2px solid #1a56db;padding-bottom:3px;color:#1a56db}
+      table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #ddd;padding:4px 6px;text-align:left;font-size:10px}th{background:#f0f2f5;text-transform:uppercase;font-size:9px}
+      .kpi{display:inline-block;padding:8px 15px;margin:3px;background:#f8f8f8;border:1px solid #eee;border-radius:6px;text-align:center}
       .kpi .value{font-size:16px;font-weight:bold;color:#1a56db}.kpi .label{font-size:9px;color:#888;text-transform:uppercase}
-      .badge{padding:2px 8px;border-radius:4px;font-size:9px;display:inline-block}
       .footer{margin-top:30px;padding-top:10px;border-top:1px solid #ddd;font-size:8px;color:#999;text-align:center}
     </style></head><body>`);
     
     printW.document.write(`<h1>PT Pamitra Jaya Konstruksi</h1>`);
-    printW.document.write(`<p style="font-size:12px;color:#666">${isDetailed ? "Detailed Project Report — Full Breakdown" : "General Project Report — Executive Summary"}</p>`);
+    printW.document.write(`<p style="font-size:12px;color:#666">Project Performance Report</p>`);
     printW.document.write(`<p style="font-size:10px;color:#999">${new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>`);
 
     printW.document.write(`<h2>1. Executive Summary</h2><div>`);
@@ -196,15 +277,15 @@ const Reporting = () => {
     });
     printW.document.write(`</div>`);
 
-    printW.document.write(`<h2>2. Project Summary</h2><table><thead><tr><th>Code</th><th>Project</th><th>Status</th><th>Progress</th><th>Budget</th><th>Spent</th><th>Margin</th>${isDetailed ? "<th>CPI</th><th>Phase</th><th>End</th>" : ""}</tr></thead><tbody>`);
+    printW.document.write(`<h2>2. Activity Progress</h2><table><thead><tr><th>Code</th><th>Project</th><th>Status</th><th>Progress</th><th>Budget</th><th>Spent</th><th>CPI</th><th>Margin</th></tr></thead><tbody>`);
     filteredProjects.forEach(p => {
       const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
       const margin = Math.round((p.budget - p.spent) / p.budget * 100);
-      printW.document.write(`<tr><td>${p.project_code}</td><td>${p.name}</td><td>${p.status}</td><td>${p.progress}%</td><td>${formatRupiah(p.budget)}</td><td>${formatRupiah(p.spent)}</td><td>${margin}%</td>${isDetailed ? `<td>${cpi.toFixed(2)}</td><td>${p.phase}</td><td>${new Date(p.end_date).toLocaleDateString("id-ID")}</td>` : ""}</tr>`);
+      printW.document.write(`<tr><td>${p.project_code}</td><td>${p.name}</td><td>${p.status}</td><td>${p.progress}%</td><td>${formatRupiah(p.budget)}</td><td>${formatRupiah(p.spent)}</td><td>${cpi.toFixed(2)}</td><td>${margin}%</td></tr>`);
     });
     printW.document.write(`</tbody></table>`);
 
-    if (isDetailed && selectedProjectId !== "all" && workAreas.length > 0) {
+    if (selectedProjectId !== "all" && workAreas.length > 0) {
       printW.document.write(`<h2>3. WBS Breakdown</h2><table><thead><tr><th>Code</th><th>Name</th><th>Qty</th><th>Done</th><th>Remaining</th><th>%</th></tr></thead><tbody>`);
       workAreas.forEach(wa => {
         printW.document.write(`<tr style="background:#f0f0f0;font-weight:bold"><td colspan="5">${wa.code} — ${wa.name}</td><td>${wa.progress}%</td></tr>`);
@@ -215,26 +296,15 @@ const Reporting = () => {
       printW.document.write(`</tbody></table>`);
     }
 
-    if (isDetailed && selectedProjectId !== "all" && milestones.length > 0) {
-      printW.document.write(`<h2>4. Milestone Tracking</h2><table><thead><tr><th>Milestone</th><th>Phase</th><th>Target</th><th>Status</th><th>Weight</th></tr></thead><tbody>`);
-      milestones.forEach(ms => {
-        const isLate = ms.status !== "completed" && new Date(ms.target_date) < new Date();
-        printW.document.write(`<tr><td>${ms.name}</td><td>${ms.phase}</td><td>${new Date(ms.target_date).toLocaleDateString("id-ID")}</td><td>${isLate ? "OVERDUE" : ms.status}</td><td>${ms.weight}%</td></tr>`);
-      });
-      printW.document.write(`</tbody></table>`);
-    }
-
     printW.document.write(`<h2>Risk Summary</h2>`);
-    if (isDetailed && filteredAlerts.length > 0) {
+    if (filteredAlerts.length > 0) {
       printW.document.write(`<table><thead><tr><th>Risk</th><th>Severity</th><th>Probability</th><th>Impact</th><th>Owner</th><th>Mitigation</th></tr></thead><tbody>`);
       filteredAlerts.forEach(a => {
         printW.document.write(`<tr><td>${a.title}</td><td>${a.severity}</td><td>${a.probability || "—"}</td><td>${a.impact || "—"}</td><td>${a.risk_owner || "—"}</td><td>${a.mitigation_plan || "—"}</td></tr>`);
       });
       printW.document.write(`</tbody></table>`);
     } else {
-      ["critical", "high", "medium", "low"].forEach(sev => {
-        printW.document.write(`<p>${sev}: ${filteredAlerts.filter(a => a.severity === sev).length}</p>`);
-      });
+      printW.document.write(`<p>Tidak ada alert aktif.</p>`);
     }
 
     printW.document.write(`<div class="footer">Report generated by Pamitra Control Tower · ${new Date().toLocaleString("id-ID")} · © 2026 PT Pamitra Jaya Konstruksi — Confidential</div></body></html>`);
@@ -243,7 +313,7 @@ const Reporting = () => {
   };
 
   const handleShare = async () => {
-    if (navigator.share) await navigator.share({ title: "EPC Project Report", text: `PMO Report - ${new Date().toLocaleDateString("id-ID")}`, url: window.location.href });
+    if (navigator.share) await navigator.share({ title: "Project Report", text: `PMO Report - ${new Date().toLocaleDateString("id-ID")}`, url: window.location.href });
     else { await navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }
   };
 
@@ -257,7 +327,7 @@ const Reporting = () => {
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <div>
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> Reporting</h2>
-              <p className="text-xs text-muted-foreground">Generate & export laporan proyek EPC</p>
+              <p className="text-xs text-muted-foreground">Generate & export laporan proyek — S Curve, Activity, Cost, Risk</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={generatePDF} disabled={generating} className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Download className="h-3.5 w-3.5" /> {generating ? "..." : "Export PDF"}</button>
@@ -268,10 +338,6 @@ const Reporting = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-3 mb-5 flex-wrap">
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
-              <button onClick={() => setReportType("general")} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${reportType === "general" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>General (Landscape)</button>
-              <button onClick={() => setReportType("detailed")} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${reportType === "detailed" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>Detailed (Portrait)</button>
-            </div>
             <div className="relative">
               <select value={selectedProjectId} onChange={e => setSelectedProjectId(e.target.value)}
                 className="appearance-none pl-3 pr-8 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer">
@@ -282,23 +348,17 @@ const Reporting = () => {
             </div>
           </div>
 
-          {/* Report type description */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-            <div className={`glass-card rounded-lg p-4 shadow-card border-2 transition-all ${reportType === "general" ? "border-primary" : "border-transparent"}`}>
-              <h4 className="text-sm font-semibold text-foreground mb-1">📊 General Report</h4>
-              <p className="text-[10px] text-muted-foreground">Landscape format — Executive summary, high-level metrics, project health overview, schedule status, cost summary. Ideal untuk management review.</p>
-            </div>
-            <div className={`glass-card rounded-lg p-4 shadow-card border-2 transition-all ${reportType === "detailed" ? "border-primary" : "border-transparent"}`}>
-              <h4 className="text-sm font-semibold text-foreground mb-1">📋 Detailed Report</h4>
-              <p className="text-[10px] text-muted-foreground">Portrait format — Full WBS breakdown, detailed schedule, complete cost analysis, full risk register with mitigation plans. Ideal untuk project team review.</p>
-            </div>
+          {/* Report description */}
+          <div className="glass-card rounded-lg p-4 shadow-card border-2 border-primary/20 mb-5">
+            <h4 className="text-sm font-semibold text-foreground mb-1">📊 Project Performance Report</h4>
+            <p className="text-[10px] text-muted-foreground">Laporan lengkap mencakup: Executive Summary, Schedule Performance (S-Curve), Activity Progress, Cost Performance, WBS Breakdown, Issue Tracking, dan Risk Summary. Pilih proyek untuk laporan detail per proyek.</p>
           </div>
 
           {/* Preview */}
           <div className="glass-card rounded-lg shadow-card p-6 space-y-5" style={{ backgroundColor: "white" }}>
             <div className="text-center border-b border-border pb-4">
               <h2 className="text-lg font-bold text-foreground">PT Pamitra Jaya Konstruksi</h2>
-              <h3 className="text-sm text-muted-foreground">{reportType === "general" ? "General Project Report — Executive Summary" : "Detailed Project Report — Full Breakdown"}</h3>
+              <h3 className="text-sm text-muted-foreground">Project Performance Report</h3>
               <p className="text-xs text-muted-foreground mt-1">{new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
             </div>
 
@@ -320,9 +380,27 @@ const Reporting = () => {
               </div>
             </div>
 
-            {/* Project Table */}
+            {/* Schedule Performance */}
             <div>
-              <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">2. {reportType === "general" ? "Schedule & Cost Summary" : "Project Detail with WBS"}</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">2. Schedule Performance</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                {[
+                  { label: "On Track", count: filteredProjects.filter(p => p.status === "on-track").length, color: "bg-success/10 border-success/20", textColor: "text-success" },
+                  { label: "At Risk", count: filteredProjects.filter(p => p.status === "at-risk").length, color: "bg-warning/10 border-warning/20", textColor: "text-warning" },
+                  { label: "Delayed", count: filteredProjects.filter(p => p.status === "delayed").length, color: "bg-destructive/10 border-destructive/20", textColor: "text-destructive" },
+                  { label: "Completed", count: filteredProjects.filter(p => p.status === "completed").length, color: "bg-primary/10 border-primary/20", textColor: "text-primary" },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-lg p-3 border ${s.color}`}>
+                    <p className={`text-2xl font-bold font-mono-data ${s.textColor}`}>{s.count}</p>
+                    <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Activity Progress Table */}
+            <div>
+              <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">3. Activity Progress</h4>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border border-border">
                   <thead><tr className="bg-muted/50">
@@ -331,13 +409,8 @@ const Reporting = () => {
                     <th className="text-left py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Status</th>
                     <th className="text-right py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Progress</th>
                     <th className="text-right py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Budget</th>
-                    <th className="text-right py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Spent</th>
+                    <th className="text-right py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">CPI</th>
                     <th className="text-right py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Margin</th>
-                    {reportType === "detailed" && <>
-                      <th className="text-right py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">CPI</th>
-                      <th className="text-left py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Phase</th>
-                      <th className="text-left py-2 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">End</th>
-                    </>}
                   </tr></thead>
                   <tbody>
                     {filteredProjects.map(p => {
@@ -353,13 +426,8 @@ const Reporting = () => {
                           }`}>{p.status}</span></td>
                           <td className="py-1.5 px-2 text-right font-mono-data">{p.progress}%</td>
                           <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatRupiah(p.budget)}</td>
-                          <td className="py-1.5 px-2 text-right font-mono-data">{formatRupiah(p.spent)}</td>
+                          <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
                           <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${margin > 10 ? "text-success" : "text-destructive"}`}>{margin}%</td>
-                          {reportType === "detailed" && <>
-                            <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
-                            <td className="py-1.5 px-2 text-muted-foreground">{p.phase}</td>
-                            <td className="py-1.5 px-2 font-mono-data text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" })}</td>
-                          </>}
                         </tr>
                       );
                     })}
@@ -368,10 +436,10 @@ const Reporting = () => {
               </div>
             </div>
 
-            {/* Detailed WBS */}
-            {reportType === "detailed" && selectedProjectId !== "all" && workAreas.length > 0 && (
+            {/* WBS */}
+            {selectedProjectId !== "all" && workAreas.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">3. WBS Breakdown</h4>
+                <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">4. WBS Breakdown</h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs border border-border">
                     <thead><tr className="bg-muted/50">
@@ -408,33 +476,6 @@ const Reporting = () => {
               </div>
             )}
 
-            {/* Milestones in detailed */}
-            {reportType === "detailed" && selectedProjectId !== "all" && milestones.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">4. Milestone Tracking</h4>
-                <table className="w-full text-xs border border-border">
-                  <thead><tr className="bg-muted/50">
-                    <th className="text-left py-1.5 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Milestone</th>
-                    <th className="text-left py-1.5 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Phase</th>
-                    <th className="text-left py-1.5 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Target</th>
-                    <th className="text-left py-1.5 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Status</th>
-                    <th className="text-right py-1.5 px-2 border-b border-border text-[10px] uppercase text-muted-foreground">Weight</th>
-                  </tr></thead>
-                  <tbody>
-                    {milestones.map(ms => (
-                      <tr key={ms.id} className="border-b border-border/30">
-                        <td className="py-1 px-2 text-foreground">{ms.name}</td>
-                        <td className="py-1 px-2 text-muted-foreground">{ms.phase}</td>
-                        <td className="py-1 px-2 font-mono-data">{new Date(ms.target_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" })}</td>
-                        <td className="py-1 px-2 capitalize">{ms.status}</td>
-                        <td className="py-1 px-2 text-right font-mono-data">{ms.weight}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
             {/* Risk Summary */}
             <div>
               <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">Risk Summary</h4>
@@ -449,7 +490,7 @@ const Reporting = () => {
                   );
                 })}
               </div>
-              {reportType === "detailed" && filteredAlerts.length > 0 && (
+              {filteredAlerts.length > 0 && (
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full text-xs border border-border">
                     <thead><tr className="bg-muted/50">
@@ -473,23 +514,6 @@ const Reporting = () => {
                   </table>
                 </div>
               )}
-            </div>
-
-            {/* Schedule Performance */}
-            <div>
-              <h4 className="text-sm font-semibold text-foreground mb-3 border-b border-border pb-1">Schedule Performance</h4>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                {[
-                  { label: "On Track", count: filteredProjects.filter(p => p.status === "on-track").length, color: "bg-success/10 border-success/20", textColor: "text-success" },
-                  { label: "At Risk", count: filteredProjects.filter(p => p.status === "at-risk").length, color: "bg-warning/10 border-warning/20", textColor: "text-warning" },
-                  { label: "Delayed", count: filteredProjects.filter(p => p.status === "delayed").length, color: "bg-destructive/10 border-destructive/20", textColor: "text-destructive" },
-                ].map(s => (
-                  <div key={s.label} className={`rounded-lg p-3 border ${s.color}`}>
-                    <p className={`text-2xl font-bold font-mono-data ${s.textColor}`}>{s.count}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                  </div>
-                ))}
-              </div>
             </div>
 
             <div className="border-t border-border pt-3 text-center text-[10px] text-muted-foreground">

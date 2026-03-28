@@ -44,6 +44,12 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
           >
             <X className="h-4 w-4 text-foreground" />
           </button>
+          {/* Status badge with white background for contrast */}
+          <div className="absolute top-3 left-3 z-10">
+            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium bg-card/90 backdrop-blur shadow-sm ${st.className}`}>
+              {st.label}
+            </span>
+          </div>
           <div className="absolute bottom-4 left-5 right-5">
             <p className="text-xs font-mono-data text-primary">{project.project_code}</p>
             <h2 className="text-xl font-bold text-foreground">{project.name}</h2>
@@ -52,9 +58,6 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
 
         <div className="p-5 space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${st.className}`}>
-              {st.label}
-            </span>
             <span className="text-xs text-muted-foreground">Fase: <strong className="text-foreground">{project.phase}</strong></span>
             {project.category && (
               <span className="text-xs px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">{project.category}</span>

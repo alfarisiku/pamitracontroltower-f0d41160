@@ -19,7 +19,7 @@ export function ProjectTable({ projects, onSelectProject }: { projects: DbProjec
   return (
     <div className="glass-card rounded-lg overflow-hidden animate-slide-up shadow-card">
       <div className="p-4 border-b border-border">
-        <h2 className="text-sm font-semibold text-foreground">Daftar Proyek EPC</h2>
+        <h2 className="text-sm font-semibold text-foreground">Daftar Proyek</h2>
         <p className="text-[11px] text-muted-foreground mt-0.5">Klik proyek untuk overview · Klik <ExternalLink className="inline h-3 w-3" /> untuk detail WBS lengkap</p>
       </div>
       <div className="overflow-x-auto">
@@ -48,13 +48,13 @@ export function ProjectTable({ projects, onSelectProject }: { projects: DbProjec
                   <td className="py-2 px-3">
                     <div className="flex items-center gap-2">
                       <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-mono-data font-bold">
-                        {p.project_code.replace("EPC-", "")}
+                        {p.project_code}
                       </span>
                       <span className="font-medium text-foreground truncate max-w-[160px]">{p.name}</span>
                     </div>
                   </td>
                   <td className="py-2 px-3">
-                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${st.className}`}>
+                    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${st.className} bg-card`}>
                       {st.label}
                     </span>
                   </td>

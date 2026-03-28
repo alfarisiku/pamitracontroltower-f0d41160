@@ -8,12 +8,14 @@ import {
   HelpCircle, CheckCircle2, Database, Layers, Target, FileText,
   Lightbulb, BookOpen, ArrowRight, X, Save, Download, Upload, Share2,
   Plus, Trash2, Edit3, AlertTriangle, DollarSign, Calendar, FileBarChart,
-  Printer, ClipboardList
+  Printer, ClipboardList, Lock, Eye, EyeOff
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
 type ActiveTab = "regular" | "structural" | "project-crud" | "addendum";
+
+const ADMIN_PASSWORD = "admin123";
 
 const DataEntry = () => {
   const queryClient = useQueryClient();
@@ -21,6 +23,12 @@ const DataEntry = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
+
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   // Regular update fields
   const [formProgress, setFormProgress] = useState("");
@@ -64,6 +72,64 @@ const DataEntry = () => {
   const [addendumScope, setAddendumScope] = useState("");
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
+
+  const handleLogin = () => {
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setAuthError("");
+      setPasswordInput("");
+    } else {
+      setAuthError("Password salah. Akses ditolak.");
+      setPasswordInput("");
+    }
+  };
+
+  // Auth gate
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen bg-background">
+        <Sidebar />
+        <main className="flex-1 p-3 sm:p-5 overflow-y-auto">
+          <div className="max-w-[1400px] mx-auto">
+            <DashboardHeader />
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="glass-card rounded-xl shadow-card p-8 max-w-md w-full text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Lock className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-lg font-bold text-foreground mb-1">Admin Access Required</h2>
+                <p className="text-xs text-muted-foreground mb-6">
+                  Data Entry Center hanya dapat diakses oleh administrator. Masukkan password untuk melanjutkan.
+                </p>
+                <div className="relative mb-3">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={passwordInput}
+                    onChange={e => { setPasswordInput(e.target.value); setAuthError(""); }}
+                    onKeyDown={e => e.key === "Enter" && handleLogin()}
+                    className="w-full px-4 py-3 text-sm bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10"
+                    placeholder="Enter admin password"
+                    autoFocus
+                  />
+                  <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {authError && <p className="text-xs text-destructive mb-3">{authError}</p>}
+                <button onClick={handleLogin} className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                  Login
+                </button>
+                <p className="text-[10px] text-muted-foreground mt-4">
+                  Dashboard data tetap dapat dilihat tanpa login.
+                  <br />Hanya fitur edit data yang memerlukan autentikasi.
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const handleProjectUpdate = async () => {
     if (!updateProjectId) return;
@@ -199,8 +265,6 @@ const DataEntry = () => {
         approval_status: "approved", approved_at: new Date().toISOString(),
       }).eq("id", id);
       if (ae) throw ae;
-
-      // Auto-update project
       if (updateProjectId && (costImpact !== 0 || scheduleDays !== 0)) {
         const proj = projects.find(p => p.id === updateProjectId);
         if (proj) {
@@ -223,7 +287,7 @@ const DataEntry = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = "project_code,work_area_code,work_area_name,work_item_code,work_item_name,unit,qty_total,qty_completed,weight,status\nEPC-001,WA-001,Area Tangki,WI-001,Tangki T-101,unit,10,5,30,in-progress";
+    const csv = "project_code,work_area_code,work_area_name,work_item_code,work_item_name,unit,qty_total,qty_completed,weight,status\nPMT-001,WA-001,Area Tangki,WI-001,Tangki T-101,unit,10,5,30,in-progress";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = "project_data_template.csv"; a.click();
@@ -253,6 +317,7 @@ const DataEntry = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-3 py-1.5 bg-success text-success-foreground rounded-lg text-xs font-medium hover:bg-success/90"><Download className="h-3.5 w-3.5" /> Template CSV</button>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
+              <button onClick={() => setIsAuthenticated(false)} className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs font-medium hover:bg-destructive/20 border border-destructive/20"><Lock className="h-3.5 w-3.5" /> Logout</button>
             </div>
           </div>
 
@@ -362,7 +427,7 @@ const DataEntry = () => {
                     <button onClick={() => setShowNewProject(false)} className="p-1 hover:bg-muted rounded"><X className="h-4 w-4" /></button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div><label className={labelCls}>Project Code</label><input value={newProject.project_code} onChange={e => setNewProject({ ...newProject, project_code: e.target.value })} className={inputCls} placeholder="EPC-016" /></div>
+                    <div><label className={labelCls}>Project Code</label><input value={newProject.project_code} onChange={e => setNewProject({ ...newProject, project_code: e.target.value })} className={inputCls} placeholder="PMT-016" /></div>
                     <div><label className={labelCls}>Name</label><input value={newProject.name} onChange={e => setNewProject({ ...newProject, name: e.target.value })} className={inputCls} placeholder="Nama proyek" /></div>
                     <div><label className={labelCls}>Client</label><input value={newProject.client} onChange={e => setNewProject({ ...newProject, client: e.target.value })} className={inputCls} placeholder="PT Client" /></div>
                     <div><label className={labelCls}>Manager</label><input value={newProject.manager} onChange={e => setNewProject({ ...newProject, manager: e.target.value })} className={inputCls} placeholder="Nama PM" /></div>
