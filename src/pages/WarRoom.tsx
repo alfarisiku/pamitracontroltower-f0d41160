@@ -57,9 +57,9 @@ const WarRoom = () => {
               {time.toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
-          <button onClick={signOut} className="p-2 rounded-lg hover:bg-white/10 transition-colors" title="Logout">
-            <LogOut className="h-4 w-4" style={{ color: "hsl(215, 15%, 50%)" }} />
-          </button>
+          <div className="px-3 py-1 rounded-full text-[10px] font-medium" style={{ background: "hsl(215, 80%, 65%, 0.15)", color: "hsl(215, 80%, 65%)" }}>
+            Public View
+          </div>
         </div>
       </header>
 
