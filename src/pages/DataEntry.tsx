@@ -18,10 +18,25 @@ type ActiveTab = "regular" | "structural" | "project-crud" | "addendum";
 
 const DataEntry = () => {
   const queryClient = useQueryClient();
-  const { data: projects = [] } = useProjects();
+  const { data: allProjects = [] } = useProjects();
+  const { isAdmin, isTeam, profile } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
+
+  // Team users can only see their assigned project
+  const projects = isTeam && profile?.assigned_project_id
+    ? allProjects.filter(p => p.id === profile.assigned_project_id)
+    : allProjects;
+
+  // Available tabs based on role
+  const allTabs = [
+    { key: "regular" as const, label: "Regular Update", icon: FileText, roles: ["admin", "team"] },
+    { key: "structural" as const, label: "Structural Update", icon: Calendar, roles: ["admin"] },
+    { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList, roles: ["admin"] },
+    { key: "addendum" as const, label: "Addendum", icon: FileBarChart, roles: ["admin"] },
+  ];
+  const tabs = allTabs.filter(t => isAdmin || t.roles.includes("team"));
 
 
 
