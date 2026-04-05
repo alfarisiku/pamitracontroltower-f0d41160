@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, isPending } = useAuth();
 
   if (loading) {
     return (
@@ -21,9 +21,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  
+
+  // Pending users see pending page
+  if (isPending) return <Navigate to="/pending" replace />;
+
   if (allowedRoles && role && !allowedRoles.includes(role)) {
-    // Redirect to appropriate default page
     if (role === "client") return <Navigate to="/war-room" replace />;
     return <Navigate to="/" replace />;
   }
