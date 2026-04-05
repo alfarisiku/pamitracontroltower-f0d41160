@@ -4,11 +4,12 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { DbProject, formatRupiah } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   HelpCircle, CheckCircle2, Database, Layers, Target, FileText,
   Lightbulb, BookOpen, ArrowRight, X, Save, Download, Upload, Share2,
   Plus, Trash2, Edit3, AlertTriangle, DollarSign, Calendar, FileBarChart,
-  Printer, ClipboardList
+  Printer, ClipboardList, Lock
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
