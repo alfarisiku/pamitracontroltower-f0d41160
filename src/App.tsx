@@ -17,6 +17,7 @@ import WarRoom from "./pages/WarRoom";
 import Login from "./pages/Login";
 import PendingApproval from "./pages/PendingApproval";
 import AccountManager from "./pages/AccountManager";
+import UserGuide from "./pages/UserGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,7 +38,7 @@ function AppRoutes() {
       <Route path="/login" element={user ? (isPending ? <Navigate to="/pending" replace /> : <Navigate to={role === "client" ? "/war-room" : "/"} replace />) : <Login />} />
       <Route path="/pending" element={user ? (isPending ? <PendingApproval /> : <Navigate to="/" replace />) : <Navigate to="/login" replace />} />
 
-      {/* War Room is public - no login required */}
+      {/* War Room is public */}
       <Route path="/war-room" element={<WarRoom />} />
 
       <Route path="/" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><Index /></ProtectedRoute>} />
@@ -48,6 +49,7 @@ function AppRoutes() {
       <Route path="/risk" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><RiskMonitoring /></ProtectedRoute>} />
       <Route path="/reporting" element={<ProtectedRoute allowedRoles={["admin", "management"]}><Reporting /></ProtectedRoute>} />
       <Route path="/data-entry" element={<ProtectedRoute allowedRoles={["admin", "team"]}><DataEntry /></ProtectedRoute>} />
+      <Route path="/guide" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><UserGuide /></ProtectedRoute>} />
       <Route path="/account-manager" element={<ProtectedRoute allowedRoles={["admin"]}><AccountManager /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -4,6 +4,8 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 
+import { BookOpen } from "lucide-react";
+
 const allMenuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/", roles: ["admin", "management", "team"] },
   { icon: FolderKanban, label: "Project Summary", path: "/projects", roles: ["admin", "management"] },
@@ -12,6 +14,7 @@ const allMenuItems = [
   { icon: AlertTriangle, label: "Risk Monitoring", path: "/risk", roles: ["admin", "management", "team"] },
   { icon: FileText, label: "Reporting", path: "/reporting", roles: ["admin", "management"] },
   { icon: Database, label: "Data Entry", path: "/data-entry", roles: ["admin", "team"] },
+  { icon: BookOpen, label: "User Guide", path: "/guide", roles: ["admin", "management", "team"] },
   { icon: Monitor, label: "War Room", path: "/war-room", roles: ["admin"] },
   { icon: Shield, label: "Account Manager", path: "/account-manager", roles: ["admin"] },
 ];

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Bell, CheckCheck, AlertTriangle, AlertCircle, Info, CheckCircle2, X } from "lucide-react";
+import { Bell, CheckCheck, AlertTriangle, AlertCircle, Info, CheckCircle2, X, UserPlus, Clock, TrendingDown } from "lucide-react";
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/useProjects";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const typeConfig: Record<string, { icon: typeof Info; className: string }> = {
@@ -8,15 +9,35 @@ const typeConfig: Record<string, { icon: typeof Info; className: string }> = {
   warning: { icon: AlertTriangle, className: "text-warning" },
   success: { icon: CheckCircle2, className: "text-success" },
   info: { icon: Info, className: "text-primary" },
+  user: { icon: UserPlus, className: "text-primary" },
+  reminder: { icon: Clock, className: "text-accent" },
+  delay: { icon: TrendingDown, className: "text-destructive" },
 };
 
 export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { data: notifications = [] } = useNotifications();
+  const { role, assignedProjectIds } = useAuth();
+  const { data: allNotifications = [] } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+
+  // Filter notifications by role
+  const notifications = allNotifications.filter(n => {
+    // Admin sees all
+    if (role === "admin") return true;
+    // Management sees project-level alerts only (no user management notifs)
+    if (role === "management") {
+      return n.type !== "user" && n.type !== "reminder";
+    }
+    // Team sees only their assigned project notifications
+    if (role === "team") {
+      if (!n.project_id) return n.type === "reminder" || n.type === "info";
+      return assignedProjectIds.includes(n.project_id);
+    }
+    return true;
+  });
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -47,10 +68,8 @@ export function NotificationDropdown() {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-lg hover:bg-muted transition-colors border border-border"
-      >
+      <button onClick={() => setOpen(!open)}
+        className="relative p-2 rounded-lg hover:bg-muted transition-colors border border-border">
         <Bell className="h-4 w-4 text-muted-foreground" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center px-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full">
@@ -65,10 +84,8 @@ export function NotificationDropdown() {
             <h3 className="text-sm font-semibold text-foreground">Notifikasi</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
-                <button
-                  onClick={() => markAllRead.mutate()}
-                  className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
-                >
+                <button onClick={() => markAllRead.mutate()}
+                  className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors">
                   <CheckCheck className="h-3 w-3" /> Baca semua
                 </button>
               )}
@@ -80,21 +97,14 @@ export function NotificationDropdown() {
 
           <div className="max-h-[400px] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground text-xs">
-                Tidak ada notifikasi
-              </div>
+              <div className="p-6 text-center text-muted-foreground text-xs">Tidak ada notifikasi</div>
             ) : (
               notifications.map(n => {
                 const tc = typeConfig[n.type] || typeConfig.info;
                 const Icon = tc.icon;
                 return (
-                  <button
-                    key={n.id}
-                    onClick={() => handleNotificationClick(n)}
-                    className={`w-full text-left flex items-start gap-3 p-3 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${
-                      !n.is_read ? "bg-primary/5" : ""
-                    }`}
-                  >
+                  <button key={n.id} onClick={() => handleNotificationClick(n)}
+                    className={`w-full text-left flex items-start gap-3 p-3 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${!n.is_read ? "bg-primary/5" : ""}`}>
                     <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${tc.className}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
@@ -103,9 +113,7 @@ export function NotificationDropdown() {
                       </div>
                       {n.message && <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
                       <div className="flex items-center gap-2 mt-1">
-                        {n.projects && (
-                          <span className="text-[9px] font-mono-data text-primary">{n.projects.project_code} →</span>
-                        )}
+                        {n.projects && <span className="text-[9px] font-mono-data text-primary">{n.projects.project_code} →</span>}
                         <span className="text-[9px] text-muted-foreground">{timeAgo(n.created_at)}</span>
                       </div>
                     </div>
