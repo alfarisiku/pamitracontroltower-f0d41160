@@ -8,6 +8,7 @@ interface UserProfile {
   display_name: string;
   avatar_url: string | null;
   assigned_project_id: string | null;
+  status: string;
 }
 
 interface AuthContextType {
@@ -16,12 +17,14 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, displayName: string, role: AppRole, assignedProjectId?: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isManagement: boolean;
   isTeam: boolean;
   isClient: boolean;
+  isPending: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,12 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfileAndRole = async (userId: string) => {
     const [profileRes, roleRes] = await Promise.all([
-      supabase.from("profiles").select("display_name, avatar_url, assigned_project_id").eq("user_id", userId).single(),
+      supabase.from("profiles").select("display_name, avatar_url, assigned_project_id, status").eq("user_id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId).limit(1).single(),
     ]);
     if (profileRes.data) setProfile(profileRes.data as UserProfile);
     if (roleRes.data) setRole((roleRes.data as any).role as AppRole);
     else setRole(null);
+  };
+
+  const refreshProfile = async () => {
+    if (user) await fetchProfileAndRole(user.id);
   };
 
   useEffect(() => {
@@ -71,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  const signUp = async (email: string, password: string, displayName: string, role: AppRole, assignedProjectId?: string) => {
+  // Registration: no role assignment - user starts as pending
+  const signUp = async (email: string, password: string, displayName: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -79,10 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) return { error: error.message };
     if (data.user) {
-      // Update profile display name
-      await supabase.from("profiles").update({ display_name: displayName, assigned_project_id: assignedProjectId || null }).eq("user_id", data.user.id);
-      // Assign role
-      await supabase.from("user_roles").insert({ user_id: data.user.id, role });
+      await supabase.from("profiles").update({ display_name: displayName }).eq("user_id", data.user.id);
       await fetchProfileAndRole(data.user.id);
     }
     return { error: null };
@@ -95,13 +100,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
   };
 
+  const isPending = !!user && (!profile || profile.status !== "active");
+
   return (
     <AuthContext.Provider value={{
-      user, profile, role, loading, signIn, signUp, signOut,
+      user, profile, role, loading, signIn, signUp, signOut, refreshProfile,
       isAdmin: role === "admin",
       isManagement: role === "management",
       isTeam: role === "team",
       isClient: role === "client",
+      isPending,
     }}>
       {children}
     </AuthContext.Provider>
