@@ -12,6 +12,7 @@ import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { useProjects } from "@/hooks/useProjects";
 import { formatRupiah, DbProject } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
