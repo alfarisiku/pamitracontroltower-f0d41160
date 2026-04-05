@@ -16,6 +16,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   role: AppRole | null;
   loading: boolean;
+  assignedProjectIds: string[];
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -24,25 +25,41 @@ interface AuthContextType {
   isTeam: boolean;
   isClient: boolean;
   isPending: boolean;
+  hasNoProject: boolean;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// System accounts that cannot be modified
+export const SYSTEM_EMAILS = ["admin@pamitra.co.id", "director@pamitra.co.id"];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [assignedProjectIds, setAssignedProjectIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfileAndRole = async (userId: string) => {
-    const [profileRes, roleRes] = await Promise.all([
+    const [profileRes, roleRes, assignmentsRes] = await Promise.all([
       supabase.from("profiles").select("display_name, avatar_url, assigned_project_id, status").eq("user_id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId).limit(1).single(),
+      supabase.from("user_project_assignments").select("project_id").eq("user_id", userId),
     ]);
     if (profileRes.data) setProfile(profileRes.data as UserProfile);
     if (roleRes.data) setRole((roleRes.data as any).role as AppRole);
     else setRole(null);
+    
+    // Set assigned project IDs from junction table
+    if (assignmentsRes.data && assignmentsRes.data.length > 0) {
+      setAssignedProjectIds(assignmentsRes.data.map((a: any) => a.project_id));
+    } else if (profileRes.data?.assigned_project_id) {
+      // Fallback to legacy single assignment
+      setAssignedProjectIds([profileRes.data.assigned_project_id]);
+    } else {
+      setAssignedProjectIds([]);
+    }
   };
 
   const refreshProfile = async () => {
@@ -58,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setProfile(null);
         setRole(null);
+        setAssignedProjectIds([]);
       }
       setLoading(false);
     });
@@ -78,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  // Registration: no role assignment - user starts as pending
   const signUp = async (email: string, password: string, displayName: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -98,18 +115,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setRole(null);
+    setAssignedProjectIds([]);
   };
 
   const isPending = !!user && (!profile || profile.status !== "active");
+  const isTeamRole = role === "team";
+  const hasNoProject = !!user && !isPending && isTeamRole && assignedProjectIds.length === 0;
 
   return (
     <AuthContext.Provider value={{
-      user, profile, role, loading, signIn, signUp, signOut, refreshProfile,
+      user, profile, role, loading, assignedProjectIds, signIn, signUp, signOut, refreshProfile,
       isAdmin: role === "admin",
       isManagement: role === "management",
-      isTeam: role === "team",
+      isTeam: isTeamRole,
       isClient: role === "client",
       isPending,
+      hasNoProject,
     }}>
       {children}
     </AuthContext.Provider>

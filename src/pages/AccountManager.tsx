@@ -3,11 +3,11 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useProjects } from "@/hooks/useProjects";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, SYSTEM_EMAILS } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import {
   Users, Shield, CheckCircle2, XCircle, Edit3, UserX, FolderKanban,
-  ChevronDown, Search, RefreshCw
+  Search, RefreshCw, Lock
 } from "lucide-react";
 
 interface UserRow {
@@ -19,6 +19,7 @@ interface UserRow {
   created_at: string;
   email?: string;
   role?: string;
+  assignedProjectIds?: string[];
 }
 
 const AccountManager = () => {
@@ -32,13 +33,17 @@ const AccountManager = () => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data: profiles } = await supabase.from("profiles").select("*");
-    const { data: roles } = await supabase.from("user_roles").select("*");
+    const [{ data: profiles }, { data: roles }, { data: assignments }] = await Promise.all([
+      supabase.from("profiles").select("*"),
+      supabase.from("user_roles").select("*"),
+      supabase.from("user_project_assignments").select("*"),
+    ]);
 
     if (profiles) {
       const mapped = profiles.map((p: any) => {
         const r = roles?.find((r: any) => r.user_id === p.user_id);
-        return { ...p, role: r?.role || "unassigned" };
+        const userAssignments = assignments?.filter((a: any) => a.user_id === p.user_id).map((a: any) => a.project_id) || [];
+        return { ...p, role: r?.role || "unassigned", assignedProjectIds: userAssignments };
       });
       setUsers(mapped);
     }
@@ -47,27 +52,45 @@ const AccountManager = () => {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  const handleApprove = async (userId: string) => {
-    await supabase.from("profiles").update({ status: "active" }).eq("user_id", userId);
-    toast({ title: "User Approved", description: "User telah disetujui dan dapat mengakses sistem." });
-    fetchUsers();
+  const isSystemUser = (userId: string) => {
+    const u = users.find(u => u.user_id === userId);
+    return u?.display_name === "Super Admin" || u?.display_name === "Director" || 
+           u?.role === "admin" && u?.display_name?.includes("Admin") ||
+           u?.role === "management" && u?.display_name === "Director";
+  };
+
+  const handleApproveAndAssign = (userId: string) => {
+    const u = users.find(u => u.user_id === userId);
+    setEditingUser(userId);
+    setEditRole("team");
+    setEditProjects(u?.assignedProjectIds || []);
   };
 
   const handleReject = async (userId: string) => {
+    if (isSystemUser(userId)) { toast({ title: "Error", description: "Akun sistem tidak bisa diubah.", variant: "destructive" }); return; }
     await supabase.from("profiles").update({ status: "disabled" }).eq("user_id", userId);
-    toast({ title: "User Rejected", description: "User telah ditolak." });
+    toast({ title: "User Rejected" });
     fetchUsers();
   };
 
   const handleDisable = async (userId: string) => {
+    if (isSystemUser(userId)) { toast({ title: "Error", description: "Akun sistem tidak bisa dinonaktifkan.", variant: "destructive" }); return; }
     await supabase.from("profiles").update({ status: "disabled" }).eq("user_id", userId);
     toast({ title: "User Disabled" });
     fetchUsers();
   };
 
   const handleSaveRole = async (userId: string) => {
+    if (isSystemUser(userId)) { toast({ title: "Error", description: "Akun sistem tidak bisa diubah.", variant: "destructive" }); return; }
+
+    // Validate: team role must have at least one project
+    if (editRole === "team" && editProjects.length === 0) {
+      toast({ title: "Error", description: "Project Team harus memiliki minimal 1 proyek yang di-assign.", variant: "destructive" });
+      return;
+    }
+
+    // Upsert role
     if (editRole && editRole !== "unassigned") {
-      // Upsert role
       const { data: existing } = await supabase.from("user_roles").select("id").eq("user_id", userId).single();
       if (existing) {
         await supabase.from("user_roles").update({ role: editRole as any }).eq("user_id", userId);
@@ -75,19 +98,38 @@ const AccountManager = () => {
         await supabase.from("user_roles").insert({ user_id: userId, role: editRole as any });
       }
     }
-    // Update assigned project (first one for now)
-    const assignedId = editProjects.length > 0 ? editProjects[0] : null;
-    await supabase.from("profiles").update({ assigned_project_id: assignedId, status: "active" }).eq("user_id", userId);
+
+    // Update project assignments
+    // Delete old assignments
+    await supabase.from("user_project_assignments").delete().eq("user_id", userId);
+    // Insert new assignments
+    if (editProjects.length > 0) {
+      await supabase.from("user_project_assignments").insert(
+        editProjects.map(pid => ({ user_id: userId, project_id: pid }))
+      );
+    }
+
+    // Also update legacy field
+    const mainProject = editProjects.length > 0 ? editProjects[0] : null;
+    await supabase.from("profiles").update({ assigned_project_id: mainProject, status: "active" }).eq("user_id", userId);
 
     toast({ title: "User Updated", description: "Role dan proyek berhasil diperbarui." });
     setEditingUser(null);
     fetchUsers();
   };
 
+  const toggleProject = (projectId: string) => {
+    setEditProjects(prev =>
+      prev.includes(projectId) ? prev.filter(id => id !== projectId) : [...prev, projectId]
+    );
+  };
+
   const filtered = users.filter(u =>
     u.display_name.toLowerCase().includes(search.toLowerCase()) ||
     (u.role || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const pendingUsers = users.filter(u => u.status === "pending");
 
   const statusBadge = (status: string) => {
     const map: Record<string, { bg: string; text: string; label: string }> = {
@@ -134,7 +176,7 @@ const AccountManager = () => {
           {[
             { label: "Total Users", value: users.length, icon: Users, color: "text-primary" },
             { label: "Active", value: users.filter(u => u.status === "active").length, icon: CheckCircle2, color: "text-success" },
-            { label: "Pending", value: users.filter(u => u.status === "pending").length, icon: Shield, color: "text-accent" },
+            { label: "Pending", value: pendingUsers.length, icon: Shield, color: "text-accent" },
             { label: "Disabled", value: users.filter(u => u.status === "disabled").length, icon: UserX, color: "text-destructive" },
           ].map(s => (
             <div key={s.label} className="bg-card border border-border rounded-lg p-4">
@@ -147,7 +189,6 @@ const AccountManager = () => {
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)}
@@ -155,19 +196,19 @@ const AccountManager = () => {
             placeholder="Cari user..." />
         </div>
 
-        {/* Pending users highlight */}
-        {users.filter(u => u.status === "pending").length > 0 && (
+        {/* Pending users */}
+        {pendingUsers.length > 0 && (
           <div className="bg-accent/10 border border-accent/30 rounded-lg p-4 mb-4">
-            <h3 className="text-sm font-semibold text-accent mb-2">⏳ Menunggu Persetujuan</h3>
+            <h3 className="text-sm font-semibold text-accent mb-2">⏳ Menunggu Persetujuan ({pendingUsers.length})</h3>
             <div className="space-y-2">
-              {users.filter(u => u.status === "pending").map(u => (
+              {pendingUsers.map(u => (
                 <div key={u.user_id} className="flex items-center justify-between bg-card border border-border rounded-lg p-3">
                   <div>
                     <p className="text-sm font-medium text-foreground">{u.display_name}</p>
                     <p className="text-[10px] text-muted-foreground">Registered {new Date(u.created_at).toLocaleDateString("id-ID")}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => { setEditingUser(u.user_id); setEditRole("team"); setEditProjects([]); }}
+                    <button onClick={() => handleApproveAndAssign(u.user_id)}
                       className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">
                       <CheckCircle2 className="h-3.5 w-3.5 inline mr-1" /> Approve & Assign
                     </button>
@@ -190,13 +231,14 @@ const AccountManager = () => {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">User</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Role</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Project</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Assigned Projects</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(u => {
-                const assignedProject = projects.find(p => p.id === u.assigned_project_id);
+                const userProjects = (u.assignedProjectIds || []).map(pid => projects.find(p => p.id === pid)).filter(Boolean);
+                const isSys = isSystemUser(u.user_id);
                 return (
                   <tr key={u.user_id} className="border-b border-border last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3">
@@ -205,34 +247,54 @@ const AccountManager = () => {
                           {u.display_name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{u.display_name}</p>
+                          <p className="font-medium text-foreground flex items-center gap-1.5">
+                            {u.display_name}
+                            {isSys && <Lock className="h-3 w-3 text-muted-foreground" />}
+                          </p>
+                          {isSys && <p className="text-[9px] text-muted-foreground">System Account</p>}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">{statusBadge(u.status)}</td>
                     <td className="px-4 py-3">{roleBadge(u.role || "unassigned")}</td>
                     <td className="px-4 py-3">
-                      <span className="text-xs text-muted-foreground">
-                        {assignedProject ? `${assignedProject.project_code} - ${assignedProject.name}` : "—"}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {u.role === "admin" || u.role === "management" ? (
+                          <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full">All Projects</span>
+                        ) : userProjects.length > 0 ? (
+                          userProjects.map(p => (
+                            <span key={p!.id} className="text-[10px] px-2 py-0.5 bg-muted rounded-full text-foreground">
+                              {p!.project_code}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {u.status === "pending" && (
-                          <button onClick={() => handleApprove(u.user_id)}
-                            className="p-1.5 rounded hover:bg-success/15 text-success" title="Approve">
-                            <CheckCircle2 className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button onClick={() => { setEditingUser(u.user_id); setEditRole(u.role || "team"); setEditProjects(u.assigned_project_id ? [u.assigned_project_id] : []); }}
-                          className="p-1.5 rounded hover:bg-muted text-muted-foreground" title="Edit">
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                        {u.status !== "disabled" && (
-                          <button onClick={() => handleDisable(u.user_id)}
-                            className="p-1.5 rounded hover:bg-destructive/15 text-destructive" title="Disable">
-                            <UserX className="h-4 w-4" />
-                          </button>
+                        {isSys ? (
+                          <span className="text-[10px] text-muted-foreground px-2">Protected</span>
+                        ) : (
+                          <>
+                            {u.status === "pending" && (
+                              <button onClick={() => handleApproveAndAssign(u.user_id)}
+                                className="p-1.5 rounded hover:bg-success/15 text-success" title="Approve & Assign">
+                                <CheckCircle2 className="h-4 w-4" />
+                              </button>
+                            )}
+                            <button onClick={() => { setEditingUser(u.user_id); setEditRole(u.role || "team"); setEditProjects(u.assignedProjectIds || []); }}
+                              className="p-1.5 rounded hover:bg-muted text-muted-foreground" title="Edit">
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            {u.status !== "disabled" && (
+                              <button onClick={() => handleDisable(u.user_id)}
+                                className="p-1.5 rounded hover:bg-destructive/15 text-destructive" title="Disable">
+                                <UserX className="h-4 w-4" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>
@@ -265,14 +327,25 @@ const AccountManager = () => {
 
               {(editRole === "team") && (
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Assign Project</label>
-                  <select value={editProjects[0] || ""} onChange={e => setEditProjects(e.target.value ? [e.target.value] : [])}
-                    className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground">
-                    <option value="">— Pilih Proyek —</option>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                    Assign Projects <span className="text-destructive">*</span>
+                  </label>
+                  <p className="text-[10px] text-muted-foreground mb-2">Pilih satu atau lebih proyek (multi-select)</p>
+                  <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border">
                     {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.project_code} - {p.name}</option>
+                      <label key={p.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 cursor-pointer">
+                        <input type="checkbox" checked={editProjects.includes(p.id)} onChange={() => toggleProject(p.id)}
+                          className="rounded border-border text-primary focus:ring-primary" />
+                        <div>
+                          <p className="text-xs font-medium text-foreground">{p.project_code}</p>
+                          <p className="text-[10px] text-muted-foreground">{p.name}</p>
+                        </div>
+                      </label>
                     ))}
-                  </select>
+                  </div>
+                  {editProjects.length === 0 && (
+                    <p className="text-[10px] text-destructive mt-1">Minimal 1 proyek harus dipilih</p>
+                  )}
                 </div>
               )}
 
