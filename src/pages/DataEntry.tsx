@@ -22,11 +22,8 @@ const DataEntry = () => {
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
-  // Auth state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [authError, setAuthError] = useState("");
+
+
 
   // Regular update fields
   const [formProgress, setFormProgress] = useState("");
