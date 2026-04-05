@@ -181,29 +181,38 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           assigned_project_id: string | null
           avatar_url: string | null
           created_at: string
           display_name: string
           id: string
+          status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_project_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string
           id?: string
+          status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_project_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string
           id?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
