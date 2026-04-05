@@ -8,14 +8,12 @@ import {
   HelpCircle, CheckCircle2, Database, Layers, Target, FileText,
   Lightbulb, BookOpen, ArrowRight, X, Save, Download, Upload, Share2,
   Plus, Trash2, Edit3, AlertTriangle, DollarSign, Calendar, FileBarChart,
-  Printer, ClipboardList, Lock, Eye, EyeOff
+  Printer, ClipboardList
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
 type ActiveTab = "regular" | "structural" | "project-crud" | "addendum";
-
-const ADMIN_PASSWORD = "admin123";
 
 const DataEntry = () => {
   const queryClient = useQueryClient();
@@ -24,11 +22,8 @@ const DataEntry = () => {
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
-  // Auth state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [authError, setAuthError] = useState("");
+
+
 
   // Regular update fields
   const [formProgress, setFormProgress] = useState("");
@@ -73,63 +68,7 @@ const DataEntry = () => {
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
 
-  const handleLogin = () => {
-    if (passwordInput === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      setAuthError("");
-      setPasswordInput("");
-    } else {
-      setAuthError("Password salah. Akses ditolak.");
-      setPasswordInput("");
-    }
-  };
 
-  // Auth gate
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-        <main className="flex-1 p-3 sm:p-5 overflow-y-auto">
-          <div className="max-w-[1400px] mx-auto">
-            <DashboardHeader />
-            <div className="flex items-center justify-center min-h-[60vh]">
-              <div className="glass-card rounded-xl shadow-card p-8 max-w-md w-full text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Lock className="h-8 w-8 text-primary" />
-                </div>
-                <h2 className="text-lg font-bold text-foreground mb-1">Admin Access Required</h2>
-                <p className="text-xs text-muted-foreground mb-6">
-                  Data Entry Center hanya dapat diakses oleh administrator. Masukkan password untuk melanjutkan.
-                </p>
-                <div className="relative mb-3">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={passwordInput}
-                    onChange={e => { setPasswordInput(e.target.value); setAuthError(""); }}
-                    onKeyDown={e => e.key === "Enter" && handleLogin()}
-                    className="w-full px-4 py-3 text-sm bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10"
-                    placeholder="Enter admin password"
-                    autoFocus
-                  />
-                  <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {authError && <p className="text-xs text-destructive mb-3">{authError}</p>}
-                <button onClick={handleLogin} className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-                  Login
-                </button>
-                <p className="text-[10px] text-muted-foreground mt-4">
-                  Dashboard data tetap dapat dilihat tanpa login.
-                  <br />Hanya fitur edit data yang memerlukan autentikasi.
-                </p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   const handleProjectUpdate = async () => {
     if (!updateProjectId) return;
@@ -317,7 +256,7 @@ const DataEntry = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-3 py-1.5 bg-success text-success-foreground rounded-lg text-xs font-medium hover:bg-success/90"><Download className="h-3.5 w-3.5" /> Template CSV</button>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
-              <button onClick={() => setIsAuthenticated(false)} className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs font-medium hover:bg-destructive/20 border border-destructive/20"><Lock className="h-3.5 w-3.5" /> Logout</button>
+              
             </div>
           </div>
 

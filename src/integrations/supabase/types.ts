@@ -179,6 +179,36 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          assigned_project_id: string | null
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_project_id?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_project_id?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       project_alerts: {
         Row: {
           created_at: string
@@ -351,6 +381,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       work_areas: {
         Row: {
           code: string
@@ -456,10 +504,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       alert_severity: "critical" | "high" | "medium" | "low"
+      app_role: "admin" | "management" | "team" | "client"
       project_phase:
         | "Engineering"
         | "Procurement"
@@ -594,6 +649,7 @@ export const Constants = {
   public: {
     Enums: {
       alert_severity: ["critical", "high", "medium", "low"],
+      app_role: ["admin", "management", "team", "client"],
       project_phase: [
         "Engineering",
         "Procurement",
