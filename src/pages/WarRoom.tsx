@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Activity, AlertTriangle, CheckCircle2, Clock, TrendingUp, Briefcase, DollarSign, MapPin } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock, TrendingUp, Briefcase, DollarSign, MapPin } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const WarRoom = () => {
-  const { signOut } = useAuth();
   const { data: projects = [], isLoading } = useProjects();
   const { data: alerts = [] } = useAlerts();
   const [time, setTime] = useState(new Date());
