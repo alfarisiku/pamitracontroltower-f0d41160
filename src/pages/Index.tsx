@@ -15,13 +15,13 @@ import { formatRupiah, DbProject } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  const { profile, isTeam } = useAuth();
+  const { isTeam, assignedProjectIds } = useAuth();
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const { data: allProjects = [], isLoading } = useProjects();
 
-  // Filter projects for team role - only show assigned project
-  const projects = isTeam && profile?.assigned_project_id
-    ? allProjects.filter(p => p.id === profile.assigned_project_id)
+  // Filter projects for team role - only show assigned projects
+  const projects = isTeam && assignedProjectIds.length > 0
+    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
     : allProjects;
 
   const active = projects.filter((p) => p.status !== "completed").length;
