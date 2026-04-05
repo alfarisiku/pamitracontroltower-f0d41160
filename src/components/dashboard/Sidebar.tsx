@@ -1,29 +1,43 @@
 import { useState } from "react";
-import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, LogOut, Monitor } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Overview", path: "/" },
-  { icon: FolderKanban, label: "Project Summary", path: "/projects" },
-  { icon: CalendarClock, label: "Schedule", path: "/schedule" },
-  { icon: DollarSign, label: "Cost Performance", path: "/cost" },
-  { icon: AlertTriangle, label: "Risk Monitoring", path: "/risk" },
-  { icon: FileText, label: "Reporting", path: "/reporting" },
-  { icon: Database, label: "Data Entry", path: "/data-entry" },
+const allMenuItems = [
+  { icon: LayoutDashboard, label: "Overview", path: "/", roles: ["admin", "management", "team"] },
+  { icon: FolderKanban, label: "Project Summary", path: "/projects", roles: ["admin", "management"] },
+  { icon: CalendarClock, label: "Schedule", path: "/schedule", roles: ["admin", "management", "team"] },
+  { icon: DollarSign, label: "Cost Performance", path: "/cost", roles: ["admin", "management", "team"] },
+  { icon: AlertTriangle, label: "Risk Monitoring", path: "/risk", roles: ["admin", "management", "team"] },
+  { icon: FileText, label: "Reporting", path: "/reporting", roles: ["admin", "management"] },
+  { icon: Database, label: "Data Entry", path: "/data-entry", roles: ["admin"] },
+  { icon: Monitor, label: "War Room", path: "/war-room", roles: ["admin"] },
 ];
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { role, profile, signOut } = useAuth();
+
+  const menuItems = allMenuItems.filter(item => !role || item.roles.includes(role));
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   const sidebarContent = (
     <>
       <div className="p-5 border-b border-sidebar-border flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-xl font-bold tracking-wider text-primary">Pamitra</h1>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground mt-0.5">EPC Oil and Gas</p>
+        <div className="flex items-center gap-2.5">
+          <img src="/images/pamitra-icon.jpg" alt="Pamitra" className="h-8 w-8 rounded-lg object-contain" />
+          <div>
+            <h1 className="font-display text-base font-bold tracking-wider text-primary">Pamitra</h1>
+            <p className="text-[9px] uppercase tracking-[0.15em] text-sidebar-foreground">EPC Oil and Gas</p>
+          </div>
         </div>
         {isMobile && (
           <button onClick={() => setMobileOpen(false)} className="p-1 hover:bg-sidebar-accent rounded">
@@ -51,8 +65,17 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-sidebar-border">
-        <p className="text-[10px] text-sidebar-foreground text-center">© 2026 PT Pamitra Jaya Konstruksi</p>
+      <div className="p-3 border-t border-sidebar-border space-y-2">
+        {profile && (
+          <div className="px-3 py-2 rounded-lg bg-sidebar-accent/50">
+            <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{profile.display_name || "User"}</p>
+            <p className="text-[10px] text-sidebar-foreground capitalize">{role || "—"}</p>
+          </div>
+        )}
+        <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-destructive transition-colors">
+          <LogOut className="h-3.5 w-3.5" /> Logout
+        </button>
+        <p className="text-[10px] text-sidebar-foreground text-center pt-1">© 2026 PT Pamitra Jaya Konstruksi</p>
       </div>
     </>
   );
