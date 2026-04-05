@@ -278,17 +278,17 @@ const DataEntry = () => {
 
           {/* Tabs */}
           <div className="flex items-center gap-1 mb-5 border-b border-border pb-2 overflow-x-auto">
-            {([
-              { key: "regular" as const, label: "Regular Update", icon: FileText },
-              { key: "structural" as const, label: "Structural Update", icon: Calendar },
-              { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
-              { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
-            ]).map(tab => (
+            {tabs.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
                 <tab.icon className="h-3.5 w-3.5" />{tab.label}
               </button>
             ))}
+            {isTeam && (
+              <div className="flex items-center gap-1 ml-auto text-[10px] text-muted-foreground">
+                <Lock className="h-3 w-3" /> Limited access — weekly updates only
+              </div>
+            )}
           </div>
 
           {/* Project selector */}
