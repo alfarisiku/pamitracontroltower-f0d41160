@@ -15,8 +15,6 @@ import { toast } from "@/hooks/use-toast";
 
 type ActiveTab = "regular" | "structural" | "project-crud" | "addendum";
 
-const ADMIN_PASSWORD = "admin123";
-
 const DataEntry = () => {
   const queryClient = useQueryClient();
   const { data: projects = [] } = useProjects();
