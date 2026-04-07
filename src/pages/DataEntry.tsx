@@ -404,11 +404,6 @@ const DataEntry = () => {
                 <tab.icon className="h-3.5 w-3.5" />{tab.label}
               </button>
             ))}
-            {isTeam && (
-              <div className="flex items-center gap-1 ml-auto text-[10px] text-muted-foreground">
-                <Lock className="h-3 w-3" /> Limited access — weekly updates only
-              </div>
-            )}
           </div>
 
           {/* Project selector */}
