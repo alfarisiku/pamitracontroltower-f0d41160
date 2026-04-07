@@ -41,16 +41,16 @@ function AppRoutes() {
       {/* War Room is public */}
       <Route path="/war-room" element={<WarRoom />} />
 
-      <Route path="/" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><Index /></ProtectedRoute>} />
-      <Route path="/projects" element={<ProtectedRoute allowedRoles={["admin", "management"]}><ProjectSummary /></ProtectedRoute>} />
-      <Route path="/project/:id" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><ProjectDetail /></ProtectedRoute>} />
-      <Route path="/schedule" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><Schedule /></ProtectedRoute>} />
-      <Route path="/cost" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><CostPerformance /></ProtectedRoute>} />
-      <Route path="/risk" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><RiskMonitoring /></ProtectedRoute>} />
-      <Route path="/reporting" element={<ProtectedRoute allowedRoles={["admin", "management"]}><Reporting /></ProtectedRoute>} />
-      <Route path="/data-entry" element={<ProtectedRoute allowedRoles={["admin", "team"]}><DataEntry /></ProtectedRoute>} />
-      <Route path="/guide" element={<ProtectedRoute allowedRoles={["admin", "management", "team"]}><UserGuide /></ProtectedRoute>} />
-      <Route path="/account-manager" element={<ProtectedRoute allowedRoles={["admin"]}><AccountManager /></ProtectedRoute>} />
+      <Route path="/" element={<Index />} />
+      <Route path="/projects" element={<ProjectSummary />} />
+      <Route path="/project/:id" element={<ProjectDetail />} />
+      <Route path="/schedule" element={<Schedule />} />
+      <Route path="/cost" element={<CostPerformance />} />
+      <Route path="/risk" element={<RiskMonitoring />} />
+      <Route path="/reporting" element={<Reporting />} />
+      <Route path="/data-entry" element={<DataEntry />} />
+      <Route path="/guide" element={<UserGuide />} />
+      <Route path="/account-manager" element={<AccountManager />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
