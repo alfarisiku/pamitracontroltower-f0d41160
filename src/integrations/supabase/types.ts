@@ -268,6 +268,41 @@ export type Database = {
           },
         ]
       }
+      project_photos: {
+        Row: {
+          caption: string | null
+          id: string
+          photo_url: string
+          project_id: string
+          uploaded_at: string
+          week_label: string | null
+        }
+        Insert: {
+          caption?: string | null
+          id?: string
+          photo_url: string
+          project_id: string
+          uploaded_at?: string
+          week_label?: string | null
+        }
+        Update: {
+          caption?: string | null
+          id?: string
+          photo_url?: string
+          project_id?: string
+          uploaded_at?: string
+          week_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_photos_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           budget: number
