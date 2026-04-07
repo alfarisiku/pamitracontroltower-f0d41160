@@ -12,17 +12,12 @@ import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { useProjects } from "@/hooks/useProjects";
 import { formatRupiah, DbProject } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
-  const { isTeam, assignedProjectIds } = useAuth();
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const { data: allProjects = [], isLoading } = useProjects();
 
-  // Filter projects for team role - only show assigned projects
-  const projects = isTeam && assignedProjectIds.length > 0
-    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
-    : allProjects;
+  const projects = allProjects;
 
   const active = projects.filter((p) => p.status !== "completed").length;
   const atRisk = projects.filter((p) => p.status === "at-risk" || p.status === "delayed").length;
