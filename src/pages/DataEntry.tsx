@@ -466,6 +466,45 @@ const DataEntry = () => {
                 </div>
                 <button onClick={handleAddRisk} disabled={saving || !riskTitle} className="mt-3 flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-xs font-medium hover:bg-warning/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Risk"}</button>
               </div>
+
+              {/* Weekly Photo Upload */}
+              <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Camera className="h-4 w-4 text-primary" /> Upload Foto Progress Mingguan</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className={labelCls}>Pilih Foto</label>
+                    <input type="file" accept="image/*" multiple onChange={async (e) => {
+                      const files = e.target.files;
+                      if (!files || files.length === 0) return;
+                      setSaving(true);
+                      try {
+                        for (const file of Array.from(files)) {
+                          const ext = file.name.split('.').pop();
+                          const path = `${updateProjectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                          const { error: uploadErr } = await supabase.storage.from('project-photos').upload(path, file);
+                          if (uploadErr) throw uploadErr;
+                          const { data: urlData } = supabase.storage.from('project-photos').getPublicUrl(path);
+                          await supabase.from('project_photos').insert({
+                            project_id: updateProjectId,
+                            photo_url: urlData.publicUrl,
+                            caption: '',
+                            week_label: `Week ${Math.ceil((new Date().getDate()) / 7)} - ${new Date().toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}`,
+                          });
+                        }
+                        queryClient.invalidateQueries({ queryKey: ["project_photos"] });
+                        toast({ title: "✅ Berhasil", description: `${files.length} foto berhasil diupload` });
+                      } catch (err: any) {
+                        toast({ title: "❌ Error", description: err.message, variant: "destructive" });
+                      } finally { setSaving(false); }
+                    }} className={inputCls + " file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-primary file:text-primary-foreground"} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Label Minggu</label>
+                    <input value={`Week ${Math.ceil((new Date().getDate()) / 7)} - ${new Date().toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}`} disabled className={inputCls + " opacity-60"} />
+                  </div>
+                </div>
+                <PhotoGallery projectId={updateProjectId} />
+              </div>
             </div>
           )}
 
