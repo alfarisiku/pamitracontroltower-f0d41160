@@ -3,8 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import ProjectSummary from "./pages/ProjectSummary";
 import ProjectDetail from "./pages/ProjectDetail";
@@ -14,8 +12,6 @@ import RiskMonitoring from "./pages/RiskMonitoring";
 import Reporting from "./pages/Reporting";
 import DataEntry from "./pages/DataEntry";
 import WarRoom from "./pages/WarRoom";
-import Login from "./pages/Login";
-import PendingApproval from "./pages/PendingApproval";
 import AccountManager from "./pages/AccountManager";
 import UserGuide from "./pages/UserGuide";
 import NotFound from "./pages/NotFound";
@@ -23,24 +19,8 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { user, role, loading, isPending } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <Routes>
-      <Route path="/login" element={user ? (isPending ? <Navigate to="/pending" replace /> : <Navigate to={role === "client" ? "/war-room" : "/"} replace />) : <Login />} />
-      <Route path="/pending" element={user ? (isPending ? <PendingApproval /> : <Navigate to="/" replace />) : <Navigate to="/login" replace />} />
-
-      {/* War Room is public */}
-      <Route path="/war-room" element={<WarRoom />} />
-
       <Route path="/" element={<Index />} />
       <Route path="/projects" element={<ProjectSummary />} />
       <Route path="/project/:id" element={<ProjectDetail />} />
@@ -49,6 +29,7 @@ function AppRoutes() {
       <Route path="/risk" element={<RiskMonitoring />} />
       <Route path="/reporting" element={<Reporting />} />
       <Route path="/data-entry" element={<DataEntry />} />
+      <Route path="/war-room" element={<WarRoom />} />
       <Route path="/guide" element={<UserGuide />} />
       <Route path="/account-manager" element={<AccountManager />} />
       <Route path="*" element={<NotFound />} />
