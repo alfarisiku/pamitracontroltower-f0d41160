@@ -4,12 +4,11 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { DbProject, formatRupiah } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   HelpCircle, CheckCircle2, Database, Layers, Target, FileText,
   Lightbulb, BookOpen, ArrowRight, X, Save, Download, Upload, Share2,
   Plus, Trash2, Edit3, AlertTriangle, DollarSign, Calendar, FileBarChart,
-  Printer, ClipboardList, Lock
+  Printer, ClipboardList, Lock, Camera, Image as ImageIcon
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -19,21 +18,18 @@ type ActiveTab = "regular" | "project-crud" | "addendum";
 const DataEntry = () => {
   const queryClient = useQueryClient();
   const { data: allProjects = [] } = useProjects();
-  const { isAdmin, isTeam, profile, assignedProjectIds } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
-  const projects = isTeam && assignedProjectIds.length > 0
-    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
-    : allProjects;
+  const projects = allProjects;
 
   const allTabs = [
-    { key: "regular" as const, label: "Regular Update", icon: FileText, roles: ["admin", "team"] },
-    { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList, roles: ["admin"] },
-    { key: "addendum" as const, label: "Addendum", icon: FileBarChart, roles: ["admin"] },
+    { key: "regular" as const, label: "Regular Update", icon: FileText },
+    { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
+    { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
   ];
-  const tabs = allTabs.filter(t => isAdmin || t.roles.includes("team"));
+  const tabs = allTabs;
 
   // Regular update fields
   const [formProgress, setFormProgress] = useState("");
