@@ -394,9 +394,9 @@ const DataEntry = () => {
         {/* Media */}
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">🖼️ Media & Links</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div><label className={labelCls}>Image URL (Photo)</label><input value={ef.image_url} onChange={e => set("image_url", e.target.value)} className={inputCls} placeholder="https://..." /></div>
-          <div><label className={labelCls}>Video URL</label><input value={ef.video_url} onChange={e => set("video_url", e.target.value)} className={inputCls} placeholder="https://..." /></div>
-          <div><label className={labelCls}>CCTV Embed Link</label><input value={ef.cctv_url} onChange={e => set("cctv_url", e.target.value)} className={inputCls} placeholder="https://..." /></div>
+          <div><label className={labelCls}>Cover Photo URL (Foto Utama)</label><input value={ef.image_url} onChange={e => set("image_url", e.target.value)} className={inputCls} placeholder="https://..." /></div>
+          <div><label className={labelCls}>YouTube Video URL</label><input value={ef.video_url} onChange={e => set("video_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/watch?v=..." /></div>
+          <div><label className={labelCls}>CCTV / Stream URL</label><input value={ef.cctv_url} onChange={e => set("cctv_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/live/..." /></div>
         </div>
 
         {/* Map & Description */}
