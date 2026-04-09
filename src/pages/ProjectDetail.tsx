@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts } from "@/hooks/useProjects";
-import { formatRupiah } from "@/lib/supabase";
+import { supabase, formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
+import { SCurveChart } from "@/components/dashboard/SCurveChart";
+import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
-  Minus, Share2, Shield, TrendingUp, Activity
+  Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon
 } from "lucide-react";
 
 const statusConfig = {
@@ -31,7 +33,17 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
   "delayed": { label: "! Terlambat", className: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
-type MediaTab = "photo" | "video" | "cctv";
+type MediaTab = "cover" | "weekly" | "video" | "cctv";
+
+function extractYoutubeId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function getYoutubeThumbnail(url: string): string | null {
+  const id = extractYoutubeId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+}
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,8 +58,16 @@ const ProjectDetail = () => {
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [activeMedia, setActiveMedia] = useState<MediaTab>("photo");
-  const [activeTab, setActiveTab] = useState<"health" | "wbs" | "milestones" | "media">("health");
+  const [activeMedia, setActiveMedia] = useState<MediaTab>("cover");
+  const [activeTab, setActiveTab] = useState<"health" | "scurve" | "wbs" | "milestones" | "media">("health");
+
+  // Weekly photos
+  const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
+  useEffect(() => {
+    if (!id) return;
+    supabase.from("project_photos").select("*").eq("project_id", id).order("uploaded_at", { ascending: false })
+      .then(({ data }) => setWeeklyPhotos(data || []));
+  }, [id]);
 
   const toggleArea = (areaId: string) => {
     setExpandedAreas(prev => { const n = new Set(prev); n.has(areaId) ? n.delete(areaId) : n.add(areaId); return n; });
@@ -78,16 +98,12 @@ const ProjectDetail = () => {
   const totalDuration = Math.ceil((endDate.getTime() - new Date(project.start_date).getTime()) / (1000 * 60 * 60 * 24));
   const elapsedPct = totalDuration > 0 ? Math.min(100, Math.round(((totalDuration - Math.max(0, daysRemaining)) / totalDuration) * 100)) : 100;
 
-  // Weekly progress simulation (difference from schedule)
   const weeklyProgress = Math.max(0, Math.min(5, Math.round((project.progress / Math.max(1, elapsedPct)) * 3 * 10) / 10));
   const futureRemaining = 100 - project.progress;
 
-  // Schedule health
   const scheduleHealth = project.progress >= elapsedPct - 5 ? "good" : project.progress >= elapsedPct - 15 ? "warning" : "critical";
-  // Cost health
   const cpi = project.spent > 0 ? ((project.progress / 100) * project.budget) / project.spent : 1;
   const costHealth = cpi >= 0.95 ? "good" : cpi >= 0.8 ? "warning" : "critical";
-  // Risk level
   const criticalAlerts = projectAlerts.filter(a => a.severity === "critical" || a.severity === "high").length;
   const riskHealth = criticalAlerts === 0 ? "good" : criticalAlerts <= 1 ? "warning" : "critical";
 
@@ -104,11 +120,15 @@ const ProjectDetail = () => {
     }
   };
 
-  const mediaTabs: { key: MediaTab; label: string; icon: typeof Camera; available: boolean }[] = [
-    { key: "photo", label: "Foto", icon: Camera, available: !!project.image_url },
-    { key: "video", label: "Video", icon: Video, available: !!project.video_url },
-    { key: "cctv", label: "CCTV Live", icon: Cctv, available: !!project.cctv_url },
-  ];
+  // Group weekly photos by week_label
+  const photosByWeek = weeklyPhotos.reduce((acc: Record<string, any[]>, p) => {
+    const key = p.week_label || "Uncategorized";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(p);
+    return acc;
+  }, {});
+
+  const videoThumbnail = project.video_url ? getYoutubeThumbnail(project.video_url) : null;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -166,6 +186,7 @@ const ProjectDetail = () => {
           <div className="flex items-center gap-1 mb-4 border-b border-border pb-2 overflow-x-auto">
             {([
               { key: "health" as const, label: "Health Summary", icon: Activity },
+              { key: "scurve" as const, label: "S-Curve", icon: TrendingUp },
               { key: "wbs" as const, label: "WBS", icon: Layers },
               { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
               { key: "media" as const, label: "Media", icon: Camera },
@@ -182,15 +203,22 @@ const ProjectDetail = () => {
           {/* Health Summary Tab */}
           {activeTab === "health" && (
             <div className="space-y-4">
-              {/* Health Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 <div className={`glass-card rounded-lg p-3 border ${healthBg(scheduleHealth)}`}>
-                  <div className="flex items-center gap-1.5 mb-1"><Calendar className={`h-3.5 w-3.5 ${healthColor(scheduleHealth)}`} /><span className="text-[10px] text-muted-foreground uppercase">Schedule</span></div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Calendar className={`h-3.5 w-3.5 ${healthColor(scheduleHealth)}`} />
+                    <span className="text-[10px] text-muted-foreground uppercase">Schedule</span>
+                    <FormulaTooltip {...FORMULAS.scheduleHealth} />
+                  </div>
                   <p className={`text-sm font-bold ${healthColor(scheduleHealth)}`}>{healthLabel(scheduleHealth)}</p>
                   <p className="text-[10px] text-muted-foreground">Plan {elapsedPct}% vs Actual {project.progress}%</p>
                 </div>
                 <div className={`glass-card rounded-lg p-3 border ${healthBg(costHealth)}`}>
-                  <div className="flex items-center gap-1.5 mb-1"><TrendingUp className={`h-3.5 w-3.5 ${healthColor(costHealth)}`} /><span className="text-[10px] text-muted-foreground uppercase">Cost</span></div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <TrendingUp className={`h-3.5 w-3.5 ${healthColor(costHealth)}`} />
+                    <span className="text-[10px] text-muted-foreground uppercase">Cost</span>
+                    <FormulaTooltip {...FORMULAS.cpi} />
+                  </div>
                   <p className={`text-sm font-bold ${healthColor(costHealth)}`}>CPI {cpi.toFixed(2)}</p>
                   <p className="text-[10px] text-muted-foreground">{formatRupiah(project.spent)} / {formatRupiah(project.budget)}</p>
                 </div>
@@ -211,7 +239,6 @@ const ProjectDetail = () => {
                 </div>
               </div>
 
-              {/* Progress + Weekly */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="glass-card rounded-lg p-4 shadow-card">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Overall Progress</h3>
@@ -225,7 +252,7 @@ const ProjectDetail = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Budget Utilization</span>
+                        <span className="text-muted-foreground flex items-center">Budget Utilization<FormulaTooltip {...FORMULAS.budgetUtil} /></span>
                         <span className={`font-mono-data font-bold ${budgetPct > 85 ? "text-destructive" : "text-foreground"}`}>{budgetPct}%</span>
                       </div>
                       <Progress value={budgetPct} className="h-2" />
@@ -257,7 +284,7 @@ const ProjectDetail = () => {
                       <p className="text-lg font-bold font-mono-data text-success">{formatRupiah(budgetRemaining)}</p>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1">Profit Margin</p>
+                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">Profit Margin<FormulaTooltip {...FORMULAS.profitMargin} /></p>
                       <p className={`text-lg font-bold font-mono-data ${budgetRemaining > 0 ? "text-success" : "text-destructive"}`}>
                         {project.budget > 0 ? Math.round((budgetRemaining / project.budget) * 100) : 0}%
                       </p>
@@ -266,7 +293,6 @@ const ProjectDetail = () => {
                 </div>
               </div>
 
-              {/* Active Alerts */}
               {projectAlerts.length > 0 && (
                 <div className="glass-card rounded-lg shadow-card overflow-hidden">
                   <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Active Alerts & Risks</h3></div>
@@ -300,6 +326,40 @@ const ProjectDetail = () => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* S-Curve Tab */}
+          {activeTab === "scurve" && (
+            <div className="glass-card rounded-lg shadow-card p-4">
+              <h3 className="text-sm font-semibold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
+              <p className="text-[10px] text-muted-foreground mb-4">Visualisasi kurva-S progress kumulatif proyek terhadap rencana awal</p>
+              <SCurveChart
+                startDate={project.start_date}
+                endDate={project.end_date}
+                progress={project.progress}
+                milestones={milestones}
+              />
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
+                  <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
+                    {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
+                  </p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi</p>
+                  <p className={`text-lg font-bold font-mono-data ${project.progress - elapsedPct >= 0 ? "text-success" : "text-destructive"}`}>
+                    {project.progress - elapsedPct > 0 ? "+" : ""}{project.progress - elapsedPct}%
+                  </p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">CPI<FormulaTooltip {...FORMULAS.cpi} /></p>
+                  <p className={`text-lg font-bold font-mono-data ${cpi >= 0.95 ? "text-success" : cpi >= 0.8 ? "text-warning" : "text-destructive"}`}>
+                    {cpi.toFixed(2)}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -463,26 +523,124 @@ const ProjectDetail = () => {
           {/* Media Tab */}
           {activeTab === "media" && (
             <div className="glass-card rounded-lg shadow-card p-4">
-              <div className="flex items-center gap-1 mb-3">
-                {mediaTabs.filter(t => t.available).map(tab => (
+              <div className="flex items-center gap-1 mb-4 flex-wrap">
+                {([
+                  { key: "cover" as MediaTab, label: "Cover Photo", icon: ImageIcon, available: true },
+                  { key: "weekly" as MediaTab, label: `Weekly (${weeklyPhotos.length})`, icon: Camera, available: true },
+                  { key: "video" as MediaTab, label: "Video", icon: Video, available: !!project.video_url },
+                  { key: "cctv" as MediaTab, label: "CCTV", icon: Cctv, available: !!project.cctv_url },
+                ]).filter(t => t.available).map(tab => (
                   <button key={tab.key} onClick={() => setActiveMedia(tab.key)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                       activeMedia === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}><tab.icon className="h-3.5 w-3.5" />{tab.label}</button>
                 ))}
               </div>
-              {activeMedia === "photo" && project.image_url && <div className="rounded-lg overflow-hidden border border-border"><img src={project.image_url} alt={project.name} className="w-full max-h-[500px] object-cover" /></div>}
-              {activeMedia === "video" && project.video_url && <div className="w-full aspect-video rounded-lg overflow-hidden border border-border"><iframe src={project.video_url} title="Video" className="w-full h-full" allowFullScreen /></div>}
-              {activeMedia === "cctv" && project.cctv_url && (
+
+              {/* Cover Photo */}
+              {activeMedia === "cover" && (
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" /></span>
-                    <span className="text-xs font-medium text-destructive">LIVE</span>
-                  </div>
-                  <div className="w-full aspect-video rounded-lg overflow-hidden border border-border"><iframe src={project.cctv_url} title="CCTV" className="w-full h-full" allowFullScreen /></div>
+                  {project.image_url ? (
+                    <div className="rounded-lg overflow-hidden border border-border">
+                      <img src={project.image_url} alt={project.name} className="w-full max-h-[500px] object-cover" />
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ImageIcon className="h-10 w-10 mx-auto mb-3" />
+                      <p className="text-sm">Belum ada foto utama proyek.</p>
+                      <p className="text-xs mt-1">Upload melalui <Link to="/data-entry" className="text-primary hover:underline">Data Entry → Manage Projects</Link></p>
+                    </div>
+                  )}
                 </div>
               )}
-              {!mediaTabs.some(t => t.available) && <div className="text-center py-8 text-muted-foreground"><Camera className="h-10 w-10 mx-auto mb-3" /><p className="text-sm">Belum ada media.</p></div>}
+
+              {/* Weekly Photos */}
+              {activeMedia === "weekly" && (
+                <div>
+                  {weeklyPhotos.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Camera className="h-10 w-10 mx-auto mb-3" />
+                      <p className="text-sm">Belum ada foto progress mingguan.</p>
+                      <p className="text-xs mt-1">Upload melalui <Link to="/data-entry" className="text-primary hover:underline">Data Entry → Regular Update</Link></p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(photosByWeek).map(([week, photos]) => (
+                        <div key={week}>
+                          <h4 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-2">
+                            <Calendar className="h-3 w-3 text-primary" /> {week}
+                            <span className="text-muted-foreground font-normal">({photos.length} foto)</span>
+                          </h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {photos.map((p: any) => (
+                              <div key={p.id} className="rounded-lg overflow-hidden border border-border group cursor-pointer"
+                                onClick={() => window.open(p.photo_url, '_blank')}>
+                                <img src={p.photo_url} alt={p.caption || "Progress"} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300" />
+                                {p.caption && <div className="p-1.5 text-[10px] text-muted-foreground truncate">{p.caption}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Video — YouTube link only */}
+              {activeMedia === "video" && project.video_url && (
+                <div>
+                  {videoThumbnail ? (
+                    <div className="relative rounded-lg overflow-hidden border border-border cursor-pointer group"
+                      onClick={() => window.open(project.video_url!, '_blank')}>
+                      <img src={videoThumbnail} alt="Video" className="w-full max-h-[400px] object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                        <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                          <div className="w-0 h-0 border-l-[20px] border-l-primary border-y-[12px] border-y-transparent ml-1" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4 text-white" />
+                        <span className="text-xs text-white font-medium">Buka di YouTube</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <a href={project.video_url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                      <Video className="h-8 w-8 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Buka Video</p>
+                        <p className="text-[10px] text-muted-foreground truncate max-w-md">{project.video_url}</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground ml-auto" />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* CCTV — External link */}
+              {activeMedia === "cctv" && project.cctv_url && (
+                <div>
+                  <a href={project.cctv_url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-5 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                    <div className="relative">
+                      <Cctv className="h-10 w-10 text-destructive" />
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive" />
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        CCTV Live Stream
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium border border-destructive/30">LIVE</span>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate max-w-md mt-0.5">{project.cctv_url}</p>
+                    </div>
+                    <ExternalLink className="h-5 w-5 text-muted-foreground ml-auto" />
+                  </a>
+                </div>
+              )}
             </div>
           )}
         </div>
