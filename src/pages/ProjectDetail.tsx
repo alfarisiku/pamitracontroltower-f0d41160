@@ -569,10 +569,10 @@ const ProjectDetail = () => {
                         <div key={week}>
                           <h4 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-primary" /> {week}
-                            <span className="text-muted-foreground font-normal">({photos.length} foto)</span>
+                            <span className="text-muted-foreground font-normal">({(photos as any[]).length} foto)</span>
                           </h4>
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                            {photos.map((p: any) => (
+                            {(photos as any[]).map((p: any) => (
                               <div key={p.id} className="rounded-lg overflow-hidden border border-border group cursor-pointer"
                                 onClick={() => window.open(p.photo_url, '_blank')}>
                                 <img src={p.photo_url} alt={p.caption || "Progress"} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300" />
