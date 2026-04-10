@@ -54,7 +54,7 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [] }: S
   const currentLabel = data[Math.min(currentMonthIdx, data.length - 1)]?.month;
 
   return (
-    <div className="w-full h-[280px]">
+    <div className="w-full h-[340px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>

@@ -22,7 +22,7 @@ export function DashboardHeader() {
       <div className="flex items-center gap-3">
         <img src="/images/pamitra-icon.jpg" alt="Pamitra" className="w-9 h-9 rounded-lg object-contain" />
         <div>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">Pamitra Control Tower</h1>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">Dashboard Control Tower</h1>
           <p className="text-xs text-muted-foreground">
             {role ? roleLabels[role] : "Dashboard"} · PT Pamitra Jaya Konstruksi
           </p>

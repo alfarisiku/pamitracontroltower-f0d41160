@@ -31,7 +31,6 @@ function PhotoGallery({ projectId }: { projectId: string }) {
 
   const handleDelete = async (id: string, url: string) => {
     if (!confirm("Hapus foto ini?")) return;
-    // Extract path from URL
     const pathMatch = url.match(/project-photos\/(.+)$/);
     if (pathMatch) await supabase.storage.from("project-photos").remove([pathMatch[1]]);
     await supabase.from("project_photos").delete().eq("id", id);
@@ -41,15 +40,33 @@ function PhotoGallery({ projectId }: { projectId: string }) {
   if (loading) return <p className="text-xs text-muted-foreground">Loading photos...</p>;
   if (photos.length === 0) return <p className="text-xs text-muted-foreground">Belum ada foto untuk proyek ini.</p>;
 
+  // Group by week_label
+  const grouped = photos.reduce((acc: Record<string, any[]>, p) => {
+    const key = p.week_label || "Uncategorized";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(p);
+    return acc;
+  }, {});
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
-      {photos.map(p => (
-        <div key={p.id} className="relative group rounded-lg overflow-hidden border border-border">
-          <img src={p.photo_url} alt={p.caption || "Project photo"} className="w-full h-24 object-cover" />
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <button onClick={() => handleDelete(p.id, p.photo_url)} className="p-1.5 bg-destructive text-destructive-foreground rounded-full"><Trash2 className="h-3 w-3" /></button>
+    <div className="space-y-3 mt-2">
+      {Object.entries(grouped).map(([week, wPhotos]) => (
+        <div key={week}>
+          <h4 className="text-[10px] font-semibold text-foreground mb-1 flex items-center gap-1">
+            <Calendar className="h-3 w-3 text-primary" /> {week}
+            <span className="text-muted-foreground font-normal">({(wPhotos as any[]).length} foto)</span>
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {(wPhotos as any[]).map(p => (
+              <div key={p.id} className="relative group rounded-lg overflow-hidden border border-border">
+                <img src={p.photo_url} alt={p.caption || "Project photo"} className="w-full h-24 object-cover" />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button onClick={() => handleDelete(p.id, p.photo_url)} className="p-1.5 bg-destructive text-destructive-foreground rounded-full"><Trash2 className="h-3 w-3" /></button>
+                </div>
+                {p.caption && <div className="p-1 text-[9px] text-muted-foreground truncate">{p.caption}</div>}
+              </div>
+            ))}
           </div>
-          <div className="p-1 text-[9px] text-muted-foreground truncate">{p.week_label}</div>
         </div>
       ))}
     </div>
@@ -109,6 +126,29 @@ const DataEntry = () => {
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
     image_url: "", video_url: "", cctv_url: "",
   });
+
+  // Weekly photo date
+  const [photoWeekLabel, setPhotoWeekLabel] = useState("");
+  const [photoCaption, setPhotoCaption] = useState("");
+
+  // Generate week options
+  const getWeekOptions = () => {
+    const options: string[] = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i * 7);
+      const weekNum = Math.ceil(d.getDate() / 7);
+      const label = `Week ${weekNum} - ${d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}`;
+      if (!options.includes(label)) options.push(label);
+    }
+    return options;
+  };
+
+  useEffect(() => {
+    const opts = getWeekOptions();
+    if (opts.length > 0 && !photoWeekLabel) setPhotoWeekLabel(opts[0]);
+  }, []);
 
   // Populate edit form when editProjectId changes
   useEffect(() => {
@@ -394,7 +434,7 @@ const DataEntry = () => {
         {/* Media */}
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">🖼️ Media & Links</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div><label className={labelCls}>Cover Photo URL (Foto Utama)</label><input value={ef.image_url} onChange={e => set("image_url", e.target.value)} className={inputCls} placeholder="https://..." /></div>
+          <div><label className={labelCls}>Cover Photo URL (Header)</label><input value={ef.image_url} onChange={e => set("image_url", e.target.value)} className={inputCls} placeholder="https://..." /></div>
           <div><label className={labelCls}>YouTube Video URL</label><input value={ef.video_url} onChange={e => set("video_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/watch?v=..." /></div>
           <div><label className={labelCls}>CCTV / Stream URL</label><input value={ef.cctv_url} onChange={e => set("cctv_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/live/..." /></div>
         </div>
@@ -508,12 +548,24 @@ const DataEntry = () => {
                 <button onClick={handleAddRisk} disabled={saving || !riskTitle} className="mt-3 flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-xs font-medium hover:bg-warning/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Risk"}</button>
               </div>
 
-              {/* Weekly Photo Upload */}
+              {/* Weekly Photo Upload — with date/week picker */}
               <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
                 <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Camera className="h-4 w-4 text-primary" /> Upload Foto Progress Mingguan</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                   <div>
-                    <label className={labelCls}>Pilih Foto</label>
+                    <label className={labelCls}>Periode Minggu</label>
+                    <select value={photoWeekLabel} onChange={e => setPhotoWeekLabel(e.target.value)} className={inputCls}>
+                      {getWeekOptions().map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Caption (opsional)</label>
+                    <input value={photoCaption} onChange={e => setPhotoCaption(e.target.value)} className={inputCls} placeholder="Deskripsi foto..." />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Pilih Foto (multi)</label>
                     <input type="file" accept="image/*" multiple onChange={async (e) => {
                       const files = e.target.files;
                       if (!files || files.length === 0) return;
@@ -528,8 +580,8 @@ const DataEntry = () => {
                           await supabase.from('project_photos').insert({
                             project_id: updateProjectId,
                             photo_url: urlData.publicUrl,
-                            caption: '',
-                            week_label: `Week ${Math.ceil((new Date().getDate()) / 7)} - ${new Date().toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}`,
+                            caption: photoCaption,
+                            week_label: photoWeekLabel,
                           });
                         }
                         queryClient.invalidateQueries({ queryKey: ["project_photos"] });
@@ -538,10 +590,6 @@ const DataEntry = () => {
                         toast({ title: "❌ Error", description: err.message, variant: "destructive" });
                       } finally { setSaving(false); }
                     }} className={inputCls + " file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-primary file:text-primary-foreground"} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Label Minggu</label>
-                    <input value={`Week ${Math.ceil((new Date().getDate()) / 7)} - ${new Date().toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}`} disabled className={inputCls + " opacity-60"} />
                   </div>
                 </div>
                 <PhotoGallery projectId={updateProjectId} />

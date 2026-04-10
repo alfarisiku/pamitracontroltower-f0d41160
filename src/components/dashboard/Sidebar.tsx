@@ -39,7 +39,7 @@ export function Sidebar() {
         <div className="flex items-center gap-2.5">
           <img src="/images/pamitra-icon.jpg" alt="Pamitra" className="h-8 w-8 rounded-lg object-contain" />
           <div>
-            <h1 className="font-display text-base font-bold tracking-wider text-primary">Pamitra</h1>
+            <h1 className="font-display text-base font-bold tracking-wider text-primary">Dashboard CT</h1>
             <p className="text-[9px] uppercase tracking-[0.15em] text-sidebar-foreground">EPC Oil and Gas</p>
           </div>
         </div>

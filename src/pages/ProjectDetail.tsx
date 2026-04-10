@@ -33,7 +33,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
   "delayed": { label: "! Terlambat", className: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
-type MediaTab = "cover" | "weekly" | "video" | "cctv";
+type MediaTab = "weekly" | "video" | "cctv";
 
 function extractYoutubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -44,6 +44,13 @@ function getYoutubeThumbnail(url: string): string | null {
   const id = extractYoutubeId(url);
   return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
 }
+
+const phaseLabels: Record<string, string> = {
+  "Engineering": "E",
+  "Procurement": "P",
+  "Construction": "C",
+  "Commissioning": "Co",
+};
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +65,7 @@ const ProjectDetail = () => {
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [activeMedia, setActiveMedia] = useState<MediaTab>("cover");
+  const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<"health" | "scurve" | "wbs" | "milestones" | "media">("health");
 
   // Weekly photos
@@ -150,9 +157,9 @@ const ProjectDetail = () => {
             </button>
           </div>
 
-          {/* Project Header */}
+          {/* Project Header — cover photo as background header only */}
           <div className="glass-card rounded-lg overflow-hidden shadow-card mb-5">
-            <div className="relative h-32 sm:h-40 overflow-hidden">
+            <div className="relative h-32 sm:h-44 overflow-hidden">
               {project.image_url ? (
                 <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
               ) : (
@@ -164,6 +171,7 @@ const ProjectDetail = () => {
                   <span className="text-xs font-mono-data text-primary bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.project_code}</span>
                   <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
                   <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.phase}</span>
+                  {project.category && <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.category}</span>}
                 </div>
                 <h1 className="text-lg sm:text-xl font-bold text-foreground mt-1">{project.name}</h1>
               </div>
@@ -272,12 +280,10 @@ const ProjectDetail = () => {
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                       <p className="text-[10px] text-muted-foreground uppercase mb-1">Weekly Progress</p>
                       <p className="text-xl font-bold font-mono-data text-primary">{weeklyProgress}%</p>
-                      <p className="text-[10px] text-muted-foreground">this week</p>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                       <p className="text-[10px] text-muted-foreground uppercase mb-1">Future Remaining</p>
                       <p className="text-xl font-bold font-mono-data text-warning">{futureRemaining}%</p>
-                      <p className="text-[10px] text-muted-foreground">to complete</p>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                       <p className="text-[10px] text-muted-foreground uppercase mb-1">Remaining Budget</p>
@@ -313,12 +319,6 @@ const ProjectDetail = () => {
                               }`}>{alert.severity}</span>
                             </div>
                             {alert.description && <p className="text-[11px] text-muted-foreground mt-0.5">{alert.description}</p>}
-                            {(alert.risk_owner || alert.mitigation_plan) && (
-                              <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground flex-wrap">
-                                {alert.risk_owner && <span>Owner: <span className="text-foreground">{alert.risk_owner}</span></span>}
-                                {alert.mitigation_plan && <span>Mitigation: <span className="text-foreground">{alert.mitigation_plan}</span></span>}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -333,7 +333,7 @@ const ProjectDetail = () => {
           {activeTab === "scurve" && (
             <div className="glass-card rounded-lg shadow-card p-4">
               <h3 className="text-sm font-semibold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
-              <p className="text-[10px] text-muted-foreground mb-4">Visualisasi kurva-S progress kumulatif proyek terhadap rencana awal</p>
+              <p className="text-[10px] text-muted-foreground mb-4">Visualisasi kurva-S progress kumulatif proyek terhadap rencana awal. Data S-Curve dapat diedit melalui Data Entry → Manage Projects.</p>
               <SCurveChart
                 startDate={project.start_date}
                 endDate={project.end_date}
@@ -363,7 +363,7 @@ const ProjectDetail = () => {
             </div>
           )}
 
-          {/* WBS Tab */}
+          {/* WBS Tab — with EPC phase and deadline info */}
           {activeTab === "wbs" && (
             <div className="space-y-3">
               {workAreas.length === 0 ? (
@@ -373,101 +373,127 @@ const ProjectDetail = () => {
                   <p className="text-xs text-muted-foreground mt-1">Isi melalui <Link to="/data-entry" className="text-primary hover:underline">Data Entry</Link>.</p>
                 </div>
               ) : (
-                workAreas.map(area => {
-                  const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
-                  const isExpanded = expandedAreas.has(area.id);
-                  const totalQty = areaItems.reduce((s, i) => s + Number(i.qty_total), 0);
-                  const doneQty = areaItems.reduce((s, i) => s + Number(i.qty_completed), 0);
-
-                  return (
-                    <div key={area.id} className="glass-card rounded-lg shadow-card overflow-hidden">
-                      <button onClick={() => toggleArea(area.id)} className="w-full flex items-center gap-3 p-3 sm:p-4 hover:bg-muted/30 transition-colors text-left">
-                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-mono-data text-primary bg-primary/10 px-1.5 py-0.5 rounded">{area.code}</span>
-                            <span className="text-sm font-semibold text-foreground">{area.name}</span>
-                            <span className="text-[10px] text-muted-foreground">W:{area.weight}%</span>
+                <>
+                  {/* EPC Phase summary */}
+                  <div className="glass-card rounded-lg p-3 shadow-card">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-[10px] uppercase text-muted-foreground font-semibold">EPC Phase:</span>
+                      {["Engineering", "Procurement", "Construction", "Commissioning"].map(phase => {
+                        const phaseItems = workItems.filter(wi => {
+                          const area = workAreas.find(wa => wa.id === wi.work_area_id);
+                          return area?.name?.toLowerCase().includes(phase.toLowerCase()) || wi.name?.toLowerCase().includes(phase.toLowerCase());
+                        });
+                        const phaseProgress = phaseItems.length > 0 ? Math.round(phaseItems.reduce((s, i) => s + i.progress, 0) / phaseItems.length) : 0;
+                        const isActive = project.phase === phase;
+                        return (
+                          <div key={phase} className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] border ${isActive ? "bg-primary/10 border-primary/30 text-primary font-bold" : "bg-muted/30 border-border/50 text-muted-foreground"}`}>
+                            <span className="font-mono-data">{phaseLabels[phase]}</span>
+                            <span>{phase}</span>
+                            {phaseItems.length > 0 && <span className="font-mono-data">({phaseProgress}%)</span>}
                           </div>
-                          <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground">
-                            <span>{areaItems.length} items</span>
-                            {totalQty > 0 && <span>{doneQty.toLocaleString()}/{totalQty.toLocaleString()}</span>}
-                            <span className="text-warning">Sisa: {(totalQty - doneQty).toLocaleString()}</span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {workAreas.map(area => {
+                    const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
+                    const isExpanded = expandedAreas.has(area.id);
+                    const totalQty = areaItems.reduce((s, i) => s + Number(i.qty_total), 0);
+                    const doneQty = areaItems.reduce((s, i) => s + Number(i.qty_completed), 0);
+
+                    return (
+                      <div key={area.id} className="glass-card rounded-lg shadow-card overflow-hidden">
+                        <button onClick={() => toggleArea(area.id)} className="w-full flex items-center gap-3 p-3 sm:p-4 hover:bg-muted/30 transition-colors text-left">
+                          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-mono-data text-primary bg-primary/10 px-1.5 py-0.5 rounded">{area.code}</span>
+                              <span className="text-sm font-semibold text-foreground">{area.name}</span>
+                              <span className="text-[10px] text-muted-foreground">W:{area.weight}%</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground">
+                              <span>{areaItems.length} items</span>
+                              {totalQty > 0 && <span>{doneQty.toLocaleString()}/{totalQty.toLocaleString()}</span>}
+                              <span className="text-warning">Sisa: {(totalQty - doneQty).toLocaleString()}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <div className="w-20 hidden sm:block"><Progress value={area.progress} className="h-1.5" /></div>
-                          <span className="text-sm font-mono-data font-bold text-primary w-10 text-right">{area.progress}%</span>
-                        </div>
-                      </button>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="w-20 hidden sm:block"><Progress value={area.progress} className="h-1.5" /></div>
+                            <span className="text-sm font-mono-data font-bold text-primary w-10 text-right">{area.progress}%</span>
+                          </div>
+                        </button>
 
-                      {isExpanded && (
-                        <div className="border-t border-border">
-                          {areaItems.map(item => {
-                            const itemSubs = subTasks.filter(s => s.work_item_id === item.id);
-                            const isItemExp = expandedItems.has(item.id);
-                            const remaining = Number(item.qty_total) - Number(item.qty_completed);
-                            const tsc = taskStatusConfig[item.status] || taskStatusConfig["in-progress"];
-                            const ItemIcon = tsc.icon;
+                        {isExpanded && (
+                          <div className="border-t border-border">
+                            {areaItems.map(item => {
+                              const itemSubs = subTasks.filter(s => s.work_item_id === item.id);
+                              const isItemExp = expandedItems.has(item.id);
+                              const remaining = Number(item.qty_total) - Number(item.qty_completed);
+                              const tsc = taskStatusConfig[item.status] || taskStatusConfig["in-progress"];
+                              const ItemIcon = tsc.icon;
 
-                            return (
-                              <div key={item.id} className="border-b border-border/30 last:border-0">
-                                <button onClick={() => itemSubs.length > 0 && toggleItem(item.id)}
-                                  className="w-full flex items-center gap-2 px-4 sm:px-6 py-2.5 hover:bg-muted/20 transition-colors text-left">
-                                  {itemSubs.length > 0 ? <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${isItemExp ? "" : "-rotate-90"}`} /> : <div className="w-3" />}
-                                  <ItemIcon className={`h-3.5 w-3.5 ${tsc.className} flex-shrink-0`} />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[10px] font-mono-data text-muted-foreground">{item.code}</span>
-                                      <span className="text-xs font-medium text-foreground">{item.name}</span>
+                              return (
+                                <div key={item.id} className="border-b border-border/30 last:border-0">
+                                  <button onClick={() => itemSubs.length > 0 && toggleItem(item.id)}
+                                    className="w-full flex items-center gap-2 px-4 sm:px-6 py-2.5 hover:bg-muted/20 transition-colors text-left">
+                                    {itemSubs.length > 0 ? <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${isItemExp ? "" : "-rotate-90"}`} /> : <div className="w-3" />}
+                                    <ItemIcon className={`h-3.5 w-3.5 ${tsc.className} flex-shrink-0`} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-mono-data text-muted-foreground">{item.code}</span>
+                                        <span className="text-xs font-medium text-foreground">{item.name}</span>
+                                        <span className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground">W:{item.weight}%</span>
+                                      </div>
+                                      <div className="flex items-center gap-3 mt-0.5 flex-wrap text-[10px]">
+                                        <span className="text-muted-foreground">
+                                          <span className="font-mono-data font-bold text-foreground">{Number(item.qty_completed).toLocaleString()}</span>/{Number(item.qty_total).toLocaleString()} {item.unit}
+                                        </span>
+                                        <span className={`font-medium ${remaining > 0 ? "text-warning" : "text-success"}`}>Sisa: {remaining.toLocaleString()} {item.unit}</span>
+                                        {item.start_date && <span className="text-muted-foreground">📅 {new Date(item.start_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>}
+                                        {item.end_date && <span className="text-muted-foreground">→ {new Date(item.end_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })}</span>}
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-3 mt-0.5 flex-wrap text-[10px]">
-                                      <span className="text-muted-foreground">
-                                        <span className="font-mono-data font-bold text-foreground">{Number(item.qty_completed).toLocaleString()}</span>/{Number(item.qty_total).toLocaleString()} {item.unit}
-                                      </span>
-                                      <span className={`font-medium ${remaining > 0 ? "text-warning" : "text-success"}`}>Sisa: {remaining.toLocaleString()} {item.unit}</span>
-                                      {item.end_date && <span className="text-muted-foreground">→ {new Date(item.end_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })}</span>}
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      <div className="w-16 hidden sm:block"><Progress value={item.progress} className="h-1" /></div>
+                                      <span className={`text-xs font-mono-data font-bold w-10 text-right ${tsc.className}`}>{item.progress}%</span>
                                     </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                    <div className="w-16 hidden sm:block"><Progress value={item.progress} className="h-1" /></div>
-                                    <span className={`text-xs font-mono-data font-bold w-10 text-right ${tsc.className}`}>{item.progress}%</span>
-                                  </div>
-                                </button>
+                                  </button>
 
-                                {isItemExp && itemSubs.length > 0 && (
-                                  <div className="bg-muted/20 border-t border-border/30">
-                                    {itemSubs.map(st => {
-                                      const stc = taskStatusConfig[st.status] || taskStatusConfig["not-started"];
-                                      const stRem = Number(st.qty_total) - Number(st.qty_completed);
-                                      const StIcon = stc.icon;
-                                      return (
-                                        <div key={st.id} className="flex items-center gap-2 px-8 sm:px-10 py-2 border-b border-border/20 last:border-0">
-                                          <StIcon className={`h-3 w-3 ${stc.className} flex-shrink-0`} />
-                                          <div className="flex-1 min-w-0">
-                                            <span className="text-[11px] text-foreground">{st.name}</span>
-                                            <div className="flex items-center gap-2 mt-0.5 text-[10px]">
-                                              <span className="text-muted-foreground"><span className="font-mono-data font-bold text-foreground">{Number(st.qty_completed).toLocaleString()}</span>/{Number(st.qty_total).toLocaleString()} {st.unit}</span>
-                                              <span className={`font-medium ${stRem > 0 ? "text-warning" : "text-success"}`}>Sisa: {stRem.toLocaleString()}</span>
+                                  {isItemExp && itemSubs.length > 0 && (
+                                    <div className="bg-muted/20 border-t border-border/30">
+                                      {itemSubs.map(st => {
+                                        const stc = taskStatusConfig[st.status] || taskStatusConfig["not-started"];
+                                        const stRem = Number(st.qty_total) - Number(st.qty_completed);
+                                        const StIcon = stc.icon;
+                                        return (
+                                          <div key={st.id} className="flex items-center gap-2 px-8 sm:px-10 py-2 border-b border-border/20 last:border-0">
+                                            <StIcon className={`h-3 w-3 ${stc.className} flex-shrink-0`} />
+                                            <div className="flex-1 min-w-0">
+                                              <span className="text-[11px] text-foreground">{st.name}</span>
+                                              <div className="flex items-center gap-2 mt-0.5 text-[10px]">
+                                                <span className="text-muted-foreground"><span className="font-mono-data font-bold text-foreground">{Number(st.qty_completed).toLocaleString()}</span>/{Number(st.qty_total).toLocaleString()} {st.unit}</span>
+                                                <span className={`font-medium ${stRem > 0 ? "text-warning" : "text-success"}`}>Sisa: {stRem.toLocaleString()}</span>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                              <div className="w-12 hidden sm:block"><Progress value={st.progress} className="h-1" /></div>
+                                              <span className={`text-[10px] font-mono-data font-bold w-8 text-right ${stc.className}`}>{st.progress}%</span>
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-2 flex-shrink-0">
-                                            <div className="w-12 hidden sm:block"><Progress value={st.progress} className="h-1" /></div>
-                                            <span className={`text-[10px] font-mono-data font-bold w-8 text-right ${stc.className}`}>{st.progress}%</span>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
               )}
             </div>
           )}
@@ -520,13 +546,12 @@ const ProjectDetail = () => {
             </div>
           )}
 
-          {/* Media Tab */}
+          {/* Media Tab — NO cover photo tab, only weekly + video + cctv */}
           {activeTab === "media" && (
             <div className="glass-card rounded-lg shadow-card p-4">
               <div className="flex items-center gap-1 mb-4 flex-wrap">
                 {([
-                  { key: "cover" as MediaTab, label: "Cover Photo", icon: ImageIcon, available: true },
-                  { key: "weekly" as MediaTab, label: `Weekly (${weeklyPhotos.length})`, icon: Camera, available: true },
+                  { key: "weekly" as MediaTab, label: `Weekly Update (${weeklyPhotos.length})`, icon: Camera, available: true },
                   { key: "video" as MediaTab, label: "Video", icon: Video, available: !!project.video_url },
                   { key: "cctv" as MediaTab, label: "CCTV", icon: Cctv, available: !!project.cctv_url },
                 ]).filter(t => t.available).map(tab => (
@@ -536,23 +561,6 @@ const ProjectDetail = () => {
                     }`}><tab.icon className="h-3.5 w-3.5" />{tab.label}</button>
                 ))}
               </div>
-
-              {/* Cover Photo */}
-              {activeMedia === "cover" && (
-                <div>
-                  {project.image_url ? (
-                    <div className="rounded-lg overflow-hidden border border-border">
-                      <img src={project.image_url} alt={project.name} className="w-full max-h-[500px] object-cover" />
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <ImageIcon className="h-10 w-10 mx-auto mb-3" />
-                      <p className="text-sm">Belum ada foto utama proyek.</p>
-                      <p className="text-xs mt-1">Upload melalui <Link to="/data-entry" className="text-primary hover:underline">Data Entry → Manage Projects</Link></p>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Weekly Photos */}
               {activeMedia === "weekly" && (
