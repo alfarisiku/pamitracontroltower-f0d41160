@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
+import { supabase } from "@/integrations/supabase/client";
 import { formatRupiah } from "@/lib/supabase";
 import { AlertCircle, AlertTriangle, Info, CheckCircle2, Shield, ChevronDown, Share2, TrendingDown, Clock, Download, Printer, X, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
 type Severity = "critical" | "high" | "medium" | "low";
@@ -37,11 +40,25 @@ const matrixRiskLevel: Record<string, string> = {
 
 const RiskMonitoring = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: projects = [], isLoading: lp } = useProjects();
   const { data: alerts = [], isLoading: la } = useAlerts();
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [resolving, setResolving] = useState<string | null>(null);
+
+  const handleResolveRisk = async (id: string) => {
+    setResolving(id);
+    try {
+      const { error } = await supabase.from("project_alerts").update({ is_resolved: true }).eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+      toast({ title: "✅ Resolved", description: "Risk berhasil ditutup / resolved" });
+    } catch (e: any) {
+      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
+    } finally { setResolving(null); }
+  };
 
   if (lp || la) {
     return <div className="flex min-h-screen"><Sidebar /><div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div></div>;
@@ -113,7 +130,7 @@ const RiskMonitoring = () => {
     alerts.forEach(a => {
       printW.document.write(`<tr><td>${a.title}</td><td>${a.severity}</td><td>${a.probability || "—"}</td><td>${a.impact || "—"}</td><td>${a.risk_owner || "—"}</td><td>${a.mitigation_plan || "—"}</td></tr>`);
     });
-    printW.document.write(`</tbody></table><p style="margin-top:20px;font-size:9px;color:#888">© 2026 PT Pamitra Jaya Konstruksi</p></body></html>`);
+    printW.document.write(`</tbody></table><p style="margin-top:20px;font-size:9px;color:#888">© 2026 Dashboard Control Tower</p></body></html>`);
     printW.document.close();
     printW.print();
   };
@@ -148,32 +165,19 @@ const RiskMonitoring = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                 <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/20">
                   <div className="flex items-center gap-2 mb-2"><AlertCircle className="h-4 w-4 text-destructive" /><span className="text-xs font-bold text-destructive">CRITICAL</span></div>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang dapat menghentikan proyek secara total. Membutuhkan eskalasi ke top management dan tindakan segera dalam 24 jam.</p>
-                  <p className="text-[10px] text-destructive mt-1 font-medium">Contoh: Kegagalan struktural, kecelakaan fatal, pembatalan kontrak</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang dapat menghentikan proyek secara total.</p>
                 </div>
                 <div className="bg-warning/10 rounded-lg p-3 border border-warning/20">
                   <div className="flex items-center gap-2 mb-2"><AlertTriangle className="h-4 w-4 text-warning" /><span className="text-xs font-bold text-warning">HIGH</span></div>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang menyebabkan keterlambatan signifikan atau pembengkakan biaya &gt;10%. Perlu rencana mitigasi dalam 1 minggu.</p>
-                  <p className="text-[10px] text-warning mt-1 font-medium">Contoh: Keterlambatan material utama, kekurangan SDM kritis</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang menyebabkan keterlambatan signifikan atau pembengkakan biaya &gt;10%.</p>
                 </div>
                 <div className="bg-info/10 rounded-lg p-3 border border-info/20">
                   <div className="flex items-center gap-2 mb-2"><Info className="h-4 w-4 text-info" /><span className="text-xs font-bold text-info">MEDIUM</span></div>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang dapat memengaruhi jadwal atau biaya dalam batas toleransi (5-10%). Monitoring berkala diperlukan.</p>
-                  <p className="text-[10px] text-info mt-1 font-medium">Contoh: Perubahan scope minor, cuaca buruk musiman</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko yang dapat memengaruhi jadwal atau biaya dalam batas toleransi (5-10%).</p>
                 </div>
                 <div className="bg-muted/30 rounded-lg p-3 border border-border">
                   <div className="flex items-center gap-2 mb-2"><Info className="h-4 w-4 text-muted-foreground" /><span className="text-xs font-bold text-muted-foreground">LOW</span></div>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko minor yang jarang terjadi dan dampaknya kecil (&lt;5%). Cukup dicatat dan dimonitor rutin.</p>
-                  <p className="text-[10px] text-muted-foreground mt-1 font-medium">Contoh: Keterlambatan dokumen administrasi</p>
-                </div>
-              </div>
-              <div className="bg-muted/20 rounded-lg p-3 border border-border/50">
-                <h4 className="text-xs font-semibold text-foreground mb-2">Bagaimana Risk Berkaitan dengan Proyek?</h4>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-[10px] text-muted-foreground">
-                  <div><span className="font-medium text-destructive">Delays</span> → Proyek yang melewati target deadline akan otomatis memunculkan alert keterlambatan.</div>
-                  <div><span className="font-medium text-warning">Budget Overruns</span> → Proyek dengan pengeluaran &gt;90% dari budget akan ditandai sebagai budget overrun.</div>
-                  <div><span className="font-medium text-destructive">Critical Issues</span> → Risk dengan severity "Critical" menandakan masalah yang harus segera ditangani.</div>
-                  <div><span className="font-medium text-warning">High Risk</span> → Risk dengan probability dan impact tinggi memerlukan rencana mitigasi aktif.</div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Risiko minor yang jarang terjadi dan dampaknya kecil (&lt;5%).</p>
                 </div>
               </div>
             </div>
@@ -196,17 +200,14 @@ const RiskMonitoring = () => {
           {/* Critical Issues Overview */}
           <div className="glass-card rounded-lg shadow-card p-4 mb-5">
             <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-destructive" /> Project Critical Issues Summary</h3>
-            <p className="text-[11px] text-muted-foreground mb-3">Ringkasan masalah kritis untuk identifikasi cepat area yang perlu akselerasi</p>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/20">
                 <div className="flex items-center gap-2 mb-1"><Clock className="h-4 w-4 text-destructive" /><span className="text-[10px] uppercase text-muted-foreground">Delays</span></div>
                 <p className="text-xl font-bold font-mono-data text-destructive">{delayedProjects.length}</p>
-                <div className="mt-1 space-y-0.5">{delayedProjects.slice(0, 3).map(p => <p key={p.id} className="text-[10px] text-muted-foreground truncate cursor-pointer hover:text-primary" onClick={() => navigate(`/project/${p.id}`)}>{p.project_code} · {p.name}</p>)}</div>
               </div>
               <div className="bg-warning/10 rounded-lg p-3 border border-warning/20">
                 <div className="flex items-center gap-2 mb-1"><TrendingDown className="h-4 w-4 text-warning" /><span className="text-[10px] uppercase text-muted-foreground">Budget Overruns</span></div>
                 <p className="text-xl font-bold font-mono-data text-warning">{overBudgetProjects.length}</p>
-                <div className="mt-1 space-y-0.5">{overBudgetProjects.slice(0, 3).map(p => <p key={p.id} className="text-[10px] text-muted-foreground truncate cursor-pointer hover:text-primary" onClick={() => navigate(`/project/${p.id}`)}>{p.project_code} · {Math.round(p.spent/p.budget*100)}%</p>)}</div>
               </div>
               <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/20">
                 <div className="flex items-center gap-2 mb-1"><AlertCircle className="h-4 w-4 text-destructive" /><span className="text-[10px] uppercase text-muted-foreground">Critical Issues</span></div>
@@ -239,12 +240,6 @@ const RiskMonitoring = () => {
               <h3 className="text-sm font-semibold text-foreground mb-2">Risk Matrix</h3>
               <p className="text-[10px] text-muted-foreground mb-3">Klik sel untuk melihat detail risiko</p>
               
-              <div className="bg-muted/30 rounded-lg p-2 mb-3 border border-border/50">
-                <p className="text-[9px] text-muted-foreground"><strong>Probability:</strong> Kemungkinan risiko terjadi (Low → Very High)</p>
-                <p className="text-[9px] text-muted-foreground"><strong>Impact:</strong> Dampak terhadap proyek (Low → Very High)</p>
-                <p className="text-[9px] text-muted-foreground"><strong>Risk Level:</strong> <span className="text-success">Green=Low</span> · <span className="text-warning">Yellow=Medium</span> · <span className="text-destructive">Red=High/Critical</span></p>
-              </div>
-
               <div className="space-y-0.5">
                 <div className="flex items-center gap-0.5">
                   <div className="w-16 text-[8px] text-muted-foreground text-right pr-1">Impact →</div>
@@ -267,9 +262,6 @@ const RiskMonitoring = () => {
                     })}
                   </div>
                 ))}
-                <div className="flex items-center gap-0.5 mt-1">
-                  <div className="w-16 text-[8px] text-muted-foreground text-right pr-1">Prob ↑</div>
-                </div>
               </div>
 
               {/* Selected cell detail */}
@@ -278,7 +270,7 @@ const RiskMonitoring = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <p className="text-[10px] font-medium text-foreground">Probability: {selectedCellInfo.prob} × Impact: {selectedCellInfo.impact}</p>
-                      <p className="text-[10px] text-muted-foreground">Risk Level: <span className={`font-bold ${selectedCellInfo.level === "Critical" ? "text-destructive" : selectedCellInfo.level === "High" ? "text-warning" : selectedCellInfo.level === "Medium" ? "text-accent" : "text-success"}`}>{selectedCellInfo.level}</span></p>
+                      <p className="text-[10px] text-muted-foreground">Risk Level: <span className={`font-bold ${selectedCellInfo.level === "Critical" ? "text-destructive" : selectedCellInfo.level === "High" ? "text-warning" : "text-success"}`}>{selectedCellInfo.level}</span></p>
                     </div>
                     <button onClick={() => setSelectedCell(null)} className="p-1 hover:bg-muted rounded"><X className="h-3 w-3 text-muted-foreground" /></button>
                   </div>
@@ -287,11 +279,15 @@ const RiskMonitoring = () => {
                   ) : (
                     <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
                       {selectedCellAlerts.map(a => (
-                        <div key={a.id} className="bg-muted/30 rounded p-2 border border-border/50 cursor-pointer hover:border-primary/50" onClick={() => a.project_id && navigate(`/project/${a.project_id}`)}>
-                          <p className="text-[10px] font-medium text-foreground">{a.title}</p>
+                        <div key={a.id} className="bg-muted/30 rounded p-2 border border-border/50">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[10px] font-medium text-foreground cursor-pointer hover:text-primary" onClick={() => a.project_id && navigate(`/project/${a.project_id}`)}>{a.title}</p>
+                            <button onClick={() => handleResolveRisk(a.id)} disabled={resolving === a.id}
+                              className="flex-shrink-0 text-[9px] px-1.5 py-0.5 bg-success/15 text-success rounded hover:bg-success/25 disabled:opacity-50 border border-success/30">
+                              {resolving === a.id ? "..." : "✓ Close"}
+                            </button>
+                          </div>
                           {a.projects && <p className="text-[9px] text-primary">{a.projects.project_code}</p>}
-                          {a.risk_owner && <p className="text-[9px] text-muted-foreground">Owner: {a.risk_owner}</p>}
-                          {a.mitigation_plan && <p className="text-[9px] text-info">⚡ {a.mitigation_plan}</p>}
                         </div>
                       ))}
                     </div>
@@ -322,12 +318,12 @@ const RiskMonitoring = () => {
                   const cfg = severityConfig[alert.severity];
                   const Icon = cfg.icon;
                   return (
-                    <div key={alert.id} className="p-3 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => alert.project_id && navigate(`/project/${alert.project_id}`)}>
+                    <div key={alert.id} className="p-3 hover:bg-muted/20 transition-colors">
                       <div className="flex items-start gap-2">
                         <div className={`p-1 rounded-lg ${cfg.bgColor} mt-0.5`}><Icon className={`h-3.5 w-3.5 ${cfg.color}`} /></div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                            <h4 className="text-xs font-medium text-foreground">{alert.title}</h4>
+                            <h4 className="text-xs font-medium text-foreground cursor-pointer hover:text-primary" onClick={() => alert.project_id && navigate(`/project/${alert.project_id}`)}>{alert.title}</h4>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium border ${cfg.bgColor} ${cfg.color} ${cfg.borderColor}`}>{cfg.label}</span>
                             {alert.probability && <span className="text-[9px] text-muted-foreground">P: {alert.probability}</span>}
                             {alert.impact && <span className="text-[9px] text-muted-foreground">I: {alert.impact}</span>}
@@ -339,6 +335,11 @@ const RiskMonitoring = () => {
                           </div>
                           {alert.mitigation_plan && <p className="text-[10px] text-info mt-0.5">⚡ {alert.mitigation_plan}</p>}
                         </div>
+                        <button onClick={() => handleResolveRisk(alert.id)} disabled={resolving === alert.id}
+                          className="flex-shrink-0 flex items-center gap-1 text-[10px] px-2 py-1 bg-success/15 text-success rounded-lg hover:bg-success/25 disabled:opacity-50 border border-success/30 transition-colors">
+                          <CheckCircle2 className="h-3 w-3" />
+                          {resolving === alert.id ? "..." : "Close"}
+                        </button>
                       </div>
                     </div>
                   );
