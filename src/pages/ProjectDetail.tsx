@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts } from "@/hooks/useProjects";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useSCurveData } from "@/hooks/useProjects";
 import { supabase, formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
@@ -62,6 +62,7 @@ const ProjectDetail = () => {
   const { data: subTasks = [] } = useSubTasks(workItemIds);
   const { data: milestones = [] } = useMilestones(id);
   const { data: allAlerts = [] } = useAlerts();
+  const { data: scurveData = [] } = useSCurveData(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
