@@ -276,7 +276,7 @@ const ProjectDetail = () => {
                   </div>
                 </div>
                 <div className="glass-card rounded-lg p-4 shadow-card">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Weekly Tracking</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Weekly & Payment Tracking</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                       <p className="text-[10px] text-muted-foreground uppercase mb-1">Weekly Progress</p>
@@ -291,12 +291,37 @@ const ProjectDetail = () => {
                       <p className="text-lg font-bold font-mono-data text-success">{formatRupiah(budgetRemaining)}</p>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">Profit Margin<FormulaTooltip {...FORMULAS.profitMargin} /></p>
+                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">Profit Margin<FormulaTooltip {...FORMULAS.profitMargin} /></p>
                       <p className={`text-lg font-bold font-mono-data ${budgetRemaining > 0 ? "text-success" : "text-destructive"}`}>
                         {project.budget > 0 ? Math.round((budgetRemaining / project.budget) * 100) : 0}%
                       </p>
+                      {project.profit_margin_target > 0 && (
+                        <p className="text-[9px] text-muted-foreground">Target: {project.profit_margin_target}%</p>
+                      )}
                     </div>
                   </div>
+                  {/* RAP vs Actual */}
+                  {project.rap > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">💰 RAP vs Actual Monitoring</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-primary/5 rounded-lg p-2 text-center border border-primary/20">
+                          <p className="text-[9px] text-muted-foreground">RAP</p>
+                          <p className="text-xs font-bold font-mono-data text-primary">{formatRupiah(project.rap)}</p>
+                        </div>
+                        <div className="bg-warning/5 rounded-lg p-2 text-center border border-warning/20">
+                          <p className="text-[9px] text-muted-foreground">Actual Spent</p>
+                          <p className="text-xs font-bold font-mono-data text-warning">{formatRupiah(project.spent)}</p>
+                        </div>
+                        <div className={`rounded-lg p-2 text-center border ${project.spent <= project.rap ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
+                          <p className="text-[9px] text-muted-foreground">Selisih</p>
+                          <p className={`text-xs font-bold font-mono-data ${project.spent <= project.rap ? "text-success" : "text-destructive"}`}>
+                            {project.spent <= project.rap ? "+" : ""}{formatRupiah(project.rap - project.spent)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
