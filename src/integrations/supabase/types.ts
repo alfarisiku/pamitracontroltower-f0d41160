@@ -320,8 +320,10 @@ export type Database = {
           map_y: number
           name: string
           phase: Database["public"]["Enums"]["project_phase"]
+          profit_margin_target: number
           progress: number
           project_code: string
+          rap: number
           spent: number
           start_date: string
           status: Database["public"]["Enums"]["project_status"]
@@ -344,8 +346,10 @@ export type Database = {
           map_y?: number
           name: string
           phase?: Database["public"]["Enums"]["project_phase"]
+          profit_margin_target?: number
           progress?: number
           project_code: string
+          rap?: number
           spent?: number
           start_date: string
           status?: Database["public"]["Enums"]["project_status"]
@@ -368,8 +372,10 @@ export type Database = {
           map_y?: number
           name?: string
           phase?: Database["public"]["Enums"]["project_phase"]
+          profit_margin_target?: number
           progress?: number
           project_code?: string
+          rap?: number
           spent?: number
           start_date?: string
           status?: Database["public"]["Enums"]["project_status"]
@@ -377,6 +383,47 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      s_curve_data: {
+        Row: {
+          actual_progress: number | null
+          created_at: string
+          curve_type: string
+          id: string
+          period_label: string
+          period_order: number
+          planned_progress: number
+          project_id: string
+        }
+        Insert: {
+          actual_progress?: number | null
+          created_at?: string
+          curve_type?: string
+          id?: string
+          period_label: string
+          period_order?: number
+          planned_progress?: number
+          project_id: string
+        }
+        Update: {
+          actual_progress?: number | null
+          created_at?: string
+          curve_type?: string
+          id?: string
+          period_label?: string
+          period_order?: number
+          planned_progress?: number
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "s_curve_data_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sub_tasks: {
         Row: {
