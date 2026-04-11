@@ -915,6 +915,11 @@ const DataEntry = () => {
             </div>
           )}
 
+          {/* S-Curve Editor Tab */}
+          {activeTab === "scurve" && updateProjectId && (
+            <SCurveEditor projectId={updateProjectId} />
+          )}
+
           {!updateProjectId && activeTab !== "project-crud" && (
             <div className="glass-card rounded-lg shadow-card p-8 text-center">
               <Database className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
