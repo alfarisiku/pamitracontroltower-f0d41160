@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums } from "@/hooks/useProjects";
+import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums, useSCurveData } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { DbProject, formatRupiah } from "@/lib/supabase";
 import {
@@ -13,7 +13,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
-type ActiveTab = "regular" | "project-crud" | "addendum";
+type ActiveTab = "regular" | "project-crud" | "addendum" | "scurve";
 
 // Photo gallery sub-component
 function PhotoGallery({ projectId }: { projectId: string }) {
@@ -85,6 +85,7 @@ const DataEntry = () => {
   const allTabs = [
     { key: "regular" as const, label: "Regular Update", icon: FileText },
     { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
+    { key: "scurve" as const, label: "S-Curve Editor", icon: FileBarChart },
     { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
   ];
   const tabs = allTabs;
