@@ -164,6 +164,8 @@ const DataEntry = () => {
           location: p.location || "",
           budget: String(p.budget || 0),
           spent: String(p.spent || 0),
+          rap: String(p.rap || 0),
+          profit_margin_target: String(p.profit_margin_target || 10),
           start_date: p.start_date || "",
           end_date: p.end_date || "",
           description: p.description || "",
