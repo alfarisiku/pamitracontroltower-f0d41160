@@ -1,5 +1,5 @@
-import { useEffect, lazy, Suspense, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -8,28 +8,9 @@ import "leaflet.markercluster";
 import { DbProject } from "@/lib/supabase";
 import { formatRupiah } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { toLatLng, STATUS_COLORS, STATUS_LABELS } from "@/lib/mapUtils";
 
 type ProjectStatus = DbProject["status"];
-
-const statusColors: Record<ProjectStatus, string> = {
-  "on-track": "#22c55e",
-  "at-risk": "#eab308",
-  "delayed": "#ef4444",
-  "completed": "#3b82f6",
-};
-
-const statusLabels: Record<ProjectStatus, string> = {
-  "on-track": "On Track",
-  "at-risk": "At Risk",
-  "delayed": "Delayed",
-  "completed": "Selesai",
-};
-
-function mapToLatLng(mapX: number, mapY: number): [number, number] {
-  const lng = 95 + (mapX / 100) * 46;
-  const lat = 6 - (mapY / 100) * 17;
-  return [lat, lng];
-}
 
 function createIcon(status: ProjectStatus) {
   const color = statusColors[status];
