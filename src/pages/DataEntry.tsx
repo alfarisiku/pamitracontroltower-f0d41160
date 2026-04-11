@@ -280,6 +280,8 @@ const DataEntry = () => {
         location: editForm.location,
         budget: parseInt(editForm.budget) || 0,
         spent: parseInt(editForm.spent) || 0,
+        rap: parseInt(editForm.rap) || 0,
+        profit_margin_target: parseFloat(editForm.profit_margin_target) || 10,
         start_date: editForm.start_date,
         end_date: editForm.end_date,
         description: editForm.description || null,
@@ -428,10 +430,12 @@ const DataEntry = () => {
         </div>
 
         {/* Financial */}
-        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">💰 Financial</p>
+        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">💰 Financial & Budget</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <div><label className={labelCls}>Budget (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Spent (Juta Rp)</label><input type="number" value={ef.spent} onChange={e => set("spent", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Contract Value / Budget (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>RAP - Rencana Anggaran (Juta Rp)</label><input type="number" value={ef.rap} onChange={e => set("rap", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Actual Spent (Juta Rp)</label><input type="number" value={ef.spent} onChange={e => set("spent", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Target Profit Margin (%)</label><input type="number" step="0.1" value={ef.profit_margin_target} onChange={e => set("profit_margin_target", e.target.value)} className={inputCls} /></div>
         </div>
 
         {/* Media */}
