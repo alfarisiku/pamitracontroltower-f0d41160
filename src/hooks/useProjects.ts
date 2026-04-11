@@ -123,6 +123,23 @@ export function useAddendums(projectId?: string) {
   });
 }
 
+export function useSCurveData(projectId: string | undefined) {
+  return useQuery<DbSCurveData[]>({
+    queryKey: ["s_curve_data", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("s_curve_data")
+        .select("*")
+        .eq("project_id", projectId!)
+        .order("curve_type")
+        .order("period_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
