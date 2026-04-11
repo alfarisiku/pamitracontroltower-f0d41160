@@ -12,6 +12,9 @@ import { toLatLng, STATUS_COLORS, STATUS_LABELS } from "@/lib/mapUtils";
 
 type ProjectStatus = DbProject["status"];
 
+const statusColors = STATUS_COLORS as Record<ProjectStatus, string>;
+const statusLabels = STATUS_LABELS as Record<ProjectStatus, string>;
+
 function createIcon(status: ProjectStatus) {
   const color = statusColors[status];
   return L.divIcon({
@@ -56,7 +59,7 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects:
     });
 
     projects.forEach(project => {
-      const [lat, lng] = mapToLatLng(project.map_x, project.map_y);
+      const [lat, lng] = toLatLng(project.map_x, project.map_y);
       const marker = L.marker([lat, lng], { icon: createIcon(project.status) });
       const popup = L.popup().setContent(`
         <div style="min-width:200px;font-family:inherit">
@@ -80,8 +83,7 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects:
 
     map.addLayer(cluster);
 
-    // Fit bounds
-    const bounds = L.latLngBounds(projects.map(p => mapToLatLng(p.map_x, p.map_y)));
+    const bounds = L.latLngBounds(projects.map(p => toLatLng(p.map_x, p.map_y)));
     map.fitBounds(bounds, { padding: [30, 30], maxZoom: 8 });
 
     return () => {
@@ -89,7 +91,6 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects:
     };
   }, [projects, map]);
 
-  // Setup global handlers for popup buttons
   useEffect(() => {
     (window as any).__mapSelectProject = (id: string) => {
       const p = projects.find(pr => pr.id === id);
@@ -142,8 +143,10 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
           center={[-2.5, 118]}
           zoom={5}
           style={{ height: "100%", width: "100%" }}
-          zoomControl={true}
-          scrollWheelZoom={true}
+          zoomControl={false}
+          scrollWheelZoom={false}
+          dragging={false}
+          doubleClickZoom={false}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
