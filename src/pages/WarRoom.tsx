@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
+import { toLatLng, STATUS_COLORS as SC } from "@/lib/mapUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Activity, CheckCircle2, TrendingUp, Briefcase, DollarSign, MapPin, ChevronLeft, ChevronRight, AlertTriangle, Globe } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -15,10 +16,10 @@ L.Icon.Default.mergeOptions({
 });
 
 const STATUS_COLORS = {
-  "on-track": "hsl(152, 55%, 50%)",
-  "at-risk": "hsl(38, 92%, 50%)",
-  "delayed": "hsl(0, 72%, 50%)",
-  "completed": "hsl(215, 80%, 55%)",
+  "on-track": SC["on-track"],
+  "at-risk": SC["at-risk"],
+  "delayed": SC["delayed"],
+  "completed": SC["completed"],
 };
 
 function createCustomIcon(status: string) {
