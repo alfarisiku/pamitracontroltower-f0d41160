@@ -334,16 +334,17 @@ const ProjectDetail = () => {
           {activeTab === "scurve" && (
             <div className="glass-card rounded-lg shadow-card p-4">
               <h3 className="text-sm font-semibold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
-              <p className="text-[10px] text-muted-foreground mb-4">Visualisasi kurva-S progress kumulatif proyek terhadap rencana awal. Data S-Curve dapat diedit melalui Data Entry → Manage Projects.</p>
+              <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor.</p>
               <SCurveChart
                 startDate={project.start_date}
                 endDate={project.end_date}
                 progress={project.progress}
                 milestones={milestones}
+                customData={scurveData.length > 0 ? scurveData : undefined}
               />
-              <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
                     {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
                   </p>
@@ -355,9 +356,15 @@ const ProjectDetail = () => {
                   </p>
                 </div>
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">CPI<FormulaTooltip {...FORMULAS.cpi} /></p>
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">CPI<FormulaTooltip {...FORMULAS.cpi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${cpi >= 0.95 ? "text-success" : cpi >= 0.8 ? "text-warning" : "text-destructive"}`}>
                     {cpi.toFixed(2)}
+                  </p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">RAP vs Actual</p>
+                  <p className={`text-lg font-bold font-mono-data ${project.rap > 0 && project.spent <= project.rap ? "text-success" : "text-destructive"}`}>
+                    {project.rap > 0 ? `${Math.round((project.spent / project.rap) * 100)}%` : "N/A"}
                   </p>
                 </div>
               </div>
