@@ -123,7 +123,7 @@ const DataEntry = () => {
   // Edit project form state
   const [editForm, setEditForm] = useState({
     project_code: "", name: "", client: "", manager: "", location: "",
-    budget: "", spent: "", start_date: "", end_date: "", description: "", category: "Energy",
+    budget: "", spent: "", rap: "", profit_margin_target: "10", start_date: "", end_date: "", description: "", category: "Energy",
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
     image_url: "", video_url: "", cctv_url: "",
   });
