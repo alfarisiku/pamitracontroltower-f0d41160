@@ -10,6 +10,8 @@ export type DbProject = {
   progress: number;
   budget: number;
   spent: number;
+  rap: number;
+  profit_margin_target: number;
   start_date: string;
   end_date: string;
   manager: string;
@@ -23,6 +25,17 @@ export type DbProject = {
   category: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type DbSCurveData = {
+  id: string;
+  project_id: string;
+  period_label: string;
+  period_order: number;
+  planned_progress: number;
+  actual_progress: number | null;
+  curve_type: string;
+  created_at: string;
 };
 
 export type DbAlert = {
