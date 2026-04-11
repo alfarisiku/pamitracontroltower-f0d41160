@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums } from "@/hooks/useProjects";
+import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums, useSCurveData } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { DbProject, formatRupiah } from "@/lib/supabase";
 import {
@@ -13,7 +13,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
-type ActiveTab = "regular" | "project-crud" | "addendum";
+type ActiveTab = "regular" | "project-crud" | "addendum" | "scurve";
 
 // Photo gallery sub-component
 function PhotoGallery({ projectId }: { projectId: string }) {
@@ -73,6 +73,196 @@ function PhotoGallery({ projectId }: { projectId: string }) {
   );
 }
 
+// Risk Resolve Panel sub-component
+function RiskResolvePanel({ projectId }: { projectId: string }) {
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [resolving, setResolving] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!projectId) return;
+    setLoading(true);
+    supabase.from("project_alerts").select("*").eq("project_id", projectId).eq("is_resolved", false).order("severity").then(({ data }) => {
+      setAlerts(data || []);
+      setLoading(false);
+    });
+  }, [projectId]);
+
+  const handleResolve = async (id: string) => {
+    setResolving(id);
+    try {
+      const { error } = await supabase.from("project_alerts").update({ is_resolved: true }).eq("id", id);
+      if (error) throw error;
+      setAlerts(prev => prev.filter(a => a.id !== id));
+      queryClient.invalidateQueries({ queryKey: ["alerts"] });
+      toast({ title: "✅ Resolved", description: "Risk berhasil ditutup" });
+    } catch (e: any) {
+      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
+    } finally { setResolving(null); }
+  };
+
+  if (loading) return <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2"><p className="text-xs text-muted-foreground">Loading risks...</p></div>;
+  if (alerts.length === 0) return <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2"><p className="text-xs text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success" /> Tidak ada risiko aktif untuk proyek ini.</p></div>;
+
+  const sevColor: Record<string, string> = { critical: "text-destructive", high: "text-warning", medium: "text-info", low: "text-muted-foreground" };
+
+  return (
+    <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
+      <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-destructive" /> Close / Resolve Risk ({alerts.length} active)</h3>
+      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+        {alerts.map(a => (
+          <div key={a.id} className="flex items-center justify-between gap-3 p-2 bg-muted/30 rounded-lg border border-border/50">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-bold uppercase ${sevColor[a.severity] || ""}`}>{a.severity}</span>
+                <span className="text-xs font-medium text-foreground truncate">{a.title}</span>
+              </div>
+              {a.description && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{a.description}</p>}
+              {a.risk_owner && <p className="text-[10px] text-muted-foreground">Owner: {a.risk_owner}</p>}
+            </div>
+            <button onClick={() => handleResolve(a.id)} disabled={resolving === a.id}
+              className="flex-shrink-0 flex items-center gap-1 text-[10px] px-3 py-1.5 bg-success text-success-foreground rounded-lg hover:bg-success/90 disabled:opacity-50 font-medium">
+              <CheckCircle2 className="h-3 w-3" /> {resolving === a.id ? "..." : "Resolve"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// S-Curve Editor sub-component
+function SCurveEditor({ projectId }: { projectId: string }) {
+  const { data: scurveData = [], isLoading } = useSCurveData(projectId);
+  const queryClient = useQueryClient();
+  const [rows, setRows] = useState<{ period_label: string; period_order: number; planned_progress: string; actual_progress: string; curve_type: string }[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [curveType, setCurveType] = useState("baseline");
+
+  useEffect(() => {
+    const filtered = scurveData.filter(d => d.curve_type === curveType);
+    if (filtered.length > 0) {
+      setRows(filtered.map(d => ({
+        period_label: d.period_label,
+        period_order: d.period_order,
+        planned_progress: String(d.planned_progress),
+        actual_progress: d.actual_progress != null ? String(d.actual_progress) : "",
+        curve_type: d.curve_type,
+      })));
+    }
+  }, [scurveData, curveType]);
+
+  const curveTypes = [...new Set(scurveData.map(d => d.curve_type))];
+  if (!curveTypes.includes("baseline")) curveTypes.unshift("baseline");
+
+  const addRow = () => {
+    setRows(prev => [...prev, {
+      period_label: `Month ${prev.length + 1}`,
+      period_order: prev.length,
+      planned_progress: "0",
+      actual_progress: "",
+      curve_type: curveType,
+    }]);
+  };
+
+  const removeRow = (idx: number) => setRows(prev => prev.filter((_, i) => i !== idx));
+
+  const updateRow = (idx: number, key: string, val: string) => {
+    setRows(prev => prev.map((r, i) => i === idx ? { ...r, [key]: val } : r));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Delete existing data for this curve type
+      await supabase.from("s_curve_data").delete().eq("project_id", projectId).eq("curve_type", curveType);
+      // Insert new
+      const inserts = rows.map((r, i) => ({
+        project_id: projectId,
+        period_label: r.period_label,
+        period_order: i,
+        planned_progress: parseFloat(r.planned_progress) || 0,
+        actual_progress: r.actual_progress ? parseFloat(r.actual_progress) : null,
+        curve_type: curveType,
+      }));
+      if (inserts.length > 0) {
+        const { error } = await supabase.from("s_curve_data").insert(inserts);
+        if (error) throw error;
+      }
+      queryClient.invalidateQueries({ queryKey: ["s_curve_data"] });
+      toast({ title: "✅ Berhasil", description: `S-Curve ${curveType} saved` });
+    } catch (e: any) {
+      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  const [newCurveType, setNewCurveType] = useState("");
+
+  const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card rounded-lg shadow-card p-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">📈 S-Curve Data Editor</h3>
+        <p className="text-[10px] text-muted-foreground mb-3">Edit data S-Curve baseline atau tambahkan kurva tambahan (misal untuk JO / Joint Operation).</p>
+
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {curveTypes.map(ct => (
+            <button key={ct} onClick={() => setCurveType(ct)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${curveType === ct ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border border-border hover:bg-muted/80"}`}>
+              {ct === "baseline" ? "Baseline" : ct}
+            </button>
+          ))}
+          <div className="flex items-center gap-1">
+            <input value={newCurveType} onChange={e => setNewCurveType(e.target.value)} className={inputCls + " w-24"} placeholder="JO name" />
+            <button onClick={() => {
+              if (newCurveType.trim()) {
+                setCurveType(newCurveType.trim());
+                setRows([]);
+                setNewCurveType("");
+              }
+            }} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium">+ Add Curve</button>
+          </div>
+        </div>
+
+        {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-8">#</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Period Label</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Planned %</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Actual %</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r, i) => (
+                    <tr key={i} className="border-b border-border/30">
+                      <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
+                      <td className="py-1 px-2"><input value={r.period_label} onChange={e => updateRow(i, "period_label", e.target.value)} className={inputCls} /></td>
+                      <td className="py-1 px-2"><input type="number" value={r.planned_progress} onChange={e => updateRow(i, "planned_progress", e.target.value)} className={inputCls} /></td>
+                      <td className="py-1 px-2"><input type="number" value={r.actual_progress} onChange={e => updateRow(i, "actual_progress", e.target.value)} className={inputCls} placeholder="—" /></td>
+                      <td className="py-1 px-2"><button onClick={() => removeRow(i)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <button onClick={addRow} className="flex items-center gap-1 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Plus className="h-3 w-3" /> Add Period</button>
+              <button onClick={handleSave} disabled={saving} className="flex items-center gap-1 px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Save className="h-3 w-3" /> {saving ? "Saving..." : "Save S-Curve"}</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const DataEntry = () => {
   const queryClient = useQueryClient();
   const { data: allProjects = [] } = useProjects();
@@ -85,6 +275,7 @@ const DataEntry = () => {
   const allTabs = [
     { key: "regular" as const, label: "Regular Update", icon: FileText },
     { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
+    { key: "scurve" as const, label: "S-Curve Editor", icon: FileBarChart },
     { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
   ];
   const tabs = allTabs;
@@ -122,7 +313,7 @@ const DataEntry = () => {
   // Edit project form state
   const [editForm, setEditForm] = useState({
     project_code: "", name: "", client: "", manager: "", location: "",
-    budget: "", spent: "", start_date: "", end_date: "", description: "", category: "Energy",
+    budget: "", spent: "", rap: "", profit_margin_target: "10", start_date: "", end_date: "", description: "", category: "Energy",
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
     image_url: "", video_url: "", cctv_url: "",
   });
@@ -163,6 +354,8 @@ const DataEntry = () => {
           location: p.location || "",
           budget: String(p.budget || 0),
           spent: String(p.spent || 0),
+          rap: String(p.rap || 0),
+          profit_margin_target: String(p.profit_margin_target || 10),
           start_date: p.start_date || "",
           end_date: p.end_date || "",
           description: p.description || "",
@@ -277,6 +470,8 @@ const DataEntry = () => {
         location: editForm.location,
         budget: parseInt(editForm.budget) || 0,
         spent: parseInt(editForm.spent) || 0,
+        rap: parseInt(editForm.rap) || 0,
+        profit_margin_target: parseFloat(editForm.profit_margin_target) || 10,
         start_date: editForm.start_date,
         end_date: editForm.end_date,
         description: editForm.description || null,
@@ -425,10 +620,12 @@ const DataEntry = () => {
         </div>
 
         {/* Financial */}
-        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">💰 Financial</p>
+        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">💰 Financial & Budget</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <div><label className={labelCls}>Budget (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Spent (Juta Rp)</label><input type="number" value={ef.spent} onChange={e => set("spent", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Contract Value / Budget (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>RAP - Rencana Anggaran (Juta Rp)</label><input type="number" value={ef.rap} onChange={e => set("rap", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Actual Spent (Juta Rp)</label><input type="number" value={ef.spent} onChange={e => set("spent", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Target Profit Margin (%)</label><input type="number" step="0.1" value={ef.profit_margin_target} onChange={e => set("profit_margin_target", e.target.value)} className={inputCls} /></div>
         </div>
 
         {/* Media */}
@@ -547,6 +744,9 @@ const DataEntry = () => {
                 </div>
                 <button onClick={handleAddRisk} disabled={saving || !riskTitle} className="mt-3 flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-xs font-medium hover:bg-warning/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Risk"}</button>
               </div>
+
+              {/* Close / Resolve Risk */}
+              <RiskResolvePanel projectId={updateProjectId} />
 
               {/* Weekly Photo Upload — with date/week picker */}
               <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
@@ -713,6 +913,11 @@ const DataEntry = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {/* S-Curve Editor Tab */}
+          {activeTab === "scurve" && updateProjectId && (
+            <SCurveEditor projectId={updateProjectId} />
           )}
 
           {!updateProjectId && activeTab !== "project-crud" && (

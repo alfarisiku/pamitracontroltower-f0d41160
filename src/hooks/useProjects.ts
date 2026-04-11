@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum } from "@/lib/supabase";
+import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData } from "@/lib/supabase";
 
 export function useProjects() {
   return useQuery<DbProject[]>({
@@ -117,6 +117,23 @@ export function useAddendums(projectId?: string) {
       let q = supabase.from("addendums").select("*, projects(name, project_code)").order("created_at", { ascending: false });
       if (projectId) q = q.eq("project_id", projectId);
       const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useSCurveData(projectId: string | undefined) {
+  return useQuery<DbSCurveData[]>({
+    queryKey: ["s_curve_data", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("s_curve_data")
+        .select("*")
+        .eq("project_id", projectId!)
+        .order("curve_type")
+        .order("period_order");
       if (error) throw error;
       return data ?? [];
     },

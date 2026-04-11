@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
+import { toLatLng, STATUS_COLORS as SC } from "@/lib/mapUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Activity, CheckCircle2, TrendingUp, Briefcase, DollarSign, MapPin, ChevronLeft, ChevronRight, AlertTriangle, Globe } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -15,10 +16,10 @@ L.Icon.Default.mergeOptions({
 });
 
 const STATUS_COLORS = {
-  "on-track": "hsl(152, 55%, 50%)",
-  "at-risk": "hsl(38, 92%, 50%)",
-  "delayed": "hsl(0, 72%, 50%)",
-  "completed": "hsl(215, 80%, 55%)",
+  "on-track": SC["on-track"],
+  "at-risk": SC["at-risk"],
+  "delayed": SC["delayed"],
+  "completed": SC["completed"],
 };
 
 function createCustomIcon(status: string) {
@@ -80,9 +81,7 @@ const WarRoom = () => {
   ].filter(d => d.value > 0);
 
   const validProjects = projects.filter(p => p.map_x !== 0 && p.map_y !== 0);
-  const mapCenter: [number, number] = validProjects.length > 0
-    ? [validProjects.reduce((s, p) => s + p.map_x, 0) / validProjects.length, validProjects.reduce((s, p) => s + p.map_y, 0) / validProjects.length]
-    : [-2.5, 118];
+  const mapCenter: [number, number] = [-2.5, 118];
 
   const featured = active[featuredIdx % Math.max(1, active.length)];
 
@@ -148,21 +147,24 @@ const WarRoom = () => {
           </div>
           <MapContainer center={mapCenter} zoom={5} style={{ height: "100%", width: "100%", background: "hsl(220, 25%, 6%)" }} zoomControl={false} attributionControl={false}>
             <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-            {validProjects.map(p => (
-              <Marker key={p.id} position={[p.map_x, p.map_y]} icon={createCustomIcon(p.status)}>
-                <Popup>
-                  <div className="text-xs min-w-[180px]">
-                    <p className="font-bold text-foreground">{p.project_code} — {p.name}</p>
-                    <p className="text-muted-foreground mt-0.5">{p.location}</p>
-                    <div className="flex items-center gap-3 mt-1.5">
-                      <span>Progress: <strong>{p.progress}%</strong></span>
-                      <span className={p.status === "on-track" ? "text-green-600" : p.status === "delayed" ? "text-red-600" : "text-yellow-600"}>{p.status}</span>
+            {validProjects.map(p => {
+              const [lat, lng] = toLatLng(p.map_x, p.map_y);
+              return (
+                <Marker key={p.id} position={[lat, lng]} icon={createCustomIcon(p.status)}>
+                  <Popup>
+                    <div className="text-xs min-w-[180px]">
+                      <p className="font-bold text-foreground">{p.project_code} — {p.name}</p>
+                      <p className="text-muted-foreground mt-0.5">{p.location}</p>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span>Progress: <strong>{p.progress}%</strong></span>
+                        <span className={p.status === "on-track" ? "text-green-600" : p.status === "delayed" ? "text-red-600" : "text-yellow-600"}>{p.status}</span>
+                      </div>
+                      <p className="mt-0.5">Budget: {formatRupiah(p.budget)}</p>
                     </div>
-                    <p className="mt-0.5">Budget: {formatRupiah(p.budget)}</p>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+                  </Popup>
+                </Marker>
+              );
+            })}
           </MapContainer>
         </div>
 

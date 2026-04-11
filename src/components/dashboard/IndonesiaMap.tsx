@@ -1,5 +1,5 @@
-import { useEffect, lazy, Suspense, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -8,28 +8,12 @@ import "leaflet.markercluster";
 import { DbProject } from "@/lib/supabase";
 import { formatRupiah } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { toLatLng, STATUS_COLORS, STATUS_LABELS } from "@/lib/mapUtils";
 
 type ProjectStatus = DbProject["status"];
 
-const statusColors: Record<ProjectStatus, string> = {
-  "on-track": "#22c55e",
-  "at-risk": "#eab308",
-  "delayed": "#ef4444",
-  "completed": "#3b82f6",
-};
-
-const statusLabels: Record<ProjectStatus, string> = {
-  "on-track": "On Track",
-  "at-risk": "At Risk",
-  "delayed": "Delayed",
-  "completed": "Selesai",
-};
-
-function mapToLatLng(mapX: number, mapY: number): [number, number] {
-  const lng = 95 + (mapX / 100) * 46;
-  const lat = 6 - (mapY / 100) * 17;
-  return [lat, lng];
-}
+const statusColors = STATUS_COLORS as Record<ProjectStatus, string>;
+const statusLabels = STATUS_LABELS as Record<ProjectStatus, string>;
 
 function createIcon(status: ProjectStatus) {
   const color = statusColors[status];
@@ -75,7 +59,7 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects:
     });
 
     projects.forEach(project => {
-      const [lat, lng] = mapToLatLng(project.map_x, project.map_y);
+      const [lat, lng] = toLatLng(project.map_x, project.map_y);
       const marker = L.marker([lat, lng], { icon: createIcon(project.status) });
       const popup = L.popup().setContent(`
         <div style="min-width:200px;font-family:inherit">
@@ -99,8 +83,7 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects:
 
     map.addLayer(cluster);
 
-    // Fit bounds
-    const bounds = L.latLngBounds(projects.map(p => mapToLatLng(p.map_x, p.map_y)));
+    const bounds = L.latLngBounds(projects.map(p => toLatLng(p.map_x, p.map_y)));
     map.fitBounds(bounds, { padding: [30, 30], maxZoom: 8 });
 
     return () => {
@@ -108,7 +91,6 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects:
     };
   }, [projects, map]);
 
-  // Setup global handlers for popup buttons
   useEffect(() => {
     (window as any).__mapSelectProject = (id: string) => {
       const p = projects.find(pr => pr.id === id);
@@ -161,8 +143,10 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
           center={[-2.5, 118]}
           zoom={5}
           style={{ height: "100%", width: "100%" }}
-          zoomControl={true}
-          scrollWheelZoom={true}
+          zoomControl={false}
+          scrollWheelZoom={false}
+          dragging={false}
+          doubleClickZoom={false}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'

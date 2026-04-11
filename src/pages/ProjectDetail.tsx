@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts } from "@/hooks/useProjects";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useSCurveData } from "@/hooks/useProjects";
 import { supabase, formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
@@ -62,6 +62,7 @@ const ProjectDetail = () => {
   const { data: subTasks = [] } = useSubTasks(workItemIds);
   const { data: milestones = [] } = useMilestones(id);
   const { data: allAlerts = [] } = useAlerts();
+  const { data: scurveData = [] } = useSCurveData(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -275,7 +276,7 @@ const ProjectDetail = () => {
                   </div>
                 </div>
                 <div className="glass-card rounded-lg p-4 shadow-card">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Weekly Tracking</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Weekly & Payment Tracking</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                       <p className="text-[10px] text-muted-foreground uppercase mb-1">Weekly Progress</p>
@@ -290,12 +291,37 @@ const ProjectDetail = () => {
                       <p className="text-lg font-bold font-mono-data text-success">{formatRupiah(budgetRemaining)}</p>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">Profit Margin<FormulaTooltip {...FORMULAS.profitMargin} /></p>
+                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">Profit Margin<FormulaTooltip {...FORMULAS.profitMargin} /></p>
                       <p className={`text-lg font-bold font-mono-data ${budgetRemaining > 0 ? "text-success" : "text-destructive"}`}>
                         {project.budget > 0 ? Math.round((budgetRemaining / project.budget) * 100) : 0}%
                       </p>
+                      {project.profit_margin_target > 0 && (
+                        <p className="text-[9px] text-muted-foreground">Target: {project.profit_margin_target}%</p>
+                      )}
                     </div>
                   </div>
+                  {/* RAP vs Actual */}
+                  {project.rap > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">💰 RAP vs Actual Monitoring</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-primary/5 rounded-lg p-2 text-center border border-primary/20">
+                          <p className="text-[9px] text-muted-foreground">RAP</p>
+                          <p className="text-xs font-bold font-mono-data text-primary">{formatRupiah(project.rap)}</p>
+                        </div>
+                        <div className="bg-warning/5 rounded-lg p-2 text-center border border-warning/20">
+                          <p className="text-[9px] text-muted-foreground">Actual Spent</p>
+                          <p className="text-xs font-bold font-mono-data text-warning">{formatRupiah(project.spent)}</p>
+                        </div>
+                        <div className={`rounded-lg p-2 text-center border ${project.spent <= project.rap ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
+                          <p className="text-[9px] text-muted-foreground">Selisih</p>
+                          <p className={`text-xs font-bold font-mono-data ${project.spent <= project.rap ? "text-success" : "text-destructive"}`}>
+                            {project.spent <= project.rap ? "+" : ""}{formatRupiah(project.rap - project.spent)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -333,16 +359,17 @@ const ProjectDetail = () => {
           {activeTab === "scurve" && (
             <div className="glass-card rounded-lg shadow-card p-4">
               <h3 className="text-sm font-semibold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
-              <p className="text-[10px] text-muted-foreground mb-4">Visualisasi kurva-S progress kumulatif proyek terhadap rencana awal. Data S-Curve dapat diedit melalui Data Entry → Manage Projects.</p>
+              <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor.</p>
               <SCurveChart
                 startDate={project.start_date}
                 endDate={project.end_date}
                 progress={project.progress}
                 milestones={milestones}
+                customData={scurveData.length > 0 ? scurveData : undefined}
               />
-              <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
                     {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
                   </p>
@@ -354,9 +381,15 @@ const ProjectDetail = () => {
                   </p>
                 </div>
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center">CPI<FormulaTooltip {...FORMULAS.cpi} /></p>
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">CPI<FormulaTooltip {...FORMULAS.cpi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${cpi >= 0.95 ? "text-success" : cpi >= 0.8 ? "text-warning" : "text-destructive"}`}>
                     {cpi.toFixed(2)}
+                  </p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">RAP vs Actual</p>
+                  <p className={`text-lg font-bold font-mono-data ${project.rap > 0 && project.spent <= project.rap ? "text-success" : "text-destructive"}`}>
+                    {project.rap > 0 ? `${Math.round((project.spent / project.rap) * 100)}%` : "N/A"}
                   </p>
                 </div>
               </div>
