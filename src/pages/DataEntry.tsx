@@ -555,6 +555,9 @@ const DataEntry = () => {
                 <button onClick={handleAddRisk} disabled={saving || !riskTitle} className="mt-3 flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-xs font-medium hover:bg-warning/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Risk"}</button>
               </div>
 
+              {/* Close / Resolve Risk */}
+              <RiskResolvePanel projectId={updateProjectId} />
+
               {/* Weekly Photo Upload — with date/week picker */}
               <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
                 <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Camera className="h-4 w-4 text-primary" /> Upload Foto Progress Mingguan</h3>
