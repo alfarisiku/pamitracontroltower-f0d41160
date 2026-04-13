@@ -12,6 +12,7 @@ import RiskMonitoring from "./pages/RiskMonitoring";
 import Reporting from "./pages/Reporting";
 import DataEntry from "./pages/DataEntry";
 import WarRoom from "./pages/WarRoom";
+import ActivityLog from "./pages/ActivityLog";
 import AccountManager from "./pages/AccountManager";
 import UserGuide from "./pages/UserGuide";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ function AppRoutes() {
       <Route path="/reporting" element={<Reporting />} />
       <Route path="/data-entry" element={<DataEntry />} />
       <Route path="/war-room" element={<WarRoom />} />
+      <Route path="/activity-log" element={<ActivityLog />} />
       <Route path="/guide" element={<UserGuide />} />
       <Route path="/account-manager" element={<AccountManager />} />
       <Route path="*" element={<NotFound />} />
