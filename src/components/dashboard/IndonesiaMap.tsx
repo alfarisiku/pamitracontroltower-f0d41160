@@ -145,8 +145,11 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
           style={{ height: "100%", width: "100%" }}
           zoomControl={false}
           scrollWheelZoom={false}
-          dragging={false}
+          dragging={true}
           doubleClickZoom={false}
+          touchZoom={false}
+          boxZoom={false}
+          keyboard={false}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'

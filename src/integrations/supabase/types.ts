@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          project_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          project_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          project_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       addendums: {
         Row: {
           addendum_code: string
@@ -179,6 +217,74 @@ export type Database = {
           },
         ]
       }
+      procurement_items: {
+        Row: {
+          amount: number
+          approval_date: string | null
+          created_at: string
+          delivery_date: string | null
+          description: string | null
+          fabrication_date: string | null
+          id: string
+          install_date: string | null
+          item_name: string
+          po_date: string | null
+          project_id: string
+          qty: number
+          rfq_date: string | null
+          status: string
+          unit: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number
+          approval_date?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          description?: string | null
+          fabrication_date?: string | null
+          id?: string
+          install_date?: string | null
+          item_name: string
+          po_date?: string | null
+          project_id: string
+          qty?: number
+          rfq_date?: string | null
+          status?: string
+          unit?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          approval_date?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          description?: string | null
+          fabrication_date?: string | null
+          id?: string
+          install_date?: string | null
+          item_name?: string
+          po_date?: string | null
+          project_id?: string
+          qty?: number
+          rfq_date?: string | null
+          status?: string
+          unit?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           approved_at: string | null
@@ -220,6 +326,7 @@ export type Database = {
       }
       project_alerts: {
         Row: {
+          category: string
           created_at: string
           description: string | null
           id: string
@@ -228,11 +335,13 @@ export type Database = {
           mitigation_plan: string | null
           probability: string | null
           project_id: string
+          resolved_at: string | null
           risk_owner: string | null
           severity: Database["public"]["Enums"]["alert_severity"]
           title: string
         }
         Insert: {
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -241,11 +350,13 @@ export type Database = {
           mitigation_plan?: string | null
           probability?: string | null
           project_id: string
+          resolved_at?: string | null
           risk_owner?: string | null
           severity?: Database["public"]["Enums"]["alert_severity"]
           title: string
         }
         Update: {
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -254,6 +365,7 @@ export type Database = {
           mitigation_plan?: string | null
           probability?: string | null
           project_id?: string
+          resolved_at?: string | null
           risk_owner?: string | null
           severity?: Database["public"]["Enums"]["alert_severity"]
           title?: string
@@ -327,6 +439,7 @@ export type Database = {
           spent: number
           start_date: string
           status: Database["public"]["Enums"]["project_status"]
+          tkdn_percentage: number
           updated_at: string
           video_url: string | null
         }
@@ -353,6 +466,7 @@ export type Database = {
           spent?: number
           start_date: string
           status?: Database["public"]["Enums"]["project_status"]
+          tkdn_percentage?: number
           updated_at?: string
           video_url?: string | null
         }
@@ -379,6 +493,7 @@ export type Database = {
           spent?: number
           start_date?: string
           status?: Database["public"]["Enums"]["project_status"]
+          tkdn_percentage?: number
           updated_at?: string
           video_url?: string | null
         }
