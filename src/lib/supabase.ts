@@ -12,6 +12,7 @@ export type DbProject = {
   spent: number;
   rap: number;
   profit_margin_target: number;
+  tkdn_percentage: number;
   start_date: string;
   end_date: string;
   manager: string;
@@ -49,7 +50,9 @@ export type DbAlert = {
   impact: string | null;
   risk_owner: string | null;
   mitigation_plan: string | null;
+  category: string;
   created_at: string;
+  resolved_at: string | null;
 };
 
 export type DbMonthlyBudget = {
@@ -139,8 +142,55 @@ export type DbAddendum = {
   updated_at: string;
 };
 
+export type DbProcurementItem = {
+  id: string;
+  project_id: string;
+  item_name: string;
+  description: string;
+  amount: number;
+  unit: string;
+  qty: number;
+  rfq_date: string | null;
+  approval_date: string | null;
+  po_date: string | null;
+  fabrication_date: string | null;
+  delivery_date: string | null;
+  install_date: string | null;
+  status: string;
+  vendor: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbActivityLog = {
+  id: string;
+  entity_type: string;
+  entity_id: string | null;
+  action: string;
+  details: string | null;
+  project_id: string | null;
+  created_at: string;
+};
+
 export function formatRupiah(jutaRupiah: number): string {
   if (jutaRupiah >= 1000000) return `Rp ${(jutaRupiah / 1000000).toFixed(1)}T`;
   if (jutaRupiah >= 1000) return `Rp ${(jutaRupiah / 1000).toFixed(1)}M`;
   return `Rp ${jutaRupiah}Jt`;
+}
+
+export async function logActivity(
+  supabase: any,
+  entityType: string,
+  action: string,
+  details: string,
+  projectId?: string,
+  entityId?: string
+) {
+  await supabase.from("activity_logs").insert({
+    entity_type: entityType,
+    entity_id: entityId || null,
+    action,
+    details,
+    project_id: projectId || null,
+  });
 }

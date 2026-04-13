@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData } from "@/lib/supabase";
+import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog } from "@/lib/supabase";
 
 export function useProjects() {
   return useQuery<DbProject[]>({
@@ -33,6 +33,22 @@ export function useAlerts() {
         .select("*, projects(name, project_code)")
         .eq("is_resolved", false)
         .order("severity")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAllAlerts(projectId?: string) {
+  return useQuery<DbAlert[]>({
+    queryKey: ["all_alerts", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_alerts")
+        .select("*")
+        .eq("project_id", projectId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -134,6 +150,37 @@ export function useSCurveData(projectId: string | undefined) {
         .eq("project_id", projectId!)
         .order("curve_type")
         .order("period_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useProcurementItems(projectId?: string) {
+  return useQuery<DbProcurementItem[]>({
+    queryKey: ["procurement_items", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("procurement_items")
+        .select("*")
+        .eq("project_id", projectId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useActivityLogs(limit = 50) {
+  return useQuery<(DbActivityLog & { projects?: { name: string; project_code: string } | null })[]>({
+    queryKey: ["activity_logs", limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_logs")
+        .select("*, projects(name, project_code)")
+        .order("created_at", { ascending: false })
+        .limit(limit);
       if (error) throw error;
       return data ?? [];
     },
