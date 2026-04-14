@@ -215,6 +215,8 @@ const ProjectDetail = () => {
               { key: "health" as const, label: "Health Summary", icon: Activity },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp },
               { key: "wbs" as const, label: "WBS", icon: Layers },
+              { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
+              { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
               { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
               { key: "media" as const, label: "Media", icon: Camera },
             ]).map(tab => (
