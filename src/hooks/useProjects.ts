@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog } from "@/lib/supabase";
+import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog, DbPurchaseOrder, DbProjectCashflow } from "@/lib/supabase";
 
 export function useProjects() {
   return useQuery<DbProject[]>({
@@ -166,6 +166,38 @@ export function useProcurementItems(projectId?: string) {
         .select("*")
         .eq("project_id", projectId!)
         .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function usePurchaseOrders(projectId?: string) {
+  return useQuery<DbPurchaseOrder[]>({
+    queryKey: ["purchase_orders", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("purchase_orders")
+        .select("*")
+        .eq("project_id", projectId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useProjectCashflow(projectId?: string) {
+  return useQuery<DbProjectCashflow[]>({
+    queryKey: ["project_cashflow", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_cashflow")
+        .select("*")
+        .eq("project_id", projectId!)
+        .order("period_order");
       if (error) throw error;
       return data ?? [];
     },

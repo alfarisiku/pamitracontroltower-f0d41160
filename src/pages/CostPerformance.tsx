@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProjects, useMonthlyBudgets, useWorkAreas, useMilestones } from "@/hooks/useProjects";
+import { useProjects, useMonthlyBudgets, useProcurementItems } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
@@ -14,8 +14,8 @@ const CostPerformance = () => {
   const { data: projects = [], isLoading } = useProjects();
   const { data: budgets = [] } = useMonthlyBudgets();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
-  const { data: workAreas = [] } = useWorkAreas(selectedProjectId !== "all" ? selectedProjectId : undefined);
-  const { data: milestones = [] } = useMilestones(selectedProjectId !== "all" ? selectedProjectId : undefined);
+  const [viewMode, setViewMode] = useState<"project" | "category" | "wbs">("project");
+  const { data: procItems = [] } = useProcurementItems(selectedProjectId !== "all" ? selectedProjectId : undefined);
 
   const filteredProjects = selectedProjectId === "all" ? projects : projects.filter(p => p.id === selectedProjectId);
 
@@ -25,15 +25,16 @@ const CostPerformance = () => {
 
   const totalBudget = filteredProjects.reduce((s, p) => s + p.budget, 0);
   const totalSpent = filteredProjects.reduce((s, p) => s + p.spent, 0);
+  const totalRap = filteredProjects.reduce((s, p) => s + p.rap, 0);
+  const totalContractValue = filteredProjects.reduce((s, p) => s + (p.contract_value || p.budget), 0);
   const remaining = totalBudget - totalSpent;
   const overBudget = filteredProjects.filter(p => (p.spent / p.budget) > 0.9);
 
   const barData = filteredProjects.map(p => ({
-    name: p.project_code, fullName: p.name, budget: p.budget, spent: p.spent,
+    name: p.project_code, fullName: p.name, budget: p.budget, spent: p.spent, rap: p.rap,
     margin: Math.round((p.budget - p.spent) / p.budget * 100),
   }));
 
-  const years = [...new Set(budgets.map(b => b.year))].sort();
   const cashflowData = budgets.sort((a, b) => a.year - b.year || a.month.localeCompare(b.month)).map(b => ({
     ...b, label: `${b.month.slice(0, 3)}'${String(b.year).slice(-2)}`,
     variance: b.actual - b.planned,
@@ -52,12 +53,12 @@ const CostPerformance = () => {
     pdf.text("Cost Performance Report", 14, 20);
     pdf.setFontSize(9);
     pdf.text(`Generated: ${new Date().toLocaleString("id-ID")}`, 14, 27);
-    pdf.text(`Total Budget: ${formatRupiah(totalBudget)} | Spent: ${formatRupiah(totalSpent)} | Remaining: ${formatRupiah(remaining)}`, 14, 33);
+    pdf.text(`Total Budget: ${formatRupiah(totalBudget)} | RAP: ${formatRupiah(totalRap)} | Spent: ${formatRupiah(totalSpent)} | Remaining: ${formatRupiah(remaining)}`, 14, 33);
 
     let y = 42;
     pdf.setFontSize(8);
     pdf.setFont("helvetica", "bold");
-    ["Code", "Project", "Budget", "Spent", "Remaining", "Used%", "CPI", "Margin"].forEach((h, i) => {
+    ["Code", "Project", "Contract", "RAP", "Spent", "Remaining", "CPI", "Margin"].forEach((h, i) => {
       pdf.text(h, 14 + i * 33, y);
     });
     y += 5;
@@ -68,10 +69,10 @@ const CostPerformance = () => {
       const margin = Math.round((p.budget - p.spent) / p.budget * 100);
       pdf.text(p.project_code, 14, y);
       pdf.text(p.name.slice(0, 18), 47, y);
-      pdf.text(formatRupiah(p.budget), 80, y);
-      pdf.text(formatRupiah(p.spent), 113, y);
-      pdf.text(formatRupiah(p.budget - p.spent), 146, y);
-      pdf.text(`${Math.round(p.spent / p.budget * 100)}%`, 179, y);
+      pdf.text(formatRupiah(p.contract_value || p.budget), 80, y);
+      pdf.text(formatRupiah(p.rap), 113, y);
+      pdf.text(formatRupiah(p.spent), 146, y);
+      pdf.text(formatRupiah(p.budget - p.spent), 179, y);
       pdf.text(cpi.toFixed(2), 212, y);
       pdf.text(`${margin}%`, 245, y);
       y += 5;
@@ -83,20 +84,26 @@ const CostPerformance = () => {
     const printW = window.open("", "_blank");
     if (!printW) return;
     printW.document.write(`<html><head><title>Cost Report</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:4px 8px;text-align:left}th{background:#f5f5f5;font-size:10px;text-transform:uppercase}</style></head><body>`);
-    printW.document.write(`<h2>Cost Performance Report</h2><p>Total Budget: ${formatRupiah(totalBudget)} | Spent: ${formatRupiah(totalSpent)}</p>`);
-    printW.document.write(`<table><thead><tr><th>Code</th><th>Project</th><th>Budget</th><th>Spent</th><th>Remaining</th><th>CPI</th><th>Margin</th></tr></thead><tbody>`);
+    printW.document.write(`<h2>Cost Performance Report</h2><p>Total Budget: ${formatRupiah(totalBudget)} | RAP: ${formatRupiah(totalRap)} | Spent: ${formatRupiah(totalSpent)}</p>`);
+    printW.document.write(`<table><thead><tr><th>Code</th><th>Project</th><th>Contract</th><th>RAP</th><th>Spent</th><th>Remaining</th><th>CPI</th><th>Margin</th></tr></thead><tbody>`);
     filteredProjects.forEach(p => {
       const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
       const margin = Math.round((p.budget - p.spent) / p.budget * 100);
-      printW.document.write(`<tr><td>${p.project_code}</td><td>${p.name}</td><td>${formatRupiah(p.budget)}</td><td>${formatRupiah(p.spent)}</td><td>${formatRupiah(p.budget - p.spent)}</td><td>${cpi.toFixed(2)}</td><td>${margin}%</td></tr>`);
+      printW.document.write(`<tr><td>${p.project_code}</td><td>${p.name}</td><td>${formatRupiah(p.contract_value || p.budget)}</td><td>${formatRupiah(p.rap)}</td><td>${formatRupiah(p.spent)}</td><td>${formatRupiah(p.budget - p.spent)}</td><td>${cpi.toFixed(2)}</td><td>${margin}%</td></tr>`);
     });
-    printW.document.write(`</tbody></table><p style="margin-top:20px;font-size:9px;color:#888">© 2026 PT Pamitra Jaya Konstruksi</p></body></html>`);
+    printW.document.write(`</tbody></table></body></html>`);
     printW.document.close();
     printW.print();
   };
 
-  // Calculate cashflow chart pixel width for scrolling
   const cashflowPxWidth = Math.max(600, cashflowData.length * 60);
+
+  // Category breakdown for selected project
+  const categoryBreakdown = procItems.reduce((acc: Record<string, number>, item) => {
+    const cat = item.status || "other";
+    acc[cat] = (acc[cat] || 0) + item.amount;
+    return acc;
+  }, {});
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -108,7 +115,7 @@ const CostPerformance = () => {
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <div>
               <h2 className="text-lg font-bold text-foreground">Cost Performance</h2>
-              <p className="text-xs text-muted-foreground">Analisis anggaran, pengeluaran & profit margin</p>
+              <p className="text-xs text-muted-foreground">Analisis anggaran, RAP, PO committed, actual cost & profit margin</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
@@ -126,23 +133,27 @@ const CostPerformance = () => {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5">
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-accent/15"><DollarSign className="h-4 w-4 text-accent" /></div><span className="text-[10px] uppercase text-muted-foreground">Total Budget</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-primary/15"><Wallet className="h-4 w-4 text-primary" /></div><span className="text-[10px] uppercase text-muted-foreground">Contract</span></div>
+              <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(totalContractValue)}</p>
+            </div>
+            <div className="glass-card rounded-lg p-3 shadow-card">
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Receipt className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">RAP</span></div>
+              <p className="text-lg font-bold font-mono-data text-info">{formatRupiah(totalRap)}</p>
+            </div>
+            <div className="glass-card rounded-lg p-3 shadow-card">
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-accent/15"><DollarSign className="h-4 w-4 text-accent" /></div><span className="text-[10px] uppercase text-muted-foreground">Budget</span></div>
               <p className="text-lg font-bold font-mono-data text-accent">{formatRupiah(totalBudget)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><TrendingUp className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">Spent</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-warning/15"><TrendingUp className="h-4 w-4 text-warning" /></div><span className="text-[10px] uppercase text-muted-foreground">Actual Cost</span></div>
               <p className="text-lg font-bold font-mono-data text-foreground">{formatRupiah(totalSpent)}</p>
               <p className="text-[10px] text-muted-foreground">{totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0}%</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-success/15"><TrendingDown className="h-4 w-4 text-success" /></div><span className="text-[10px] uppercase text-muted-foreground">Remaining</span></div>
               <p className="text-lg font-bold font-mono-data text-success">{formatRupiah(remaining)}</p>
-            </div>
-            <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-primary/15"><Percent className="h-4 w-4 text-primary" /></div><span className="text-[10px] uppercase text-muted-foreground">Avg Margin</span></div>
-              <p className="text-lg font-bold font-mono-data text-primary">{totalBudget > 0 ? Math.round(remaining / totalBudget * 100) : 0}%</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><AlertTriangle className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground">Over Budget</span></div>
@@ -154,7 +165,7 @@ const CostPerformance = () => {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
             <div className="glass-card rounded-lg p-4 shadow-card">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Budget vs Spent & Margin</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Budget vs RAP vs Actual</h3>
               <p className="text-[11px] text-muted-foreground mb-3">Per proyek</p>
               <div className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -165,20 +176,16 @@ const CostPerformance = () => {
                     <Tooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => [formatRupiah(v), name]} />
                     <Legend iconSize={8} wrapperStyle={{ fontSize: "10px" }} />
                     <Bar dataKey="budget" fill="hsl(215, 80%, 48%)" radius={[0, 2, 2, 0]} name="Budget" />
-                    <Bar dataKey="spent" fill="hsl(30, 85%, 50%)" radius={[0, 2, 2, 0]} name="Spent" />
+                    <Bar dataKey="rap" fill="hsl(200, 75%, 45%)" radius={[0, 2, 2, 0]} name="RAP" />
+                    <Bar dataKey="spent" fill="hsl(30, 85%, 50%)" radius={[0, 2, 2, 0]} name="Actual" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             <div className="glass-card rounded-lg p-4 shadow-card">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-sm font-semibold text-foreground">Cashflow Multi-Year</h3>
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  {years.map(y => <span key={y} className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono-data">{y}</span>)}
-                </div>
-              </div>
-              <p className="text-[11px] text-muted-foreground mb-3">Planned vs Actual — scroll horizontal untuk data lengkap</p>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Cashflow Multi-Year</h3>
+              <p className="text-[11px] text-muted-foreground mb-3">Planned vs Actual</p>
               <div className="h-[280px] overflow-x-auto">
                 <div style={{ width: `${cashflowPxWidth}px`, height: "100%" }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -201,69 +208,32 @@ const CostPerformance = () => {
             </div>
           </div>
 
-          {/* WBS Cost + Milestones when project selected */}
-          {selectedProjectId !== "all" && workAreas.length > 0 && (
+          {/* Procurement Cost Summary for selected project */}
+          {selectedProjectId !== "all" && procItems.length > 0 && (
             <div className="glass-card rounded-lg shadow-card overflow-hidden mb-5">
-              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Cost by WBS Area</h3></div>
-              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {workAreas.map(wa => (
-                  <div key={wa.id} className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] font-mono-data text-primary">{wa.code}</span>
-                      <span className="text-xs font-medium text-foreground">{wa.name}</span>
-                    </div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-muted-foreground">Weight: {wa.weight}%</span>
-                      <span className="text-xs font-mono-data font-bold text-primary">{wa.progress}%</span>
-                    </div>
-                    <Progress value={wa.progress} className="h-1.5" />
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Procurement Cost Breakdown</h3></div>
+              <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {Object.entries(categoryBreakdown).map(([cat, amt]) => (
+                  <div key={cat} className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                    <p className="text-[10px] text-muted-foreground uppercase">{cat}</p>
+                    <p className="text-sm font-bold font-mono-data text-foreground">{formatRupiah(amt)}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {selectedProjectId !== "all" && milestones.length > 0 && (
-            <div className="glass-card rounded-lg shadow-card overflow-hidden mb-5">
-              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Milestone Tracking</h3></div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead><tr className="bg-muted/50 border-b border-border">
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Milestone</th>
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Phase</th>
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Target</th>
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Weight</th>
-                  </tr></thead>
-                  <tbody>{milestones.map(ms => {
-                    const isLate = ms.status !== "completed" && new Date(ms.target_date) < new Date();
-                    return (
-                      <tr key={ms.id} className="border-b border-border/30">
-                        <td className="py-2 px-3 font-medium text-foreground">{ms.name}</td>
-                        <td className="py-2 px-3 text-muted-foreground">{ms.phase}</td>
-                        <td className="py-2 px-3 font-mono-data text-muted-foreground">{new Date(ms.target_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" })}</td>
-                        <td className="py-2 px-3"><span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                          ms.status === "completed" ? "bg-success/15 text-success border-success/30" : isLate ? "bg-destructive/15 text-destructive border-destructive/30" : "bg-primary/15 text-primary border-primary/30"
-                        }`}>{isLate ? "Overdue" : ms.status}</span></td>
-                        <td className="py-2 px-3 font-mono-data text-foreground">{ms.weight}%</td>
-                      </tr>
-                    );
-                  })}</tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Cost Table with Margin */}
+          {/* Cost Table */}
           <div className="glass-card rounded-lg shadow-card overflow-hidden">
-            <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya & Profit Margin</h3></div>
+            <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya — Contract, RAP, PO & Margin</h3></div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead><tr className="bg-muted/50 border-b border-border">
                   <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Kode</th>
                   <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Proyek</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Budget</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Spent</th>
+                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Contract</th>
+                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">RAP</th>
+                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Actual</th>
                   <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Remaining</th>
                   <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Used%</th>
                   <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">CPI</th>
@@ -273,12 +243,14 @@ const CostPerformance = () => {
                   {filteredProjects.map(p => {
                     const pct = Math.round(p.spent / p.budget * 100);
                     const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
-                    const margin = Math.round((p.budget - p.spent) / p.budget * 100);
+                    const cv = p.contract_value || p.budget;
+                    const margin = cv > 0 ? Math.round((cv - p.spent) / cv * 100) : 0;
                     return (
                       <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/project/${p.id}`)}>
                         <td className="py-2 px-3 font-mono-data text-primary">{p.project_code}</td>
                         <td className="py-2 px-3 font-medium text-foreground">{p.name}</td>
-                        <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah(p.budget)}</td>
+                        <td className="py-2 px-3 font-mono-data text-primary">{formatRupiah(cv)}</td>
+                        <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(p.rap)}</td>
                         <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.spent)}</td>
                         <td className="py-2 px-3 font-mono-data text-success">{formatRupiah(p.budget - p.spent)}</td>
                         <td className="py-2 px-3">

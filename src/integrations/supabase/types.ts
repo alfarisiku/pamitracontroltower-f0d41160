@@ -329,6 +329,7 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          due_date: string | null
           id: string
           impact: string | null
           is_resolved: boolean
@@ -344,6 +345,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          due_date?: string | null
           id?: string
           impact?: string | null
           is_resolved?: boolean
@@ -359,6 +361,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          due_date?: string | null
           id?: string
           impact?: string | null
           is_resolved?: boolean
@@ -373,6 +376,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_alerts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_cashflow: {
+        Row: {
+          actual_progress: number
+          cash_in: number
+          cash_out: number
+          created_at: string
+          id: string
+          period_label: string
+          period_order: number
+          planned_progress: number
+          project_id: string
+        }
+        Insert: {
+          actual_progress?: number
+          cash_in?: number
+          cash_out?: number
+          created_at?: string
+          id?: string
+          period_label: string
+          period_order?: number
+          planned_progress?: number
+          project_id: string
+        }
+        Update: {
+          actual_progress?: number
+          cash_in?: number
+          cash_out?: number
+          created_at?: string
+          id?: string
+          period_label?: string
+          period_order?: number
+          planned_progress?: number
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_cashflow_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -421,6 +468,7 @@ export type Database = {
           category: string | null
           cctv_url: string | null
           client: string
+          contract_value: number
           created_at: string
           description: string | null
           end_date: string
@@ -430,6 +478,7 @@ export type Database = {
           manager: string
           map_x: number
           map_y: number
+          margin_locked: boolean
           name: string
           phase: Database["public"]["Enums"]["project_phase"]
           profit_margin_target: number
@@ -448,6 +497,7 @@ export type Database = {
           category?: string | null
           cctv_url?: string | null
           client: string
+          contract_value?: number
           created_at?: string
           description?: string | null
           end_date: string
@@ -457,6 +507,7 @@ export type Database = {
           manager: string
           map_x?: number
           map_y?: number
+          margin_locked?: boolean
           name: string
           phase?: Database["public"]["Enums"]["project_phase"]
           profit_margin_target?: number
@@ -475,6 +526,7 @@ export type Database = {
           category?: string | null
           cctv_url?: string | null
           client?: string
+          contract_value?: number
           created_at?: string
           description?: string | null
           end_date?: string
@@ -484,6 +536,7 @@ export type Database = {
           manager?: string
           map_x?: number
           map_y?: number
+          margin_locked?: boolean
           name?: string
           phase?: Database["public"]["Enums"]["project_phase"]
           profit_margin_target?: number
@@ -498,6 +551,56 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      purchase_orders: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          id: string
+          po_date: string | null
+          project_id: string
+          related_activity: string | null
+          status: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          po_date?: string | null
+          project_id: string
+          related_activity?: string | null
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          po_date?: string | null
+          project_id?: string
+          related_activity?: string | null
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       s_curve_data: {
         Row: {
