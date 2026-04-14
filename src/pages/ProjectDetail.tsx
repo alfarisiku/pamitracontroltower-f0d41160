@@ -78,12 +78,14 @@ const ProjectDetail = () => {
   const { data: subTasks = [] } = useSubTasks(workItemIds);
   const { data: milestones = [] } = useMilestones(id);
   const { data: allAlerts = [] } = useAlerts();
+  const { data: projectRisks = [] } = useAllAlerts(id);
   const { data: scurveData = [] } = useSCurveData(id);
+  const { data: procurementItems = [] } = useProcurementItems(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
-  const [activeTab, setActiveTab] = useState<"health" | "scurve" | "wbs" | "milestones" | "media">("health");
+  const [activeTab, setActiveTab] = useState<"health" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media">("health");
 
   // Weekly photos
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
