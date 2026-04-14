@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useSCurveData } from "@/hooks/useProjects";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems } from "@/hooks/useProjects";
 import { supabase, formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
@@ -10,7 +10,8 @@ import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip"
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
-  Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon
+  Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon,
+  Package, DollarSign
 } from "lucide-react";
 
 const statusConfig = {
@@ -34,6 +35,21 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
 };
 
 type MediaTab = "weekly" | "video" | "cctv";
+
+const riskCategoryLabels: Record<string, string> = {
+  technical: "Technical", schedule: "Schedule", cost: "Cost",
+  procurement: "Procurement", contractual: "Contractual", operational: "Operational",
+};
+const procStatusLabels: Record<string, string> = {
+  planned: "Planned", "rfq-sent": "RFQ Sent", approval: "Approval", "po-issued": "PO Issued",
+  fabrication: "Fabrication", delivery: "Delivery", installed: "Installed",
+};
+const procStatusColors: Record<string, string> = {
+  planned: "bg-muted text-muted-foreground", "rfq-sent": "bg-primary/15 text-primary",
+  approval: "bg-warning/15 text-warning", "po-issued": "bg-info/15 text-info",
+  fabrication: "bg-accent/15 text-accent-foreground", delivery: "bg-success/15 text-success",
+  installed: "bg-success/20 text-success",
+};
 
 function extractYoutubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -62,12 +78,14 @@ const ProjectDetail = () => {
   const { data: subTasks = [] } = useSubTasks(workItemIds);
   const { data: milestones = [] } = useMilestones(id);
   const { data: allAlerts = [] } = useAlerts();
+  const { data: projectRisks = [] } = useAllAlerts(id);
   const { data: scurveData = [] } = useSCurveData(id);
+  const { data: procurementItems = [] } = useProcurementItems(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
-  const [activeTab, setActiveTab] = useState<"health" | "scurve" | "wbs" | "milestones" | "media">("health");
+  const [activeTab, setActiveTab] = useState<"health" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media">("health");
 
   // Weekly photos
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
@@ -197,6 +215,8 @@ const ProjectDetail = () => {
               { key: "health" as const, label: "Health Summary", icon: Activity },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp },
               { key: "wbs" as const, label: "WBS", icon: Layers },
+              { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
+              { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
               { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
               { key: "media" as const, label: "Media", icon: Camera },
             ]).map(tab => (
@@ -579,7 +599,159 @@ const ProjectDetail = () => {
             </div>
           )}
 
-          {/* Media Tab — NO cover photo tab, only weekly + video + cctv */}
+          {/* Procurement Tab */}
+          {activeTab === "procurement" && (
+            <div className="space-y-3">
+              {procurementItems.length === 0 ? (
+                <div className="glass-card rounded-lg p-8 text-center shadow-card">
+                  <Package className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">Belum ada data procurement.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tambah melalui <Link to="/data-entry" className="text-primary hover:underline">Data Entry → Regular Update</Link>.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="glass-card rounded-lg p-3 shadow-card">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">Total Items</p>
+                        <p className="text-lg font-bold font-mono-data text-primary">{procurementItems.length}</p>
+                      </div>
+                      <div className="bg-success/5 rounded-lg p-3 border border-success/20 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">Installed</p>
+                        <p className="text-lg font-bold font-mono-data text-success">{procurementItems.filter(i => i.status === 'installed').length}</p>
+                      </div>
+                      <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">In Progress</p>
+                        <p className="text-lg font-bold font-mono-data text-warning">{procurementItems.filter(i => !['installed','planned'].includes(i.status)).length}</p>
+                      </div>
+                      <div className="bg-accent/5 rounded-lg p-3 border border-border text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">Total Cost</p>
+                        <p className="text-lg font-bold font-mono-data text-foreground">{formatRupiah(procurementItems.reduce((s, i) => s + i.amount, 0))}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="glass-card rounded-lg shadow-card overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead><tr className="bg-muted/50 border-b border-border">
+                          <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Item</th>
+                          <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Vendor</th>
+                          <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Amount</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Qty</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Status</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">RFQ</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Approval</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PO</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Fabrication</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Delivery</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Install</th>
+                        </tr></thead>
+                        <tbody>
+                          {procurementItems.map(item => (
+                            <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20">
+                              <td className="py-2 px-3">
+                                <p className="font-medium text-foreground">{item.item_name}</p>
+                                {item.description && <p className="text-[9px] text-muted-foreground">{item.description}</p>}
+                              </td>
+                              <td className="py-2 px-3 text-muted-foreground">{item.vendor || "—"}</td>
+                              <td className="py-2 px-3 text-right font-mono-data text-foreground">{formatRupiah(item.amount)}</td>
+                              <td className="py-2 px-3 text-center font-mono-data">{item.qty} {item.unit}</td>
+                              <td className="py-2 px-3 text-center">
+                                <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${procStatusColors[item.status] || ""}`}>
+                                  {procStatusLabels[item.status] || item.status}
+                                </span>
+                              </td>
+                              {["rfq_date","approval_date","po_date","fabrication_date","delivery_date","install_date"].map(field => (
+                                <td key={field} className="py-2 px-3 text-center text-[9px] font-mono-data text-muted-foreground">
+                                  {(item as any)[field] ? new Date((item as any)[field]).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—"}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Risks Tab */}
+          {activeTab === "risks" && (
+            <div className="space-y-3">
+              {projectRisks.length === 0 ? (
+                <div className="glass-card rounded-lg p-8 text-center shadow-card">
+                  <Shield className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">Tidak ada risiko tercatat.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tambah melalui <Link to="/data-entry" className="text-primary hover:underline">Data Entry → Regular Update</Link>.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="glass-card rounded-lg p-3 shadow-card">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="bg-destructive/5 rounded-lg p-3 border border-destructive/20 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">Active</p>
+                        <p className="text-lg font-bold font-mono-data text-destructive">{projectRisks.filter(r => !r.is_resolved).length}</p>
+                      </div>
+                      <div className="bg-success/5 rounded-lg p-3 border border-success/20 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">Resolved</p>
+                        <p className="text-lg font-bold font-mono-data text-success">{projectRisks.filter(r => r.is_resolved).length}</p>
+                      </div>
+                      <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">Critical/High</p>
+                        <p className="text-lg font-bold font-mono-data text-warning">{projectRisks.filter(r => !r.is_resolved && (r.severity === 'critical' || r.severity === 'high')).length}</p>
+                      </div>
+                      <div className="bg-muted rounded-lg p-3 border border-border text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase">Total</p>
+                        <p className="text-lg font-bold font-mono-data text-foreground">{projectRisks.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="glass-card rounded-lg shadow-card overflow-hidden">
+                    <div className="divide-y divide-border/30">
+                      {projectRisks.map(risk => {
+                        const sevColor = risk.severity === "critical" ? "text-destructive" : risk.severity === "high" ? "text-warning" : risk.severity === "medium" ? "text-info" : "text-muted-foreground";
+                        const duration = risk.is_resolved && risk.resolved_at
+                          ? Math.ceil((new Date(risk.resolved_at).getTime() - new Date(risk.created_at).getTime()) / (1000*60*60*24))
+                          : Math.ceil((new Date().getTime() - new Date(risk.created_at).getTime()) / (1000*60*60*24));
+                        return (
+                          <div key={risk.id} className={`p-3 hover:bg-muted/20 ${risk.is_resolved ? "opacity-60" : ""}`}>
+                            <div className="flex items-start gap-3">
+                              <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${sevColor}`} />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-medium text-foreground">{risk.title}</span>
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${sevColor}`}>{risk.severity}</span>
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{riskCategoryLabels[risk.category] || risk.category}</span>
+                                  {risk.is_resolved && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium">✓ Resolved</span>}
+                                </div>
+                                {risk.description && <p className="text-[10px] text-muted-foreground mt-0.5">{risk.description}</p>}
+                                <div className="flex items-center gap-4 mt-1 text-[9px] text-muted-foreground flex-wrap">
+                                  <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" /> Created: {new Date(risk.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                                  {risk.is_resolved && risk.resolved_at && (
+                                    <span className="flex items-center gap-0.5 text-success"><CheckCircle2 className="h-2.5 w-2.5" /> Resolved: {new Date(risk.resolved_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+                                  )}
+                                  <span>Duration: <span className="font-mono-data font-bold text-foreground">{duration}d</span></span>
+                                  {risk.risk_owner && <span>Owner: <span className="font-medium text-foreground">{risk.risk_owner}</span></span>}
+                                  {risk.probability && <span>P: {risk.probability}</span>}
+                                  {risk.impact && <span>I: {risk.impact}</span>}
+                                </div>
+                                {risk.mitigation_plan && (
+                                  <p className="text-[10px] text-primary mt-1">💡 Mitigation: {risk.mitigation_plan}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {activeTab === "media" && (
             <div className="glass-card rounded-lg shadow-card p-4">
               <div className="flex items-center gap-1 mb-4 flex-wrap">
