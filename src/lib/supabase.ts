@@ -11,7 +11,9 @@ export type DbProject = {
   budget: number;
   spent: number;
   rap: number;
+  contract_value: number;
   profit_margin_target: number;
+  margin_locked: boolean;
   tkdn_percentage: number;
   start_date: string;
   end_date: string;
@@ -51,6 +53,7 @@ export type DbAlert = {
   risk_owner: string | null;
   mitigation_plan: string | null;
   category: string;
+  due_date: string | null;
   created_at: string;
   resolved_at: string | null;
 };
@@ -169,6 +172,32 @@ export type DbActivityLog = {
   action: string;
   details: string | null;
   project_id: string | null;
+  created_at: string;
+};
+
+export type DbPurchaseOrder = {
+  id: string;
+  project_id: string;
+  description: string;
+  amount: number;
+  po_date: string | null;
+  vendor: string;
+  related_activity: string;
+  category: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbProjectCashflow = {
+  id: string;
+  project_id: string;
+  period_label: string;
+  period_order: number;
+  cash_in: number;
+  cash_out: number;
+  planned_progress: number;
+  actual_progress: number;
   created_at: string;
 };
 
