@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useSCurveData } from "@/hooks/useProjects";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems } from "@/hooks/useProjects";
 import { supabase, formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
@@ -10,7 +10,8 @@ import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip"
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
-  Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon
+  Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon,
+  Package, DollarSign
 } from "lucide-react";
 
 const statusConfig = {
@@ -34,6 +35,21 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
 };
 
 type MediaTab = "weekly" | "video" | "cctv";
+
+const riskCategoryLabels: Record<string, string> = {
+  technical: "Technical", schedule: "Schedule", cost: "Cost",
+  procurement: "Procurement", contractual: "Contractual", operational: "Operational",
+};
+const procStatusLabels: Record<string, string> = {
+  planned: "Planned", "rfq-sent": "RFQ Sent", approval: "Approval", "po-issued": "PO Issued",
+  fabrication: "Fabrication", delivery: "Delivery", installed: "Installed",
+};
+const procStatusColors: Record<string, string> = {
+  planned: "bg-muted text-muted-foreground", "rfq-sent": "bg-primary/15 text-primary",
+  approval: "bg-warning/15 text-warning", "po-issued": "bg-info/15 text-info",
+  fabrication: "bg-accent/15 text-accent-foreground", delivery: "bg-success/15 text-success",
+  installed: "bg-success/20 text-success",
+};
 
 function extractYoutubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
