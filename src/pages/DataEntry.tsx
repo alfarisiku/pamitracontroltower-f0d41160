@@ -1164,6 +1164,10 @@ const DataEntry = () => {
             </div>
           )}
 
+          {activeTab === "finance" && updateProjectId && (
+            <FinanceEditor projectId={updateProjectId} projects={projects} />
+          )}
+
           {activeTab === "scurve" && updateProjectId && (
             <SCurveEditor projectId={updateProjectId} />
           )}
