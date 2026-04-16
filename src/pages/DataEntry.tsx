@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums, useSCurveData, useProcurementItems } from "@/hooks/useProjects";
+import { useProjects, useWorkAreas, useWorkItems, useAlerts, useAddendums, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow } from "@/hooks/useProjects";
 import { supabase, DbProject, formatRupiah, logActivity } from "@/lib/supabase";
 import {
   HelpCircle, CheckCircle2, Database, Layers, Target, FileText,
