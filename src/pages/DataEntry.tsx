@@ -981,10 +981,13 @@ const DataEntry = () => {
                   <div><label className={labelCls}>Risk Title</label><input value={riskTitle} onChange={e => setRiskTitle(e.target.value)} className={inputCls} placeholder="Keterlambatan material" /></div>
                   <div><label className={labelCls}>Category</label>
                     <select value={riskCategory} onChange={e => setRiskCategory(e.target.value)} className={inputCls}>
-                      <option value="operational">Operational</option>
-                      <option value="contractual">Contractual</option>
-                      <option value="financial">Financial</option>
                       <option value="technical">Technical</option>
+                      <option value="schedule">Schedule</option>
+                      <option value="cost">Cost</option>
+                      <option value="procurement">Procurement</option>
+                      <option value="contractual">Contractual</option>
+                      <option value="operational">Operational</option>
+                      <option value="financial">Financial</option>
                       <option value="hse">HSE</option>
                       <option value="external">External</option>
                     </select>
