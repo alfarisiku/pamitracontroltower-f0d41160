@@ -12,7 +12,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
-type ActiveTab = "regular" | "project-crud" | "addendum" | "scurve";
+type ActiveTab = "regular" | "project-crud" | "addendum" | "scurve" | "finance";
 
 // Photo gallery sub-component
 function PhotoGallery({ projectId }: { projectId: string }) {
