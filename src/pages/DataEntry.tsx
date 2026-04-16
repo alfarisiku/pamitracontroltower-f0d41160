@@ -402,6 +402,7 @@ const DataEntry = () => {
 
   const allTabs = [
     { key: "regular" as const, label: "Regular Update", icon: FileText },
+    { key: "finance" as const, label: "Finance & PO", icon: DollarSign },
     { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
     { key: "scurve" as const, label: "S-Curve Editor", icon: FileBarChart },
     { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
