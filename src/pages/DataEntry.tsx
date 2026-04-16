@@ -7,7 +7,7 @@ import {
   HelpCircle, CheckCircle2, Database, Layers, Target, FileText,
   Lightbulb, BookOpen, ArrowRight, X, Save, Download, Upload, Share2,
   Plus, Trash2, Edit3, AlertTriangle, DollarSign, Calendar, FileBarChart,
-  Printer, ClipboardList, Lock, Camera, Image as ImageIcon, Package, Clock
+  Printer, ClipboardList, Lock, Camera, Image as ImageIcon, Package, Clock, Receipt
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
