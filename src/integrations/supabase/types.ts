@@ -105,6 +105,42 @@ export type Database = {
           },
         ]
       }
+      manpower_logs: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          hours_per_worker: number
+          id: string
+          log_date: string
+          project_id: string
+          updated_at: string
+          workers: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          hours_per_worker?: number
+          id?: string
+          log_date?: string
+          project_id: string
+          updated_at?: string
+          workers?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          hours_per_worker?: number
+          id?: string
+          log_date?: string
+          project_id?: string
+          updated_at?: string
+          workers?: number
+        }
+        Relationships: []
+      }
       milestones: {
         Row: {
           actual_date: string | null
@@ -559,6 +595,8 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          penalty_amount: number
+          penalty_note: string | null
           po_date: string | null
           project_id: string
           related_activity: string | null
@@ -572,6 +610,8 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          penalty_amount?: number
+          penalty_note?: string | null
           po_date?: string | null
           project_id: string
           related_activity?: string | null
@@ -585,6 +625,8 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          penalty_amount?: number
+          penalty_note?: string | null
           po_date?: string | null
           project_id?: string
           related_activity?: string | null
