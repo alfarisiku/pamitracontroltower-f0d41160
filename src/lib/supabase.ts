@@ -185,6 +185,20 @@ export type DbPurchaseOrder = {
   related_activity: string;
   category: string;
   status: string;
+  penalty_amount: number;
+  penalty_note: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbManpowerLog = {
+  id: string;
+  project_id: string;
+  log_date: string;
+  category: string;
+  workers: number;
+  hours_per_worker: number;
+  description: string;
   created_at: string;
   updated_at: string;
 };

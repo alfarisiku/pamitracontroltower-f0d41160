@@ -40,12 +40,19 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
       <div className="absolute inset-0 bg-foreground/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card border border-border rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-slide-up">
-        {/* Header with cover */}
+        {/* Header with weekly photo (latest) */}
         <div className="relative h-40 overflow-hidden rounded-t-xl">
-          {project.image_url ? (
+          {weeklyPhotos[0]?.photo_url ? (
+            <img src={weeklyPhotos[0].photo_url} alt={`${project.name} - ${weeklyPhotos[0].week_label || 'Latest'}`} className="w-full h-full object-cover" />
+          ) : project.image_url ? (
             <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
+          )}
+          {weeklyPhotos[0]?.week_label && (
+            <div className="absolute top-3 right-12 z-10 bg-card/80 backdrop-blur px-2 py-0.5 rounded text-[10px] text-foreground border border-border">
+              📷 {weeklyPhotos[0].week_label}
+            </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
           <button onClick={onClose} className="absolute top-3 right-3 p-1.5 bg-card/80 backdrop-blur rounded-full hover:bg-card transition-colors z-10">
