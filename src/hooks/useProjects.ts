@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog, DbPurchaseOrder, DbProjectCashflow } from "@/lib/supabase";
+import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog, DbPurchaseOrder, DbProjectCashflow, DbManpowerLog } from "@/lib/supabase";
 
 export function useProjects() {
   return useQuery<DbProject[]>({
@@ -238,5 +238,21 @@ export function useMarkAllNotificationsRead() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+export function useManpowerLogs(projectId?: string) {
+  return useQuery<DbManpowerLog[]>({
+    queryKey: ["manpower_logs", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manpower_logs" as any)
+        .select("*")
+        .eq("project_id", projectId!)
+        .order("log_date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as DbManpowerLog[];
+    },
   });
 }

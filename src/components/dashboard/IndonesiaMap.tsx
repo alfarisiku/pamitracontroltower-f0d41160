@@ -112,7 +112,7 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
   const navigate = useNavigate();
 
   return (
-    <div className="glass-card rounded-lg p-4 animate-slide-up shadow-card">
+    <div className="glass-card rounded-lg p-4 animate-slide-up shadow-card relative z-0">
       <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-sm font-semibold text-foreground">Project Portfolio</h2>
@@ -128,13 +128,15 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
         </div>
       </div>
 
-      <div className="relative w-full aspect-[2.2/1] rounded-lg overflow-hidden border border-border">
+      <div className="relative w-full aspect-[2.2/1] rounded-lg overflow-hidden border border-border" style={{ zIndex: 0 }}>
         <style>{`
           @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.7; transform: scale(1.3); }
           }
-          .leaflet-container { background: hsl(210, 20%, 95%); font-family: inherit; }
+          .leaflet-container { background: hsl(210, 20%, 95%); font-family: inherit; z-index: 0 !important; }
+          .leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 1 !important; }
+          .leaflet-popup-pane { z-index: 5 !important; }
           .leaflet-popup-content-wrapper { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
           .leaflet-popup-content { margin: 8px 12px; font-size: 12px; }
           .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: transparent !important; }
