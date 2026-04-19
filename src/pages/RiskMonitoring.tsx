@@ -51,7 +51,7 @@ const RiskMonitoring = () => {
   const handleResolveRisk = async (id: string) => {
     setResolving(id);
     try {
-      const { error } = await supabase.from("project_alerts").update({ is_resolved: true }).eq("id", id);
+      const { error } = await supabase.from("project_alerts").update({ is_resolved: true, resolved_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
       toast({ title: "✅ Resolved", description: "Risk berhasil ditutup / resolved" });
