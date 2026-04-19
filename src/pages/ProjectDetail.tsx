@@ -362,10 +362,23 @@ const ProjectDetail = () => {
 
               {/* Margin Calculation */}
               <div className="glass-card rounded-lg p-4 shadow-card">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-accent" /> Margin Calculation
-                  {project.margin_locked && <span className="text-[9px] px-2 py-0.5 rounded-full bg-warning/15 text-warning border border-warning/30 flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Locked</span>}
-                </h3>
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Receipt className="h-4 w-4 text-accent" /> Margin Calculation
+                    {project.margin_locked && <span className="text-[9px] px-2 py-0.5 rounded-full bg-warning/15 text-warning border border-warning/30 flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Locked (Admin)</span>}
+                  </h3>
+                  <button
+                    onClick={async () => {
+                      const newVal = !project.margin_locked;
+                      await supabase.from("projects").update({ margin_locked: newVal }).eq("id", project.id);
+                      await supabase.from("activity_logs").insert({ action: newVal ? "margin_locked" : "margin_unlocked", entity_type: "project", entity_id: project.id, project_id: project.id, details: `Margin ${newVal ? "locked" : "unlocked"} by admin` });
+                      window.location.reload();
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium border transition-colors ${project.margin_locked ? "bg-warning/15 text-warning border-warning/30 hover:bg-warning/25" : "bg-success/15 text-success border-success/30 hover:bg-success/25"}`}
+                  >
+                    <Lock className="h-3 w-3" /> {project.margin_locked ? "Unlock Margin" : "Lock Margin"}
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
                     <p className="text-[9px] text-muted-foreground uppercase mb-1">Planned Margin (Contract - RAP)</p>
@@ -427,6 +440,7 @@ const ProjectDetail = () => {
                         <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Amount</th>
                         <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PO Date</th>
                         <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Activity</th>
+                        <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Penalty</th>
                         <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Category</th>
                       </tr></thead>
                       <tbody>
@@ -437,6 +451,7 @@ const ProjectDetail = () => {
                             <td className="py-2 px-3 text-right font-mono-data text-accent">{formatRupiah(po.amount)}</td>
                             <td className="py-2 px-3 text-center font-mono-data text-muted-foreground">{po.po_date ? new Date(po.po_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }) : "—"}</td>
                             <td className="py-2 px-3 text-muted-foreground">{po.related_activity || "—"}</td>
+                            <td className="py-2 px-3 text-right font-mono-data">{(po as any).penalty_amount > 0 ? <span className="text-destructive" title={(po as any).penalty_note || ""}>{formatRupiah((po as any).penalty_amount)}</span> : <span className="text-muted-foreground">—</span>}</td>
                             <td className="py-2 px-3 text-center"><span className="text-[9px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">{po.category}</span></td>
                           </tr>
                         ))}
