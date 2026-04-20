@@ -167,33 +167,53 @@ const CostPerformance = () => {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5">
+          <div className="grid grid-cols-2 lg:grid-cols-8 gap-3 mb-5">
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-primary/15"><Wallet className="h-4 w-4 text-primary" /></div><span className="text-[10px] uppercase text-muted-foreground">Contract</span></div>
-              <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(totalContractValue)}</p>
+              <p className="text-base font-bold font-mono-data text-primary">{formatRupiah(totalContractValue)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Receipt className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">RAP</span></div>
-              <p className="text-lg font-bold font-mono-data text-info">{formatRupiah(totalRap)}</p>
+              <p className="text-base font-bold font-mono-data text-info">{formatRupiah(totalRap)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-accent/15"><DollarSign className="h-4 w-4 text-accent" /></div><span className="text-[10px] uppercase text-muted-foreground">Budget</span></div>
-              <p className="text-lg font-bold font-mono-data text-accent">{formatRupiah(totalBudget)}</p>
+              <p className="text-base font-bold font-mono-data text-accent">{formatRupiah(totalBudget)}</p>
+            </div>
+            <div className="glass-card rounded-lg p-3 shadow-card" title="Total committed via Purchase Orders">
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Layers className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">PO Committed</span></div>
+              <p className="text-base font-bold font-mono-data text-info">{formatRupiah(totalCommitted)}</p>
+              <p className="text-[10px] text-muted-foreground">{filteredPOs.length} PO</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-warning/15"><TrendingUp className="h-4 w-4 text-warning" /></div><span className="text-[10px] uppercase text-muted-foreground">Actual Cost</span></div>
-              <p className="text-lg font-bold font-mono-data text-foreground">{formatRupiah(totalSpent)}</p>
+              <p className="text-base font-bold font-mono-data text-foreground">{formatRupiah(totalSpent)}</p>
               <p className="text-[10px] text-muted-foreground">{totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0}%</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-success/15"><TrendingDown className="h-4 w-4 text-success" /></div><span className="text-[10px] uppercase text-muted-foreground">Remaining</span></div>
-              <p className="text-lg font-bold font-mono-data text-success">{formatRupiah(remaining)}</p>
+              <p className="text-base font-bold font-mono-data text-success">{formatRupiah(remaining)}</p>
+            </div>
+            <div className="glass-card rounded-lg p-3 shadow-card">
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><FileWarning className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground">Penalty/Claim</span></div>
+              <p className="text-base font-bold font-mono-data text-destructive">{formatRupiah(totalPenalty)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><AlertTriangle className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground">Over Budget</span></div>
-              <p className="text-lg font-bold font-mono-data text-destructive">{overBudget.length}</p>
+              <p className="text-base font-bold font-mono-data text-destructive">{overBudget.length}</p>
               <p className="text-[10px] text-muted-foreground">&gt;90% used</p>
             </div>
+          </div>
+
+          {/* View Mode toggle */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="text-[11px] text-muted-foreground uppercase">Breakdown:</span>
+            {(["project", "category", "wbs"] as const).map(m => (
+              <button key={m} onClick={() => setViewMode(m)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${viewMode === m ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border hover:bg-muted/50"}`}>
+                {m === "project" ? "Per Proyek" : m === "category" ? "Per Kategori PO" : "Per WBS / Aktivitas"}
+              </button>
+            ))}
           </div>
 
           {/* Charts */}
