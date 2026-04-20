@@ -25,15 +25,47 @@ const CostPerformance = () => {
     return <div className="flex min-h-screen"><Sidebar /><div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div></div>;
   }
 
+  const relevantPOs = selectedProjectId === "all" ? allPOs : projectPOs;
   const totalBudget = filteredProjects.reduce((s, p) => s + p.budget, 0);
   const totalSpent = filteredProjects.reduce((s, p) => s + p.spent, 0);
   const totalRap = filteredProjects.reduce((s, p) => s + p.rap, 0);
   const totalContractValue = filteredProjects.reduce((s, p) => s + (p.contract_value || p.budget), 0);
+  const totalCommitted = relevantPOs.reduce((s, po) => s + (po.amount || 0), 0);
+  const totalPenalty = relevantPOs.reduce((s, po) => s + (po.penalty_amount || 0), 0);
   const remaining = totalBudget - totalSpent;
   const overBudget = filteredProjects.filter(p => (p.spent / p.budget) > 0.9);
 
+  // Per-project committed cost map
+  const committedByProject = allPOs.reduce((acc: Record<string, number>, po) => {
+    acc[po.project_id] = (acc[po.project_id] || 0) + (po.amount || 0);
+    return acc;
+  }, {});
+  const penaltyByProject = allPOs.reduce((acc: Record<string, number>, po) => {
+    acc[po.project_id] = (acc[po.project_id] || 0) + (po.penalty_amount || 0);
+    return acc;
+  }, {});
+
+  // PO breakdown by category (across filteredProjects)
+  const filteredPOs = selectedProjectId === "all" ? allPOs : projectPOs;
+  const poBreakdownByCategory = filteredPOs.reduce((acc: Record<string, { committed: number; penalty: number; count: number }>, po) => {
+    const cat = po.category || "other";
+    if (!acc[cat]) acc[cat] = { committed: 0, penalty: 0, count: 0 };
+    acc[cat].committed += po.amount || 0;
+    acc[cat].penalty += po.penalty_amount || 0;
+    acc[cat].count += 1;
+    return acc;
+  }, {});
+
+  // Breakdown by WBS via related_activity field
+  const poBreakdownByWBS = filteredPOs.reduce((acc: Record<string, number>, po) => {
+    const wbs = po.related_activity || "Unassigned";
+    acc[wbs] = (acc[wbs] || 0) + (po.amount || 0);
+    return acc;
+  }, {});
+
   const barData = filteredProjects.map(p => ({
     name: p.project_code, fullName: p.name, budget: p.budget, spent: p.spent, rap: p.rap,
+    committed: committedByProject[p.id] || 0,
     margin: Math.round((p.budget - p.spent) / p.budget * 100),
   }));
 
