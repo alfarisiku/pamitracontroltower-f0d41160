@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProjects, useMonthlyBudgets, useProcurementItems } from "@/hooks/useProjects";
+import { useProjects, useMonthlyBudgets, useProcurementItems, useAllPurchaseOrders, usePurchaseOrders } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt, FileWarning, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
@@ -16,6 +16,8 @@ const CostPerformance = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"project" | "category" | "wbs">("project");
   const { data: procItems = [] } = useProcurementItems(selectedProjectId !== "all" ? selectedProjectId : undefined);
+  const { data: allPOs = [] } = useAllPurchaseOrders();
+  const { data: projectPOs = [] } = usePurchaseOrders(selectedProjectId !== "all" ? selectedProjectId : undefined);
 
   const filteredProjects = selectedProjectId === "all" ? projects : projects.filter(p => p.id === selectedProjectId);
 
