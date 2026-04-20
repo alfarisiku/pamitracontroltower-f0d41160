@@ -188,6 +188,20 @@ export function usePurchaseOrders(projectId?: string) {
   });
 }
 
+export function useAllPurchaseOrders() {
+  return useQuery<DbPurchaseOrder[]>({
+    queryKey: ["purchase_orders_all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("purchase_orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 export function useProjectCashflow(projectId?: string) {
   return useQuery<DbProjectCashflow[]>({
     queryKey: ["project_cashflow", projectId],
