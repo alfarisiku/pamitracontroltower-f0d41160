@@ -277,51 +277,133 @@ const CostPerformance = () => {
             </div>
           )}
 
-          {/* Cost Table */}
-          <div className="glass-card rounded-lg shadow-card overflow-hidden">
-            <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya — Contract, RAP, PO & Margin</h3></div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead><tr className="bg-muted/50 border-b border-border">
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Kode</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Proyek</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Contract</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">RAP</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Actual</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Remaining</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Used%</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">CPI</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin</th>
-                </tr></thead>
-                <tbody>
-                  {filteredProjects.map(p => {
-                    const pct = Math.round(p.spent / p.budget * 100);
-                    const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
-                    const cv = p.contract_value || p.budget;
-                    const margin = cv > 0 ? Math.round((cv - p.spent) / cv * 100) : 0;
-                    return (
-                      <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/project/${p.id}`)}>
-                        <td className="py-2 px-3 font-mono-data text-primary">{p.project_code}</td>
-                        <td className="py-2 px-3 font-medium text-foreground">{p.name}</td>
-                        <td className="py-2 px-3 font-mono-data text-primary">{formatRupiah(cv)}</td>
-                        <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(p.rap)}</td>
-                        <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.spent)}</td>
-                        <td className="py-2 px-3 font-mono-data text-success">{formatRupiah(p.budget - p.spent)}</td>
-                        <td className="py-2 px-3">
-                          <div className="flex items-center gap-1.5">
-                            <Progress value={pct} className="h-1 flex-1 max-w-[50px]" />
-                            <span className={`font-mono-data ${pct > 90 ? "text-destructive" : "text-foreground"}`}>{pct}%</span>
-                          </div>
-                        </td>
-                        <td className={`py-2 px-3 font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
-                        <td className={`py-2 px-3 font-mono-data font-bold ${margin > 10 ? "text-success" : margin > 0 ? "text-warning" : "text-destructive"}`}>{margin}%</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* Breakdown Views */}
+          {viewMode === "project" && (
+            <div className="glass-card rounded-lg shadow-card overflow-hidden">
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya per Proyek — Contract, RAP, Committed (PO), Actual & Margin</h3></div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Kode</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Proyek</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Contract</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">RAP</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Committed (PO)</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Actual</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Remaining</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Used%</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">CPI</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Penalty</th>
+                  </tr></thead>
+                  <tbody>
+                    {filteredProjects.map(p => {
+                      const pct = Math.round(p.spent / p.budget * 100);
+                      const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
+                      const cv = p.contract_value || p.budget;
+                      const margin = cv > 0 ? Math.round((cv - p.spent) / cv * 100) : 0;
+                      const committed = committedByProject[p.id] || 0;
+                      const penalty = penaltyByProject[p.id] || 0;
+                      return (
+                        <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/project/${p.id}`)}>
+                          <td className="py-2 px-3 font-mono-data text-primary">{p.project_code}</td>
+                          <td className="py-2 px-3 font-medium text-foreground">{p.name}</td>
+                          <td className="py-2 px-3 font-mono-data text-primary">{formatRupiah(cv)}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(p.rap)}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(committed)}</td>
+                          <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.spent)}</td>
+                          <td className="py-2 px-3 font-mono-data text-success">{formatRupiah(p.budget - p.spent)}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Progress value={pct} className="h-1 flex-1 max-w-[50px]" />
+                              <span className={`font-mono-data ${pct > 90 ? "text-destructive" : "text-foreground"}`}>{pct}%</span>
+                            </div>
+                          </td>
+                          <td className={`py-2 px-3 font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
+                          <td className={`py-2 px-3 font-mono-data font-bold ${margin > 10 ? "text-success" : margin > 0 ? "text-warning" : "text-destructive"}`}>{margin}%</td>
+                          <td className={`py-2 px-3 font-mono-data ${penalty > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{penalty > 0 ? formatRupiah(penalty) : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
+
+          {viewMode === "category" && (
+            <div className="glass-card rounded-lg shadow-card overflow-hidden">
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Breakdown PO per Kategori</h3></div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Kategori</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Jumlah PO</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Committed</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">% dari Total</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Penalty</th>
+                  </tr></thead>
+                  <tbody>
+                    {Object.entries(poBreakdownByCategory).sort((a, b) => b[1].committed - a[1].committed).map(([cat, v]) => {
+                      const pct = totalCommitted > 0 ? (v.committed / totalCommitted) * 100 : 0;
+                      return (
+                        <tr key={cat} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="py-2 px-3 font-medium text-foreground capitalize">{cat}</td>
+                          <td className="py-2 px-3 font-mono-data text-foreground">{v.count}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(v.committed)}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Progress value={pct} className="h-1 flex-1 max-w-[80px]" />
+                              <span className="font-mono-data text-foreground">{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                          <td className={`py-2 px-3 font-mono-data ${v.penalty > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{v.penalty > 0 ? formatRupiah(v.penalty) : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                    {Object.keys(poBreakdownByCategory).length === 0 && (
+                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground text-xs">Tidak ada data PO untuk filter ini.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {viewMode === "wbs" && (
+            <div className="glass-card rounded-lg shadow-card overflow-hidden">
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Breakdown PO per WBS / Aktivitas Terkait</h3></div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">WBS / Aktivitas</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Committed</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">% dari Total</th>
+                  </tr></thead>
+                  <tbody>
+                    {Object.entries(poBreakdownByWBS).sort((a, b) => b[1] - a[1]).map(([wbs, amt]) => {
+                      const pct = totalCommitted > 0 ? (amt / totalCommitted) * 100 : 0;
+                      return (
+                        <tr key={wbs} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="py-2 px-3 font-medium text-foreground">{wbs}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(amt)}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Progress value={pct} className="h-1 flex-1 max-w-[120px]" />
+                              <span className="font-mono-data text-foreground">{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {Object.keys(poBreakdownByWBS).length === 0 && (
+                      <tr><td colSpan={3} className="py-8 text-center text-muted-foreground text-xs">Tidak ada data PO untuk filter ini.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
