@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProjects, useMonthlyBudgets, useProcurementItems } from "@/hooks/useProjects";
+import { useProjects, useMonthlyBudgets, useProcurementItems, useAllPurchaseOrders, usePurchaseOrders } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt, FileWarning, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 
@@ -16,6 +16,8 @@ const CostPerformance = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"project" | "category" | "wbs">("project");
   const { data: procItems = [] } = useProcurementItems(selectedProjectId !== "all" ? selectedProjectId : undefined);
+  const { data: allPOs = [] } = useAllPurchaseOrders();
+  const { data: projectPOs = [] } = usePurchaseOrders(selectedProjectId !== "all" ? selectedProjectId : undefined);
 
   const filteredProjects = selectedProjectId === "all" ? projects : projects.filter(p => p.id === selectedProjectId);
 
@@ -23,15 +25,47 @@ const CostPerformance = () => {
     return <div className="flex min-h-screen"><Sidebar /><div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div></div>;
   }
 
+  const relevantPOs = selectedProjectId === "all" ? allPOs : projectPOs;
   const totalBudget = filteredProjects.reduce((s, p) => s + p.budget, 0);
   const totalSpent = filteredProjects.reduce((s, p) => s + p.spent, 0);
   const totalRap = filteredProjects.reduce((s, p) => s + p.rap, 0);
   const totalContractValue = filteredProjects.reduce((s, p) => s + (p.contract_value || p.budget), 0);
+  const totalCommitted = relevantPOs.reduce((s, po) => s + (po.amount || 0), 0);
+  const totalPenalty = relevantPOs.reduce((s, po) => s + (po.penalty_amount || 0), 0);
   const remaining = totalBudget - totalSpent;
   const overBudget = filteredProjects.filter(p => (p.spent / p.budget) > 0.9);
 
+  // Per-project committed cost map
+  const committedByProject = allPOs.reduce((acc: Record<string, number>, po) => {
+    acc[po.project_id] = (acc[po.project_id] || 0) + (po.amount || 0);
+    return acc;
+  }, {});
+  const penaltyByProject = allPOs.reduce((acc: Record<string, number>, po) => {
+    acc[po.project_id] = (acc[po.project_id] || 0) + (po.penalty_amount || 0);
+    return acc;
+  }, {});
+
+  // PO breakdown by category (across filteredProjects)
+  const filteredPOs = selectedProjectId === "all" ? allPOs : projectPOs;
+  const poBreakdownByCategory = filteredPOs.reduce((acc: Record<string, { committed: number; penalty: number; count: number }>, po) => {
+    const cat = po.category || "other";
+    if (!acc[cat]) acc[cat] = { committed: 0, penalty: 0, count: 0 };
+    acc[cat].committed += po.amount || 0;
+    acc[cat].penalty += po.penalty_amount || 0;
+    acc[cat].count += 1;
+    return acc;
+  }, {});
+
+  // Breakdown by WBS via related_activity field
+  const poBreakdownByWBS = filteredPOs.reduce((acc: Record<string, number>, po) => {
+    const wbs = po.related_activity || "Unassigned";
+    acc[wbs] = (acc[wbs] || 0) + (po.amount || 0);
+    return acc;
+  }, {});
+
   const barData = filteredProjects.map(p => ({
     name: p.project_code, fullName: p.name, budget: p.budget, spent: p.spent, rap: p.rap,
+    committed: committedByProject[p.id] || 0,
     margin: Math.round((p.budget - p.spent) / p.budget * 100),
   }));
 
@@ -133,33 +167,53 @@ const CostPerformance = () => {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5">
+          <div className="grid grid-cols-2 lg:grid-cols-8 gap-3 mb-5">
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-primary/15"><Wallet className="h-4 w-4 text-primary" /></div><span className="text-[10px] uppercase text-muted-foreground">Contract</span></div>
-              <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(totalContractValue)}</p>
+              <p className="text-base font-bold font-mono-data text-primary">{formatRupiah(totalContractValue)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Receipt className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">RAP</span></div>
-              <p className="text-lg font-bold font-mono-data text-info">{formatRupiah(totalRap)}</p>
+              <p className="text-base font-bold font-mono-data text-info">{formatRupiah(totalRap)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-accent/15"><DollarSign className="h-4 w-4 text-accent" /></div><span className="text-[10px] uppercase text-muted-foreground">Budget</span></div>
-              <p className="text-lg font-bold font-mono-data text-accent">{formatRupiah(totalBudget)}</p>
+              <p className="text-base font-bold font-mono-data text-accent">{formatRupiah(totalBudget)}</p>
+            </div>
+            <div className="glass-card rounded-lg p-3 shadow-card" title="Total committed via Purchase Orders">
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Layers className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">PO Committed</span></div>
+              <p className="text-base font-bold font-mono-data text-info">{formatRupiah(totalCommitted)}</p>
+              <p className="text-[10px] text-muted-foreground">{filteredPOs.length} PO</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-warning/15"><TrendingUp className="h-4 w-4 text-warning" /></div><span className="text-[10px] uppercase text-muted-foreground">Actual Cost</span></div>
-              <p className="text-lg font-bold font-mono-data text-foreground">{formatRupiah(totalSpent)}</p>
+              <p className="text-base font-bold font-mono-data text-foreground">{formatRupiah(totalSpent)}</p>
               <p className="text-[10px] text-muted-foreground">{totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0}%</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-success/15"><TrendingDown className="h-4 w-4 text-success" /></div><span className="text-[10px] uppercase text-muted-foreground">Remaining</span></div>
-              <p className="text-lg font-bold font-mono-data text-success">{formatRupiah(remaining)}</p>
+              <p className="text-base font-bold font-mono-data text-success">{formatRupiah(remaining)}</p>
+            </div>
+            <div className="glass-card rounded-lg p-3 shadow-card">
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><FileWarning className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground">Penalty/Claim</span></div>
+              <p className="text-base font-bold font-mono-data text-destructive">{formatRupiah(totalPenalty)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
               <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><AlertTriangle className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground">Over Budget</span></div>
-              <p className="text-lg font-bold font-mono-data text-destructive">{overBudget.length}</p>
+              <p className="text-base font-bold font-mono-data text-destructive">{overBudget.length}</p>
               <p className="text-[10px] text-muted-foreground">&gt;90% used</p>
             </div>
+          </div>
+
+          {/* View Mode toggle */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="text-[11px] text-muted-foreground uppercase">Breakdown:</span>
+            {(["project", "category", "wbs"] as const).map(m => (
+              <button key={m} onClick={() => setViewMode(m)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${viewMode === m ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border hover:bg-muted/50"}`}>
+                {m === "project" ? "Per Proyek" : m === "category" ? "Per Kategori PO" : "Per WBS / Aktivitas"}
+              </button>
+            ))}
           </div>
 
           {/* Charts */}
@@ -223,51 +277,133 @@ const CostPerformance = () => {
             </div>
           )}
 
-          {/* Cost Table */}
-          <div className="glass-card rounded-lg shadow-card overflow-hidden">
-            <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya — Contract, RAP, PO & Margin</h3></div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead><tr className="bg-muted/50 border-b border-border">
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Kode</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Proyek</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Contract</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">RAP</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Actual</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Remaining</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Used%</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">CPI</th>
-                  <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin</th>
-                </tr></thead>
-                <tbody>
-                  {filteredProjects.map(p => {
-                    const pct = Math.round(p.spent / p.budget * 100);
-                    const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
-                    const cv = p.contract_value || p.budget;
-                    const margin = cv > 0 ? Math.round((cv - p.spent) / cv * 100) : 0;
-                    return (
-                      <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/project/${p.id}`)}>
-                        <td className="py-2 px-3 font-mono-data text-primary">{p.project_code}</td>
-                        <td className="py-2 px-3 font-medium text-foreground">{p.name}</td>
-                        <td className="py-2 px-3 font-mono-data text-primary">{formatRupiah(cv)}</td>
-                        <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(p.rap)}</td>
-                        <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.spent)}</td>
-                        <td className="py-2 px-3 font-mono-data text-success">{formatRupiah(p.budget - p.spent)}</td>
-                        <td className="py-2 px-3">
-                          <div className="flex items-center gap-1.5">
-                            <Progress value={pct} className="h-1 flex-1 max-w-[50px]" />
-                            <span className={`font-mono-data ${pct > 90 ? "text-destructive" : "text-foreground"}`}>{pct}%</span>
-                          </div>
-                        </td>
-                        <td className={`py-2 px-3 font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
-                        <td className={`py-2 px-3 font-mono-data font-bold ${margin > 10 ? "text-success" : margin > 0 ? "text-warning" : "text-destructive"}`}>{margin}%</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* Breakdown Views */}
+          {viewMode === "project" && (
+            <div className="glass-card rounded-lg shadow-card overflow-hidden">
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya per Proyek — Contract, RAP, Committed (PO), Actual & Margin</h3></div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Kode</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Proyek</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Contract</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">RAP</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Committed (PO)</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Actual</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Remaining</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Used%</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">CPI</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Penalty</th>
+                  </tr></thead>
+                  <tbody>
+                    {filteredProjects.map(p => {
+                      const pct = Math.round(p.spent / p.budget * 100);
+                      const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
+                      const cv = p.contract_value || p.budget;
+                      const margin = cv > 0 ? Math.round((cv - p.spent) / cv * 100) : 0;
+                      const committed = committedByProject[p.id] || 0;
+                      const penalty = penaltyByProject[p.id] || 0;
+                      return (
+                        <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/project/${p.id}`)}>
+                          <td className="py-2 px-3 font-mono-data text-primary">{p.project_code}</td>
+                          <td className="py-2 px-3 font-medium text-foreground">{p.name}</td>
+                          <td className="py-2 px-3 font-mono-data text-primary">{formatRupiah(cv)}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(p.rap)}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(committed)}</td>
+                          <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.spent)}</td>
+                          <td className="py-2 px-3 font-mono-data text-success">{formatRupiah(p.budget - p.spent)}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Progress value={pct} className="h-1 flex-1 max-w-[50px]" />
+                              <span className={`font-mono-data ${pct > 90 ? "text-destructive" : "text-foreground"}`}>{pct}%</span>
+                            </div>
+                          </td>
+                          <td className={`py-2 px-3 font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
+                          <td className={`py-2 px-3 font-mono-data font-bold ${margin > 10 ? "text-success" : margin > 0 ? "text-warning" : "text-destructive"}`}>{margin}%</td>
+                          <td className={`py-2 px-3 font-mono-data ${penalty > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{penalty > 0 ? formatRupiah(penalty) : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
+
+          {viewMode === "category" && (
+            <div className="glass-card rounded-lg shadow-card overflow-hidden">
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Breakdown PO per Kategori</h3></div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Kategori</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Jumlah PO</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Committed</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">% dari Total</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Penalty</th>
+                  </tr></thead>
+                  <tbody>
+                    {Object.entries(poBreakdownByCategory).sort((a, b) => b[1].committed - a[1].committed).map(([cat, v]) => {
+                      const pct = totalCommitted > 0 ? (v.committed / totalCommitted) * 100 : 0;
+                      return (
+                        <tr key={cat} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="py-2 px-3 font-medium text-foreground capitalize">{cat}</td>
+                          <td className="py-2 px-3 font-mono-data text-foreground">{v.count}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(v.committed)}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Progress value={pct} className="h-1 flex-1 max-w-[80px]" />
+                              <span className="font-mono-data text-foreground">{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                          <td className={`py-2 px-3 font-mono-data ${v.penalty > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{v.penalty > 0 ? formatRupiah(v.penalty) : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                    {Object.keys(poBreakdownByCategory).length === 0 && (
+                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground text-xs">Tidak ada data PO untuk filter ini.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {viewMode === "wbs" && (
+            <div className="glass-card rounded-lg shadow-card overflow-hidden">
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Breakdown PO per WBS / Aktivitas Terkait</h3></div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">WBS / Aktivitas</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Committed</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">% dari Total</th>
+                  </tr></thead>
+                  <tbody>
+                    {Object.entries(poBreakdownByWBS).sort((a, b) => b[1] - a[1]).map(([wbs, amt]) => {
+                      const pct = totalCommitted > 0 ? (amt / totalCommitted) * 100 : 0;
+                      return (
+                        <tr key={wbs} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="py-2 px-3 font-medium text-foreground">{wbs}</td>
+                          <td className="py-2 px-3 font-mono-data text-info">{formatRupiah(amt)}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Progress value={pct} className="h-1 flex-1 max-w-[120px]" />
+                              <span className="font-mono-data text-foreground">{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {Object.keys(poBreakdownByWBS).length === 0 && (
+                      <tr><td colSpan={3} className="py-8 text-center text-muted-foreground text-xs">Tidak ada data PO untuk filter ini.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
