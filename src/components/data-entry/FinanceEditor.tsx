@@ -241,32 +241,61 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
         {cfLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : cfItems.length === 0 ? (
           <p className="text-xs text-muted-foreground">Belum ada data cashflow.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead><tr className="bg-muted/50 border-b border-border">
-                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Period</th>
-                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Cash In</th>
-                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
-                <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
-                <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
-                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-10"></th>
-              </tr></thead>
-              <tbody>
-                {cfItems.map(cf => (
-                  <tr key={cf.id} className="border-b border-border/30">
-                    <td className="py-1.5 px-2 font-medium text-foreground">{cf.period_label}</td>
-                    <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(cf.cash_in)}</td>
-                    <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(cf.cash_out)}</td>
-                    <td className={`py-1.5 px-2 text-right font-mono-data ${cf.cash_in - cf.cash_out >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(cf.cash_in - cf.cash_out)}</td>
-                    <td className="py-1.5 px-2 text-center font-mono-data">{cf.planned_progress}%</td>
-                    <td className="py-1.5 px-2 text-center font-mono-data">{cf.actual_progress}%</td>
-                    <td className="py-1.5 px-2"><button onClick={() => handleDeleteCF(cf.id, cf.period_label)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+              <div className="bg-success/5 rounded p-2 border border-success/20">
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Total Cash In<FormulaTooltip title="Cash In" formula="Σ cash_in (semua periode)" description="Total uang masuk dari pembayaran client (termin, DP, retensi)." interpretation="Sumber: invoice ke client" /></p>
+                <p className="text-sm font-bold font-mono-data text-success">{formatRupiah(totalCashIn)}</p>
+              </div>
+              <div className="bg-destructive/5 rounded p-2 border border-destructive/20">
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Total Cash Out<FormulaTooltip title="Cash Out" formula="Σ cash_out (semua periode)" description="Total uang keluar untuk vendor (PO), gaji, dan biaya operasional." interpretation="Termasuk pembayaran PO + opex" /></p>
+                <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(totalCashOut)}</p>
+              </div>
+              <div className={`rounded p-2 border ${cumulativeNet >= 0 ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/30"}`}>
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Cumulative Net<FormulaTooltip title="Cumulative Net Cashflow" formula="Σ (Cash In − Cash Out)" description="Akumulasi net cashflow dari semua periode." interpretation="Positif = surplus kas, Negatif = perlu pendanaan eksternal" /></p>
+                <p className={`text-sm font-bold font-mono-data ${cumulativeNet >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(cumulativeNet)}</p>
+              </div>
+              <div className="bg-info/5 rounded p-2 border border-info/20">
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Avg Net/Periode<FormulaTooltip title="Avg Net per Period" formula="Cumulative Net / jumlah periode" description="Rata-rata net cashflow per periode." /></p>
+                <p className={`text-sm font-bold font-mono-data ${cumulativeNet >= 0 ? "text-success" : "text-destructive"}`}>{cfItems.length > 0 ? formatRupiah(Math.round(cumulativeNet / cfItems.length)) : "—"}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="bg-muted/50 border-b border-border">
+                  <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Period</th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Cash In<FormulaTooltip title="Cash In" formula="Pembayaran dari client" description="Termin pembayaran client (DP, progress, retensi)." /></span></th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Cash Out<FormulaTooltip title="Cash Out" formula="Pembayaran ke vendor + opex" description="Pembayaran PO + biaya operasional bulanan." /></span></th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Net<FormulaTooltip title="Monthly Net" formula="Cash In − Cash Out" description="Selisih cash bulan tersebut." /></span></th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Cumulative<FormulaTooltip title="Cumulative Net" formula="Running total Net" description="Akumulasi Net cashflow dari periode pertama sampai sekarang." /></span></th>
+                  <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
+                  <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
+                  <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-10"></th>
+                </tr></thead>
+                <tbody>
+                  {(() => {
+                    let running = 0;
+                    return cfItems.map(cf => {
+                      const net = cf.cash_in - cf.cash_out;
+                      running += net;
+                      return (
+                        <tr key={cf.id} className="border-b border-border/30">
+                          <td className="py-1.5 px-2 font-medium text-foreground">{cf.period_label}</td>
+                          <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(cf.cash_in)}</td>
+                          <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(cf.cash_out)}</td>
+                          <td className={`py-1.5 px-2 text-right font-mono-data ${net >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(net)}</td>
+                          <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${running >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(running)}</td>
+                          <td className="py-1.5 px-2 text-center font-mono-data">{cf.planned_progress}%</td>
+                          <td className="py-1.5 px-2 text-center font-mono-data">{cf.actual_progress}%</td>
+                          <td className="py-1.5 px-2"><button onClick={() => handleDeleteCF(cf.id, cf.period_label)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
