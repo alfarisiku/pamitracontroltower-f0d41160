@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProjects, useAlerts, useMonthlyBudgets, useWorkAreas, useWorkItems, useMilestones } from "@/hooks/useProjects";
+import { useProjects, useAlerts, useMonthlyBudgets, useWorkAreas, useWorkItems, useMilestones, useSCurveData, useProjectCashflow, usePurchaseOrders } from "@/hooks/useProjects";
 import { formatRupiah } from "@/lib/supabase";
 import { FileText, Download, Printer, Share2, ChevronDown } from "lucide-react";
 import jsPDF from "jspdf";
@@ -18,6 +18,9 @@ const Reporting = () => {
   const waIds = workAreas.map(wa => wa.id);
   const { data: workItems = [] } = useWorkItems(waIds);
   const { data: milestones = [] } = useMilestones(selectedProjectId !== "all" ? selectedProjectId : undefined);
+  const { data: scurve = [] } = useSCurveData(selectedProjectId !== "all" ? selectedProjectId : undefined);
+  const { data: cashflow = [] } = useProjectCashflow(selectedProjectId !== "all" ? selectedProjectId : undefined);
+  const { data: pos = [] } = usePurchaseOrders(selectedProjectId !== "all" ? selectedProjectId : undefined);
 
   const totalBudget = filteredProjects.reduce((s, p) => s + p.budget, 0);
   const totalSpent = filteredProjects.reduce((s, p) => s + p.spent, 0);
