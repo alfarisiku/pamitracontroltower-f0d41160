@@ -5,9 +5,10 @@ import { useProjects, useMonthlyBudgets, useProcurementItems, useAllPurchaseOrde
 import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt, FileWarning, Layers } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt, FileWarning, Layers, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
+import { FormulaTooltip } from "@/components/dashboard/FormulaTooltip";
 
 const CostPerformance = () => {
   const navigate = useNavigate();
