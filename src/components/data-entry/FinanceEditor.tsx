@@ -76,31 +76,78 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
   const totalPO = poItems.reduce((s, po) => s + po.amount, 0);
   const p = projects.find(pr => pr.id === projectId);
 
+  const totalCashIn = cfItems.reduce((s, c) => s + (c.cash_in || 0), 0);
+  const totalCashOut = cfItems.reduce((s, c) => s + (c.cash_out || 0), 0);
+  const cumulativeNet = totalCashIn - totalCashOut;
+
+  const cv = p ? (p.contract_value || p.budget) : 0;
+  const computedMarginPct = cv > 0 ? Math.round(((cv - (p?.spent || 0)) / cv) * 100) : 0;
+  const computedMarginRp = cv - (p?.spent || 0);
+
+  const handleToggleMarginLock = async () => {
+    if (!p) return;
+    const newVal = !p.margin_locked;
+    const { error } = await supabase.from("projects").update({ margin_locked: newVal }).eq("id", p.id);
+    if (error) { toast({ title: "❌ Error", description: error.message, variant: "destructive" }); return; }
+    await logActivity(supabase, "project", newVal ? "margin_locked" : "margin_unlocked", `Margin ${newVal ? "LOCKED (manual override)" : "UNLOCKED (auto-calc)"} for ${p.project_code} — current: ${computedMarginPct}% / ${formatRupiah(computedMarginRp)}`, p.id, p.id);
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
+    queryClient.invalidateQueries({ queryKey: ["project", p.id] });
+    queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+    toast({ title: newVal ? "🔒 Margin Locked" : "🔓 Margin Unlocked", description: newVal ? "Margin sekarang manual override (admin only)" : "Margin kembali auto-calculate" });
+  };
+
   return (
     <div className="space-y-5">
       {p && (
         <div className="glass-card rounded-lg shadow-card p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /> Financial Overview</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /> Financial Overview & Margin Control</h3>
+            <button onClick={handleToggleMarginLock}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium border transition-colors ${p.margin_locked ? "bg-warning/15 text-warning border-warning/30 hover:bg-warning/25" : "bg-success/15 text-success border-success/30 hover:bg-success/25"}`}>
+              {p.margin_locked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+              {p.margin_locked ? "Margin Locked (admin override)" : "Lock Margin (admin only)"}
+            </button>
+          </div>
+          {p.margin_locked && (
+            <div className="bg-warning/10 border border-warning/30 rounded p-2 mb-3 text-[11px] text-warning flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+              <span><strong>Margin Manually Overridden</strong> — perubahan margin tidak akan auto-recalculate dari Contract & Spent. Setiap perubahan tercatat di Activity Log.</span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
             <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Contract Value</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Contract Value<FormulaTooltip title="Contract Value" formula="contract_value" description="Nilai kontrak resmi yang ditandatangani dengan client (sudah termasuk addendum yang approved)." /></p>
               <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(p.contract_value || p.budget)}</p>
             </div>
             <div className="bg-muted rounded-lg p-3 border border-border text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Budget</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Budget<FormulaTooltip title="Approved Budget" formula="budget" description="Anggaran resmi yang disetujui untuk pelaksanaan proyek." /></p>
               <p className="text-sm font-bold font-mono-data text-foreground">{formatRupiah(p.budget)}</p>
             </div>
             <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">RAP</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">RAP<FormulaTooltip title="RAP" formula="rap" description="Rencana Anggaran Pelaksanaan — estimasi internal biaya. Selisih dengan Contract = target margin." /></p>
               <p className="text-sm font-bold font-mono-data text-warning">{formatRupiah(p.rap)}</p>
             </div>
             <div className="bg-info/5 rounded-lg p-3 border border-border text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">PO Committed</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">PO Committed<FormulaTooltip title="PO Committed" formula="Σ purchase_orders.amount" description="Total PO yang sudah diterbitkan ke vendor — biaya committed walaupun belum dibayar." /></p>
               <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(totalPO)}</p>
             </div>
             <div className="bg-destructive/5 rounded-lg p-3 border border-destructive/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Actual Spent</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Actual Spent<FormulaTooltip title="Actual Spent" formula="spent" description="Realisasi biaya yang sudah dibayar (cash out aktual)." /></p>
               <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(p.spent)}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={`rounded-lg p-3 border text-center ${p.margin_locked ? "bg-warning/5 border-warning/30" : computedMarginPct > 10 ? "bg-success/5 border-success/30" : computedMarginPct > 0 ? "bg-warning/5 border-warning/30" : "bg-destructive/5 border-destructive/30"}`}>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+                Margin %{p.margin_locked && <Lock className="h-2.5 w-2.5 text-warning" />}
+                <FormulaTooltip title="Margin %" formula="((Contract − Spent) / Contract) × 100%" description="Persentase profit margin berdasarkan nilai kontrak vs actual cost." interpretation="> 15% Sehat • 5–15% Normal • < 5% Tipis • Negatif Rugi" />
+              </p>
+              <p className={`text-lg font-bold font-mono-data ${p.margin_locked ? "text-warning" : computedMarginPct > 10 ? "text-success" : computedMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{computedMarginPct}%</p>
+              {p.margin_locked && <p className="text-[9px] text-warning mt-0.5">Manually Overridden</p>}
+            </div>
+            <div className={`rounded-lg p-3 border text-center ${computedMarginRp > 0 ? "bg-success/5 border-success/30" : "bg-destructive/5 border-destructive/30"}`}>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Margin Nominal<FormulaTooltip title="Margin Nominal" formula="Contract − Spent" description="Profit margin dalam rupiah." /></p>
+              <p className={`text-lg font-bold font-mono-data ${computedMarginRp > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(computedMarginRp)}</p>
             </div>
           </div>
         </div>
