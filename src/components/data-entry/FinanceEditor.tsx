@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { DollarSign, Plus, Save, Trash2 } from "lucide-react";
+import { DollarSign, Plus, Save, Trash2, Lock, Unlock } from "lucide-react";
 import { supabase, formatRupiah, logActivity, DbProject } from "@/lib/supabase";
 import { usePurchaseOrders, useProjectCashflow } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
+import { FormulaTooltip } from "@/components/dashboard/FormulaTooltip";
 
 export function FinanceEditor({ projectId, projects }: { projectId: string; projects: DbProject[] }) {
   const { data: poItems = [], isLoading: poLoading } = usePurchaseOrders(projectId);
@@ -75,31 +76,78 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
   const totalPO = poItems.reduce((s, po) => s + po.amount, 0);
   const p = projects.find(pr => pr.id === projectId);
 
+  const totalCashIn = cfItems.reduce((s, c) => s + (c.cash_in || 0), 0);
+  const totalCashOut = cfItems.reduce((s, c) => s + (c.cash_out || 0), 0);
+  const cumulativeNet = totalCashIn - totalCashOut;
+
+  const cv = p ? (p.contract_value || p.budget) : 0;
+  const computedMarginPct = cv > 0 ? Math.round(((cv - (p?.spent || 0)) / cv) * 100) : 0;
+  const computedMarginRp = cv - (p?.spent || 0);
+
+  const handleToggleMarginLock = async () => {
+    if (!p) return;
+    const newVal = !p.margin_locked;
+    const { error } = await supabase.from("projects").update({ margin_locked: newVal }).eq("id", p.id);
+    if (error) { toast({ title: "❌ Error", description: error.message, variant: "destructive" }); return; }
+    await logActivity(supabase, "project", newVal ? "margin_locked" : "margin_unlocked", `Margin ${newVal ? "LOCKED (manual override)" : "UNLOCKED (auto-calc)"} for ${p.project_code} — current: ${computedMarginPct}% / ${formatRupiah(computedMarginRp)}`, p.id, p.id);
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
+    queryClient.invalidateQueries({ queryKey: ["project", p.id] });
+    queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+    toast({ title: newVal ? "🔒 Margin Locked" : "🔓 Margin Unlocked", description: newVal ? "Margin sekarang manual override (admin only)" : "Margin kembali auto-calculate" });
+  };
+
   return (
     <div className="space-y-5">
       {p && (
         <div className="glass-card rounded-lg shadow-card p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /> Financial Overview</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /> Financial Overview & Margin Control</h3>
+            <button onClick={handleToggleMarginLock}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium border transition-colors ${p.margin_locked ? "bg-warning/15 text-warning border-warning/30 hover:bg-warning/25" : "bg-success/15 text-success border-success/30 hover:bg-success/25"}`}>
+              {p.margin_locked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+              {p.margin_locked ? "Margin Locked (admin override)" : "Lock Margin (admin only)"}
+            </button>
+          </div>
+          {p.margin_locked && (
+            <div className="bg-warning/10 border border-warning/30 rounded p-2 mb-3 text-[11px] text-warning flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+              <span><strong>Margin Manually Overridden</strong> — perubahan margin tidak akan auto-recalculate dari Contract & Spent. Setiap perubahan tercatat di Activity Log.</span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
             <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Contract Value</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Contract Value<FormulaTooltip title="Contract Value" formula="contract_value" description="Nilai kontrak resmi yang ditandatangani dengan client (sudah termasuk addendum yang approved)." /></p>
               <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(p.contract_value || p.budget)}</p>
             </div>
             <div className="bg-muted rounded-lg p-3 border border-border text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Budget</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Budget<FormulaTooltip title="Approved Budget" formula="budget" description="Anggaran resmi yang disetujui untuk pelaksanaan proyek." /></p>
               <p className="text-sm font-bold font-mono-data text-foreground">{formatRupiah(p.budget)}</p>
             </div>
             <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">RAP</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">RAP<FormulaTooltip title="RAP" formula="rap" description="Rencana Anggaran Pelaksanaan — estimasi internal biaya. Selisih dengan Contract = target margin." /></p>
               <p className="text-sm font-bold font-mono-data text-warning">{formatRupiah(p.rap)}</p>
             </div>
             <div className="bg-info/5 rounded-lg p-3 border border-border text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">PO Committed</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">PO Committed<FormulaTooltip title="PO Committed" formula="Σ purchase_orders.amount" description="Total PO yang sudah diterbitkan ke vendor — biaya committed walaupun belum dibayar." /></p>
               <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(totalPO)}</p>
             </div>
             <div className="bg-destructive/5 rounded-lg p-3 border border-destructive/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Actual Spent</p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Actual Spent<FormulaTooltip title="Actual Spent" formula="spent" description="Realisasi biaya yang sudah dibayar (cash out aktual)." /></p>
               <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(p.spent)}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={`rounded-lg p-3 border text-center ${p.margin_locked ? "bg-warning/5 border-warning/30" : computedMarginPct > 10 ? "bg-success/5 border-success/30" : computedMarginPct > 0 ? "bg-warning/5 border-warning/30" : "bg-destructive/5 border-destructive/30"}`}>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+                Margin %{p.margin_locked && <Lock className="h-2.5 w-2.5 text-warning" />}
+                <FormulaTooltip title="Margin %" formula="((Contract − Spent) / Contract) × 100%" description="Persentase profit margin berdasarkan nilai kontrak vs actual cost." interpretation="> 15% Sehat • 5–15% Normal • < 5% Tipis • Negatif Rugi" />
+              </p>
+              <p className={`text-lg font-bold font-mono-data ${p.margin_locked ? "text-warning" : computedMarginPct > 10 ? "text-success" : computedMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{computedMarginPct}%</p>
+              {p.margin_locked && <p className="text-[9px] text-warning mt-0.5">Manually Overridden</p>}
+            </div>
+            <div className={`rounded-lg p-3 border text-center ${computedMarginRp > 0 ? "bg-success/5 border-success/30" : "bg-destructive/5 border-destructive/30"}`}>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Margin Nominal<FormulaTooltip title="Margin Nominal" formula="Contract − Spent" description="Profit margin dalam rupiah." /></p>
+              <p className={`text-lg font-bold font-mono-data ${computedMarginRp > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(computedMarginRp)}</p>
             </div>
           </div>
         </div>
@@ -193,32 +241,61 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
         {cfLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : cfItems.length === 0 ? (
           <p className="text-xs text-muted-foreground">Belum ada data cashflow.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead><tr className="bg-muted/50 border-b border-border">
-                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Period</th>
-                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Cash In</th>
-                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
-                <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
-                <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
-                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-10"></th>
-              </tr></thead>
-              <tbody>
-                {cfItems.map(cf => (
-                  <tr key={cf.id} className="border-b border-border/30">
-                    <td className="py-1.5 px-2 font-medium text-foreground">{cf.period_label}</td>
-                    <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(cf.cash_in)}</td>
-                    <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(cf.cash_out)}</td>
-                    <td className={`py-1.5 px-2 text-right font-mono-data ${cf.cash_in - cf.cash_out >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(cf.cash_in - cf.cash_out)}</td>
-                    <td className="py-1.5 px-2 text-center font-mono-data">{cf.planned_progress}%</td>
-                    <td className="py-1.5 px-2 text-center font-mono-data">{cf.actual_progress}%</td>
-                    <td className="py-1.5 px-2"><button onClick={() => handleDeleteCF(cf.id, cf.period_label)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+              <div className="bg-success/5 rounded p-2 border border-success/20">
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Total Cash In<FormulaTooltip title="Cash In" formula="Σ cash_in (semua periode)" description="Total uang masuk dari pembayaran client (termin, DP, retensi)." interpretation="Sumber: invoice ke client" /></p>
+                <p className="text-sm font-bold font-mono-data text-success">{formatRupiah(totalCashIn)}</p>
+              </div>
+              <div className="bg-destructive/5 rounded p-2 border border-destructive/20">
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Total Cash Out<FormulaTooltip title="Cash Out" formula="Σ cash_out (semua periode)" description="Total uang keluar untuk vendor (PO), gaji, dan biaya operasional." interpretation="Termasuk pembayaran PO + opex" /></p>
+                <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(totalCashOut)}</p>
+              </div>
+              <div className={`rounded p-2 border ${cumulativeNet >= 0 ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/30"}`}>
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Cumulative Net<FormulaTooltip title="Cumulative Net Cashflow" formula="Σ (Cash In − Cash Out)" description="Akumulasi net cashflow dari semua periode." interpretation="Positif = surplus kas, Negatif = perlu pendanaan eksternal" /></p>
+                <p className={`text-sm font-bold font-mono-data ${cumulativeNet >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(cumulativeNet)}</p>
+              </div>
+              <div className="bg-info/5 rounded p-2 border border-info/20">
+                <p className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">Avg Net/Periode<FormulaTooltip title="Avg Net per Period" formula="Cumulative Net / jumlah periode" description="Rata-rata net cashflow per periode." /></p>
+                <p className={`text-sm font-bold font-mono-data ${cumulativeNet >= 0 ? "text-success" : "text-destructive"}`}>{cfItems.length > 0 ? formatRupiah(Math.round(cumulativeNet / cfItems.length)) : "—"}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="bg-muted/50 border-b border-border">
+                  <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Period</th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Cash In<FormulaTooltip title="Cash In" formula="Pembayaran dari client" description="Termin pembayaran client (DP, progress, retensi)." /></span></th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Cash Out<FormulaTooltip title="Cash Out" formula="Pembayaran ke vendor + opex" description="Pembayaran PO + biaya operasional bulanan." /></span></th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Net<FormulaTooltip title="Monthly Net" formula="Cash In − Cash Out" description="Selisih cash bulan tersebut." /></span></th>
+                  <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground"><span className="inline-flex items-center">Cumulative<FormulaTooltip title="Cumulative Net" formula="Running total Net" description="Akumulasi Net cashflow dari periode pertama sampai sekarang." /></span></th>
+                  <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
+                  <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
+                  <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-10"></th>
+                </tr></thead>
+                <tbody>
+                  {(() => {
+                    let running = 0;
+                    return cfItems.map(cf => {
+                      const net = cf.cash_in - cf.cash_out;
+                      running += net;
+                      return (
+                        <tr key={cf.id} className="border-b border-border/30">
+                          <td className="py-1.5 px-2 font-medium text-foreground">{cf.period_label}</td>
+                          <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(cf.cash_in)}</td>
+                          <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(cf.cash_out)}</td>
+                          <td className={`py-1.5 px-2 text-right font-mono-data ${net >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(net)}</td>
+                          <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${running >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(running)}</td>
+                          <td className="py-1.5 px-2 text-center font-mono-data">{cf.planned_progress}%</td>
+                          <td className="py-1.5 px-2 text-center font-mono-data">{cf.actual_progress}%</td>
+                          <td className="py-1.5 px-2"><button onClick={() => handleDeleteCF(cf.id, cf.period_label)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

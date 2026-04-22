@@ -5,9 +5,10 @@ import { useProjects, useMonthlyBudgets, useProcurementItems, useAllPurchaseOrde
 import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt, FileWarning, Layers } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Share2, Percent, Download, Printer, Wallet, Receipt, FileWarning, Layers, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
+import { FormulaTooltip } from "@/components/dashboard/FormulaTooltip";
 
 const CostPerformance = () => {
   const navigate = useNavigate();
@@ -169,37 +170,37 @@ const CostPerformance = () => {
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-8 gap-3 mb-5">
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-primary/15"><Wallet className="h-4 w-4 text-primary" /></div><span className="text-[10px] uppercase text-muted-foreground">Contract</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-primary/15"><Wallet className="h-4 w-4 text-primary" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">Contract<FormulaTooltip title="Contract Value" formula="Σ contract_value" description="Total nilai kontrak semua proyek terpilih (Nilai Kontrak resmi dengan client)." /></span></div>
               <p className="text-base font-bold font-mono-data text-primary">{formatRupiah(totalContractValue)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Receipt className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">RAP</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Receipt className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">RAP<FormulaTooltip title="RAP (Rencana Anggaran Pelaksanaan)" formula="Σ rap" description="Estimasi internal biaya pelaksanaan proyek. Selisih dengan Contract Value = target margin." interpretation="RAP < Contract Value = ada margin perencanaan" /></span></div>
               <p className="text-base font-bold font-mono-data text-info">{formatRupiah(totalRap)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-accent/15"><DollarSign className="h-4 w-4 text-accent" /></div><span className="text-[10px] uppercase text-muted-foreground">Budget</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-accent/15"><DollarSign className="h-4 w-4 text-accent" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">Budget<FormulaTooltip title="Approved Budget" formula="Σ budget" description="Anggaran resmi yang sudah disetujui untuk eksekusi proyek (termasuk addendum jika ada)." /></span></div>
               <p className="text-base font-bold font-mono-data text-accent">{formatRupiah(totalBudget)}</p>
             </div>
-            <div className="glass-card rounded-lg p-3 shadow-card" title="Total committed via Purchase Orders">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Layers className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground">PO Committed</span></div>
+            <div className="glass-card rounded-lg p-3 shadow-card">
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-info/15"><Layers className="h-4 w-4 text-info" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">PO Committed<FormulaTooltip title="Committed Cost (PO)" formula="Σ purchase_orders.amount" description="Total nilai Purchase Order yang sudah diterbitkan ke vendor — biaya yang sudah committed walaupun belum tentu dibayar." interpretation="Committed mendekati Budget = ruang fleksibilitas menyusut" /></span></div>
               <p className="text-base font-bold font-mono-data text-info">{formatRupiah(totalCommitted)}</p>
               <p className="text-[10px] text-muted-foreground">{filteredPOs.length} PO</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-warning/15"><TrendingUp className="h-4 w-4 text-warning" /></div><span className="text-[10px] uppercase text-muted-foreground">Actual Cost</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-warning/15"><TrendingUp className="h-4 w-4 text-warning" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">Actual Cost<FormulaTooltip title="Actual Cost (Cash Out)" formula="Σ spent" description="Realisasi biaya yang sudah dikeluarkan (terbayar). Termasuk pembayaran PO + operasional." interpretation="Actual / Budget < 90% = sehat, > 95% = kritis" /></span></div>
               <p className="text-base font-bold font-mono-data text-foreground">{formatRupiah(totalSpent)}</p>
               <p className="text-[10px] text-muted-foreground">{totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0}%</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-success/15"><TrendingDown className="h-4 w-4 text-success" /></div><span className="text-[10px] uppercase text-muted-foreground">Remaining</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-success/15"><TrendingDown className="h-4 w-4 text-success" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">Remaining<FormulaTooltip title="Remaining Budget" formula="Budget − Actual Cost" description="Sisa anggaran yang masih tersedia untuk dipakai sampai akhir proyek." interpretation="Bandingkan dengan sisa scope work untuk antisipasi over-budget" /></span></div>
               <p className="text-base font-bold font-mono-data text-success">{formatRupiah(remaining)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><FileWarning className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground">Penalty/Claim</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><FileWarning className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">Penalty/Claim<FormulaTooltip title="Penalty / Claim" formula="Σ purchase_orders.penalty_amount" description="Akumulasi denda keterlambatan / klaim dari vendor atau client yang berdampak pada arus kas." /></span></div>
               <p className="text-base font-bold font-mono-data text-destructive">{formatRupiah(totalPenalty)}</p>
             </div>
             <div className="glass-card rounded-lg p-3 shadow-card">
-              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><AlertTriangle className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground">Over Budget</span></div>
+              <div className="flex items-center gap-2 mb-1"><div className="p-1.5 rounded-lg bg-destructive/15"><AlertTriangle className="h-4 w-4 text-destructive" /></div><span className="text-[10px] uppercase text-muted-foreground flex items-center">Over Budget<FormulaTooltip title="Project Over Budget" formula="Count(Spent / Budget > 90%)" description="Jumlah proyek yang sudah mengkonsumsi >90% anggarannya — perlu monitoring intensif." /></span></div>
               <p className="text-base font-bold font-mono-data text-destructive">{overBudget.length}</p>
               <p className="text-[10px] text-muted-foreground">&gt;90% used</p>
             </div>
@@ -293,7 +294,8 @@ const CostPerformance = () => {
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Remaining</th>
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Used%</th>
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">CPI</th>
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin %</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin Rp</th>
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Penalty</th>
                   </tr></thead>
                   <tbody>
@@ -320,7 +322,13 @@ const CostPerformance = () => {
                             </div>
                           </td>
                           <td className={`py-2 px-3 font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
-                          <td className={`py-2 px-3 font-mono-data font-bold ${margin > 10 ? "text-success" : margin > 0 ? "text-warning" : "text-destructive"}`}>{margin}%</td>
+                          <td className={`py-2 px-3 font-mono-data font-bold ${margin > 10 ? "text-success" : margin > 0 ? "text-warning" : "text-destructive"}`}>
+                            <div className="flex items-center gap-1">
+                              <span>{margin}%</span>
+                              {p.margin_locked && <span title="Margin manually overridden by admin (locked)" className="inline-flex items-center px-1 py-0.5 rounded bg-warning/15 text-warning border border-warning/30 text-[8px] font-semibold gap-0.5"><Lock className="h-2 w-2" />OVR</span>}
+                            </div>
+                          </td>
+                          <td className={`py-2 px-3 font-mono-data ${margin > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(cv - p.spent)}</td>
                           <td className={`py-2 px-3 font-mono-data ${penalty > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{penalty > 0 ? formatRupiah(penalty) : "—"}</td>
                         </tr>
                       );
