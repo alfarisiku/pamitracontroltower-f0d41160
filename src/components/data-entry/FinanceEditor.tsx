@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { DollarSign, Plus, Save, Trash2 } from "lucide-react";
+import { DollarSign, Plus, Save, Trash2, Lock, Unlock } from "lucide-react";
 import { supabase, formatRupiah, logActivity, DbProject } from "@/lib/supabase";
 import { usePurchaseOrders, useProjectCashflow } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
+import { FormulaTooltip } from "@/components/dashboard/FormulaTooltip";
 
 export function FinanceEditor({ projectId, projects }: { projectId: string; projects: DbProject[] }) {
   const { data: poItems = [], isLoading: poLoading } = usePurchaseOrders(projectId);
