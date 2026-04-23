@@ -22,18 +22,51 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
   const handleAddPO = async () => {
     setSaving(true);
     try {
+      const amt = parseInt(poForm.amount) || 0;
       const { error } = await supabase.from("purchase_orders").insert({
-        project_id: projectId, description: poForm.description, amount: parseInt(poForm.amount) || 0,
+        project_id: projectId, description: poForm.description, amount: amt,
         po_date: poForm.po_date || null, vendor: poForm.vendor, related_activity: poForm.related_activity,
         category: poForm.category, status: poForm.status,
       });
       if (error) throw error;
-      await logActivity(supabase, "purchase_order", "create", `PO added: ${poForm.description} (${formatRupiah(parseInt(poForm.amount) || 0)})`, projectId);
+      await logActivity(supabase, "purchase_order", "create", `PO added: ${poForm.description} (${formatRupiah(amt)}, ${poForm.status})`, projectId);
+
+      // If PO is created already as "paid", auto-create cash_out for current month
+      if (poForm.status === "paid" && amt > 0) {
+        const periodLabel = new Date(poForm.po_date || Date.now()).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        await supabase.from("project_cashflow").insert({
+          project_id: projectId, period_label: periodLabel, period_order: cfItems.length,
+          cash_in: 0, cash_out: amt, planned_progress: 0, actual_progress: 0,
+        });
+        await logActivity(supabase, "cashflow", "auto_create", `Auto cash_out from PO paid: ${formatRupiah(amt)} (${periodLabel})`, projectId);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["purchase_orders"] });
+      queryClient.invalidateQueries({ queryKey: ["project_cashflow"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Purchase Order ditambahkan" });
+      toast({ title: "✅ Berhasil", description: poForm.status === "paid" ? "PO + cash_out auto-generated" : "Purchase Order ditambahkan" });
       setShowAddPO(false);
       setPoForm({ description: "", amount: "", po_date: "", vendor: "", related_activity: "", category: "material", status: "committed" });
+    } catch (e: any) { toast({ title: "❌ Error", description: e.message, variant: "destructive" }); }
+    finally { setSaving(false); }
+  };
+
+  const handleMarkPOPaid = async (po: any) => {
+    if (po.status === "paid") return;
+    if (!confirm(`Tandai PO "${po.description}" sebagai PAID?\n\nIni akan otomatis membuat entri cash_out di Cashflow.`)) return;
+    setSaving(true);
+    try {
+      await supabase.from("purchase_orders").update({ status: "paid" }).eq("id", po.id);
+      const periodLabel = new Date(po.po_date || Date.now()).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      await supabase.from("project_cashflow").insert({
+        project_id: projectId, period_label: periodLabel, period_order: cfItems.length,
+        cash_in: 0, cash_out: po.amount, planned_progress: 0, actual_progress: 0,
+      });
+      await logActivity(supabase, "purchase_order", "mark_paid", `PO marked PAID: ${po.description} (${formatRupiah(po.amount)}) → cash_out ${periodLabel}`, projectId, po.id);
+      queryClient.invalidateQueries({ queryKey: ["purchase_orders"] });
+      queryClient.invalidateQueries({ queryKey: ["project_cashflow"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "✅ Paid", description: `Cash out ${formatRupiah(po.amount)} ditambahkan untuk ${periodLabel}` });
     } catch (e: any) { toast({ title: "❌ Error", description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   };
