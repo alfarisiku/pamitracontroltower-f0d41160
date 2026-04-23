@@ -22,18 +22,51 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
   const handleAddPO = async () => {
     setSaving(true);
     try {
+      const amt = parseInt(poForm.amount) || 0;
       const { error } = await supabase.from("purchase_orders").insert({
-        project_id: projectId, description: poForm.description, amount: parseInt(poForm.amount) || 0,
+        project_id: projectId, description: poForm.description, amount: amt,
         po_date: poForm.po_date || null, vendor: poForm.vendor, related_activity: poForm.related_activity,
         category: poForm.category, status: poForm.status,
       });
       if (error) throw error;
-      await logActivity(supabase, "purchase_order", "create", `PO added: ${poForm.description} (${formatRupiah(parseInt(poForm.amount) || 0)})`, projectId);
+      await logActivity(supabase, "purchase_order", "create", `PO added: ${poForm.description} (${formatRupiah(amt)}, ${poForm.status})`, projectId);
+
+      // If PO is created already as "paid", auto-create cash_out for current month
+      if (poForm.status === "paid" && amt > 0) {
+        const periodLabel = new Date(poForm.po_date || Date.now()).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        await supabase.from("project_cashflow").insert({
+          project_id: projectId, period_label: periodLabel, period_order: cfItems.length,
+          cash_in: 0, cash_out: amt, planned_progress: 0, actual_progress: 0,
+        });
+        await logActivity(supabase, "cashflow", "auto_create", `Auto cash_out from PO paid: ${formatRupiah(amt)} (${periodLabel})`, projectId);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["purchase_orders"] });
+      queryClient.invalidateQueries({ queryKey: ["project_cashflow"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Purchase Order ditambahkan" });
+      toast({ title: "✅ Berhasil", description: poForm.status === "paid" ? "PO + cash_out auto-generated" : "Purchase Order ditambahkan" });
       setShowAddPO(false);
       setPoForm({ description: "", amount: "", po_date: "", vendor: "", related_activity: "", category: "material", status: "committed" });
+    } catch (e: any) { toast({ title: "❌ Error", description: e.message, variant: "destructive" }); }
+    finally { setSaving(false); }
+  };
+
+  const handleMarkPOPaid = async (po: any) => {
+    if (po.status === "paid") return;
+    if (!confirm(`Tandai PO "${po.description}" sebagai PAID?\n\nIni akan otomatis membuat entri cash_out di Cashflow.`)) return;
+    setSaving(true);
+    try {
+      await supabase.from("purchase_orders").update({ status: "paid" }).eq("id", po.id);
+      const periodLabel = new Date(po.po_date || Date.now()).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      await supabase.from("project_cashflow").insert({
+        project_id: projectId, period_label: periodLabel, period_order: cfItems.length,
+        cash_in: 0, cash_out: po.amount, planned_progress: 0, actual_progress: 0,
+      });
+      await logActivity(supabase, "purchase_order", "mark_paid", `PO marked PAID: ${po.description} (${formatRupiah(po.amount)}) → cash_out ${periodLabel}`, projectId, po.id);
+      queryClient.invalidateQueries({ queryKey: ["purchase_orders"] });
+      queryClient.invalidateQueries({ queryKey: ["project_cashflow"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "✅ Paid", description: `Cash out ${formatRupiah(po.amount)} ditambahkan untuk ${periodLabel}` });
     } catch (e: any) { toast({ title: "❌ Error", description: e.message, variant: "destructive" }); }
     finally { setSaving(false); }
   };
@@ -136,20 +169,35 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
               <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(p.spent)}</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className={`rounded-lg p-3 border text-center ${p.margin_locked ? "bg-warning/5 border-warning/30" : computedMarginPct > 10 ? "bg-success/5 border-success/30" : computedMarginPct > 0 ? "bg-warning/5 border-warning/30" : "bg-destructive/5 border-destructive/30"}`}>
               <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                Margin %{p.margin_locked && <Lock className="h-2.5 w-2.5 text-warning" />}
-                <FormulaTooltip title="Margin %" formula="((Contract − Spent) / Contract) × 100%" description="Persentase profit margin berdasarkan nilai kontrak vs actual cost." interpretation="> 15% Sehat • 5–15% Normal • < 5% Tipis • Negatif Rugi" />
+                Actual Margin %{p.margin_locked && <Lock className="h-2.5 w-2.5 text-warning" />}
+                <FormulaTooltip title="Actual Margin %" formula="((Contract − Spent) / Contract) × 100%" description="Auto-calculated dari Contract & Actual Spent. Selalu real-time, tidak bisa diedit manual kecuali mode Lock." interpretation="> 15% Sehat • 5–15% Normal • < 5% Tipis • Negatif Rugi" />
               </p>
               <p className={`text-lg font-bold font-mono-data ${p.margin_locked ? "text-warning" : computedMarginPct > 10 ? "text-success" : computedMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{computedMarginPct}%</p>
               {p.margin_locked && <p className="text-[9px] text-warning mt-0.5">Manually Overridden</p>}
             </div>
             <div className={`rounded-lg p-3 border text-center ${computedMarginRp > 0 ? "bg-success/5 border-success/30" : "bg-destructive/5 border-destructive/30"}`}>
-              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Margin Nominal<FormulaTooltip title="Margin Nominal" formula="Contract − Spent" description="Profit margin dalam rupiah." /></p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Actual Margin Nominal<FormulaTooltip title="Actual Margin Nominal" formula="Contract − Spent" description="Profit margin aktual dalam rupiah, auto-calc dari data." /></p>
               <p className={`text-lg font-bold font-mono-data ${computedMarginRp > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(computedMarginRp)}</p>
             </div>
+            <div className="bg-info/5 rounded-lg p-3 border border-info/30 text-center">
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Target Margin %<FormulaTooltip title="Target Margin" formula="profit_margin_target (Master Data)" description="Target profit margin yang ditetapkan saat planning. Edit di tab Manage Projects → Edit Project → Financial." interpretation="Bandingkan dengan Actual Margin untuk evaluasi performa." /></p>
+              <p className="text-lg font-bold font-mono-data text-info">{p.profit_margin_target}%</p>
+              {Math.abs(computedMarginPct - p.profit_margin_target) > 5 && !p.margin_locked && (
+                <p className={`text-[9px] mt-0.5 font-medium ${computedMarginPct < p.profit_margin_target ? "text-destructive" : "text-success"}`}>
+                  ⚠ Deviasi {(computedMarginPct - p.profit_margin_target).toFixed(1)}% vs target
+                </p>
+              )}
+            </div>
           </div>
+          {Math.abs(computedMarginPct - p.profit_margin_target) > 10 && !p.margin_locked && (
+            <div className="mt-3 bg-destructive/10 border border-destructive/30 rounded p-2 text-[11px] text-destructive flex items-center gap-2">
+              <span className="flex-shrink-0">⚠️</span>
+              <span><strong>Margin Inkonsisten:</strong> Actual {computedMarginPct}% berbeda jauh dari Target {p.profit_margin_target}%. Review budget atau update Target Margin di Manage Projects.</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -207,7 +255,14 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
                     <td className="py-1.5 px-2 capitalize text-muted-foreground">{po.category}</td>
                     <td className="py-1.5 px-2 text-[9px] font-mono-data text-muted-foreground">{po.po_date ? new Date(po.po_date).toLocaleDateString("id-ID", {day:"numeric",month:"short",year:"numeric"}) : "—"}</td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${po.status === "paid" ? "bg-success/15 text-success border-success/30" : po.status === "cancelled" ? "bg-destructive/15 text-destructive border-destructive/30" : "bg-primary/15 text-primary border-primary/30"}`}>{po.status}</span></td>
-                    <td className="py-1.5 px-2"><button onClick={() => handleDeletePO(po.id, po.description)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                    <td className="py-1.5 px-2">
+                      <div className="flex items-center gap-1">
+                        {po.status !== "paid" && po.status !== "cancelled" && (
+                          <button onClick={() => handleMarkPOPaid(po)} title="Mark Paid → auto generate cash_out" className="text-[9px] px-1.5 py-0.5 bg-success/10 text-success rounded border border-success/30 hover:bg-success/20 font-medium">Pay</button>
+                        )}
+                        <button onClick={() => handleDeletePO(po.id, po.description)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
