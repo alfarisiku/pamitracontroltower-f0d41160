@@ -51,19 +51,28 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
   const handleCreateProject = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase.from("projects").insert({
+      const { data: created, error } = await supabase.from("projects").insert({
         project_code: newProject.project_code, name: newProject.name, client: newProject.client,
         manager: newProject.manager, location: newProject.location,
         budget: parseInt(newProject.budget) || 0, start_date: newProject.start_date,
         end_date: newProject.end_date, description: newProject.description,
         category: newProject.category, map_x: parseFloat(newProject.map_x) || 50,
         map_y: parseFloat(newProject.map_y) || 50,
-      });
+      }).select().single();
       if (error) throw error;
-      await logActivity(supabase, "project", "create", `Project created: ${newProject.project_code} - ${newProject.name}`);
+
+      // Auto-init default WBS structure so user can immediately add work items
+      if (created?.id) {
+        await supabase.from("work_areas").insert([
+          { project_id: created.id, code: "WA-001", name: "General Works", weight: 100, sort_order: 0 },
+        ]);
+      }
+
+      await logActivity(supabase, "project", "create", `Project created: ${newProject.project_code} - ${newProject.name} (with default WBS)`, created?.id, created?.id);
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["work_areas"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Proyek baru ditambahkan" });
+      toast({ title: "✅ Berhasil", description: "Proyek baru + default Work Area dibuat. Silakan tambah work items." });
       setShowNewProject(false);
       setNewProject({ project_code: "", name: "", client: "", manager: "", location: "", budget: "", start_date: "", end_date: "", description: "", category: "Energy", map_x: "50", map_y: "50" });
     } catch (e: any) {
@@ -102,16 +111,40 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (!confirm("Yakin hapus proyek ini?")) return;
+    const p = projects.find(pr => pr.id === id);
+    if (!confirm(`Yakin hapus proyek "${p?.project_code} - ${p?.name}"?\n\nSemua data terkait akan dihapus:\n• Work Areas, Work Items, Sub Tasks\n• Risks, POs, Cashflow, Photos\n• Addendums, Milestones, S-Curve, Manpower`)) return;
     setSaving(true);
     try {
-      const p = projects.find(pr => pr.id === id);
+      // Cascade delete all related data (no FK cascade in DB, so do manually)
+      // 1. Find work_areas to cascade work_items + sub_tasks
+      const { data: wa } = await supabase.from("work_areas").select("id").eq("project_id", id);
+      const waIds = (wa || []).map(w => w.id);
+      if (waIds.length > 0) {
+        const { data: wi } = await supabase.from("work_items").select("id").in("work_area_id", waIds);
+        const wiIds = (wi || []).map(w => w.id);
+        if (wiIds.length > 0) await supabase.from("sub_tasks").delete().in("work_item_id", wiIds);
+        await supabase.from("work_items").delete().in("work_area_id", waIds);
+      }
+      // 2. Delete all project-scoped tables
+      await Promise.all([
+        supabase.from("work_areas").delete().eq("project_id", id),
+        supabase.from("project_alerts").delete().eq("project_id", id),
+        supabase.from("purchase_orders").delete().eq("project_id", id),
+        supabase.from("project_cashflow").delete().eq("project_id", id),
+        supabase.from("project_photos").delete().eq("project_id", id),
+        supabase.from("addendums").delete().eq("project_id", id),
+        supabase.from("milestones").delete().eq("project_id", id),
+        supabase.from("s_curve_data").delete().eq("project_id", id),
+        supabase.from("procurement_items").delete().eq("project_id", id),
+        supabase.from("manpower_logs" as any).delete().eq("project_id", id),
+        supabase.from("notifications").delete().eq("project_id", id),
+      ]);
+      // 3. Finally delete project
       const { error } = await supabase.from("projects").delete().eq("id", id);
       if (error) throw error;
-      await logActivity(supabase, "project", "delete", `Project deleted: ${p?.project_code || id}`);
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Proyek dihapus" });
+      await logActivity(supabase, "project", "delete", `Project deleted (cascade): ${p?.project_code || id} — semua data terkait terhapus`);
+      queryClient.invalidateQueries();
+      toast({ title: "✅ Berhasil", description: "Proyek dan semua data terkait berhasil dihapus" });
       if (editProjectId === id) setEditProjectId(null);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });

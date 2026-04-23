@@ -136,20 +136,35 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
               <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(p.spent)}</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className={`rounded-lg p-3 border text-center ${p.margin_locked ? "bg-warning/5 border-warning/30" : computedMarginPct > 10 ? "bg-success/5 border-success/30" : computedMarginPct > 0 ? "bg-warning/5 border-warning/30" : "bg-destructive/5 border-destructive/30"}`}>
               <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                Margin %{p.margin_locked && <Lock className="h-2.5 w-2.5 text-warning" />}
-                <FormulaTooltip title="Margin %" formula="((Contract − Spent) / Contract) × 100%" description="Persentase profit margin berdasarkan nilai kontrak vs actual cost." interpretation="> 15% Sehat • 5–15% Normal • < 5% Tipis • Negatif Rugi" />
+                Actual Margin %{p.margin_locked && <Lock className="h-2.5 w-2.5 text-warning" />}
+                <FormulaTooltip title="Actual Margin %" formula="((Contract − Spent) / Contract) × 100%" description="Auto-calculated dari Contract & Actual Spent. Selalu real-time, tidak bisa diedit manual kecuali mode Lock." interpretation="> 15% Sehat • 5–15% Normal • < 5% Tipis • Negatif Rugi" />
               </p>
               <p className={`text-lg font-bold font-mono-data ${p.margin_locked ? "text-warning" : computedMarginPct > 10 ? "text-success" : computedMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{computedMarginPct}%</p>
               {p.margin_locked && <p className="text-[9px] text-warning mt-0.5">Manually Overridden</p>}
             </div>
             <div className={`rounded-lg p-3 border text-center ${computedMarginRp > 0 ? "bg-success/5 border-success/30" : "bg-destructive/5 border-destructive/30"}`}>
-              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Margin Nominal<FormulaTooltip title="Margin Nominal" formula="Contract − Spent" description="Profit margin dalam rupiah." /></p>
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Actual Margin Nominal<FormulaTooltip title="Actual Margin Nominal" formula="Contract − Spent" description="Profit margin aktual dalam rupiah, auto-calc dari data." /></p>
               <p className={`text-lg font-bold font-mono-data ${computedMarginRp > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(computedMarginRp)}</p>
             </div>
+            <div className="bg-info/5 rounded-lg p-3 border border-info/30 text-center">
+              <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Target Margin %<FormulaTooltip title="Target Margin" formula="profit_margin_target (Master Data)" description="Target profit margin yang ditetapkan saat planning. Edit di tab Manage Projects → Edit Project → Financial." interpretation="Bandingkan dengan Actual Margin untuk evaluasi performa." /></p>
+              <p className="text-lg font-bold font-mono-data text-info">{p.profit_margin_target}%</p>
+              {Math.abs(computedMarginPct - p.profit_margin_target) > 5 && !p.margin_locked && (
+                <p className={`text-[9px] mt-0.5 font-medium ${computedMarginPct < p.profit_margin_target ? "text-destructive" : "text-success"}`}>
+                  ⚠ Deviasi {(computedMarginPct - p.profit_margin_target).toFixed(1)}% vs target
+                </p>
+              )}
+            </div>
           </div>
+          {Math.abs(computedMarginPct - p.profit_margin_target) > 10 && !p.margin_locked && (
+            <div className="mt-3 bg-destructive/10 border border-destructive/30 rounded p-2 text-[11px] text-destructive flex items-center gap-2">
+              <span className="flex-shrink-0">⚠️</span>
+              <span><strong>Margin Inkonsisten:</strong> Actual {computedMarginPct}% berbeda jauh dari Target {p.profit_margin_target}%. Review budget atau update Target Margin di Manage Projects.</span>
+            </div>
+          )}
         </div>
       )}
 
