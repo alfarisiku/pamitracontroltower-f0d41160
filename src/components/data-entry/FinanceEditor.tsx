@@ -255,7 +255,14 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
                     <td className="py-1.5 px-2 capitalize text-muted-foreground">{po.category}</td>
                     <td className="py-1.5 px-2 text-[9px] font-mono-data text-muted-foreground">{po.po_date ? new Date(po.po_date).toLocaleDateString("id-ID", {day:"numeric",month:"short",year:"numeric"}) : "—"}</td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${po.status === "paid" ? "bg-success/15 text-success border-success/30" : po.status === "cancelled" ? "bg-destructive/15 text-destructive border-destructive/30" : "bg-primary/15 text-primary border-primary/30"}`}>{po.status}</span></td>
-                    <td className="py-1.5 px-2"><button onClick={() => handleDeletePO(po.id, po.description)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                    <td className="py-1.5 px-2">
+                      <div className="flex items-center gap-1">
+                        {po.status !== "paid" && po.status !== "cancelled" && (
+                          <button onClick={() => handleMarkPOPaid(po)} title="Mark Paid → auto generate cash_out" className="text-[9px] px-1.5 py-0.5 bg-success/10 text-success rounded border border-success/30 hover:bg-success/20 font-medium">Pay</button>
+                        )}
+                        <button onClick={() => handleDeletePO(po.id, po.description)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
