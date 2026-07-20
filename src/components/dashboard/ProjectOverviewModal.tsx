@@ -5,21 +5,14 @@ import { supabase } from "@/lib/supabase";
 import { X, MapPin, Calendar, User, Play, Camera, Video, Cctv, DollarSign, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-type ProjectStatus = DbProject["status"];
-
-const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
-  "on-track": { label: "On Track", className: "bg-success/15 text-success border-success/30" },
-  "at-risk": { label: "At Risk", className: "bg-warning/15 text-warning border-warning/30" },
-  "delayed": { label: "Delayed", className: "bg-destructive/15 text-destructive border-destructive/30" },
-  "completed": { label: "Selesai", className: "bg-primary/15 text-primary border-primary/30" },
-};
+import { getStatusMeta } from "@/lib/supabase";
 
 type MediaTab = "weekly" | "video" | "cctv";
 
 export function ProjectOverviewModal({ project, onClose }: { project: DbProject; onClose: () => void }) {
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
-  const st = statusConfig[project.status];
+  const st = getStatusMeta(project.status);
   const budgetPct = project.budget > 0 ? Math.round((project.spent / project.budget) * 100) : 0;
   const contractValue = project.contract_value || project.budget;
   const margin = contractValue > 0 && project.rap > 0 ? Math.round(((contractValue - project.rap) / contractValue) * 100) : 0;
