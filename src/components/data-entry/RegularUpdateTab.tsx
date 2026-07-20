@@ -190,35 +190,8 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
                 </div>
               );
             })()}
-            <div className="border-t border-border/50 pt-3">
-              <p className="text-[10px] text-muted-foreground uppercase mb-2 font-semibold">➕ Add New Work Item</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div><label className={labelCls}>Code</label><input id="wi-code" className={inputCls} placeholder="WI-010" /></div>
-                <div><label className={labelCls}>Name</label><input id="wi-name" className={inputCls} placeholder="Item name" /></div>
-                <div><label className={labelCls}>Unit</label><input id="wi-unit" className={inputCls} placeholder="unit" defaultValue="unit" /></div>
-                <div><label className={labelCls}>Qty Total</label><input id="wi-qty" type="number" className={inputCls} placeholder="100" /></div>
-              </div>
-              <button onClick={async () => {
-                const code = (document.getElementById("wi-code") as HTMLInputElement)?.value;
-                const name = (document.getElementById("wi-name") as HTMLInputElement)?.value;
-                const unit = (document.getElementById("wi-unit") as HTMLInputElement)?.value || "unit";
-                const qty = parseFloat((document.getElementById("wi-qty") as HTMLInputElement)?.value) || 0;
-                if (!code || !name || waIds.length === 0) { toast({ title: "❌ Error", description: "Isi code & name, pastikan ada work area", variant: "destructive" }); return; }
-                setSaving(true);
-                try {
-                  const { error } = await supabase.from("work_items").insert({ work_area_id: waIds[0], code, name, unit, qty_total: qty, sort_order: workItems.length });
-                  if (error) throw error;
-                  await logActivity(supabase, "work_item", "create", `Added work item: ${code} - ${name}`, projectId);
-                  queryClient.invalidateQueries({ queryKey: ["work_items"] });
-                  queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-                  toast({ title: "✅ Berhasil", description: "Work item ditambahkan" });
-                  (document.getElementById("wi-code") as HTMLInputElement).value = "";
-                  (document.getElementById("wi-name") as HTMLInputElement).value = "";
-                  (document.getElementById("wi-qty") as HTMLInputElement).value = "";
-                } catch (e: any) { toast({ title: "❌ Error", description: e.message, variant: "destructive" }); }
-                finally { setSaving(false); }
-              }} disabled={saving} className="mt-2 flex items-center gap-1 px-3 py-1.5 bg-success text-success-foreground rounded text-xs font-medium disabled:opacity-50"><Plus className="h-3 w-3" /> Add Work Item</button>
-            </div>
+            <p className="text-[10px] text-muted-foreground italic">Untuk menambah / mengubah struktur WBS lengkap, gunakan tab <span className="font-semibold">WBS (Full CRUD)</span>.</p>
+
           </div>
         )}
       </div>
@@ -235,50 +208,7 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
         </div>
       </div>
 
-      {/* Editable Cost Summary */}
-      <div className="glass-card rounded-lg shadow-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4 text-success" /> Cost Summary (Editable)</h3>
-        {(() => {
-          const p = projects.find(pr => pr.id === projectId);
-          if (!p) return null;
-          return (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div><label className={labelCls}>Contract Value (Juta Rp)</label><input id="cs-contract" type="number" className={inputCls} defaultValue={p.contract_value || 0} /></div>
-                <div><label className={labelCls}>Budget (Juta Rp)</label><input id="cs-budget" type="number" className={inputCls} defaultValue={p.budget || 0} /></div>
-                <div><label className={labelCls}>RAP (Juta Rp)</label><input id="cs-rap" type="number" className={inputCls} defaultValue={p.rap || 0} /></div>
-                <div><label className={labelCls}>Actual Spent (Juta Rp)</label><input id="cs-spent" type="number" className={inputCls} defaultValue={p.spent || 0} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className={`rounded-lg p-3 border text-center ${p.spent <= p.rap ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
-                  <p className="text-[9px] text-muted-foreground uppercase">Variance (RAP-Actual)</p>
-                  <p className={`text-sm font-bold font-mono-data ${p.spent <= p.rap ? "text-success" : "text-destructive"}`}>{formatRupiah(p.rap - p.spent)}</p>
-                </div>
-                <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
-                  <p className="text-[9px] text-muted-foreground uppercase">Margin Target</p>
-                  <p className="text-sm font-bold font-mono-data text-primary">{p.profit_margin_target}%</p>
-                </div>
-              </div>
-              <button onClick={async () => {
-                setSaving(true);
-                try {
-                  const contract_value = parseInt((document.getElementById("cs-contract") as HTMLInputElement)?.value) || 0;
-                  const budget = parseInt((document.getElementById("cs-budget") as HTMLInputElement)?.value) || 0;
-                  const rap = parseInt((document.getElementById("cs-rap") as HTMLInputElement)?.value) || 0;
-                  const spent = parseInt((document.getElementById("cs-spent") as HTMLInputElement)?.value) || 0;
-                  const { error } = await supabase.from("projects").update({ contract_value, budget, rap, spent }).eq("id", projectId);
-                  if (error) throw error;
-                  await logActivity(supabase, "project", "update_finance", `Cost updated: Contract=${formatRupiah(contract_value)}, Budget=${formatRupiah(budget)}, RAP=${formatRupiah(rap)}, Spent=${formatRupiah(spent)}`, projectId, projectId);
-                  queryClient.invalidateQueries({ queryKey: ["projects"] });
-                  queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-                  toast({ title: "✅ Berhasil", description: "Data keuangan diupdate" });
-                } catch (e: any) { toast({ title: "❌ Error", description: e.message, variant: "destructive" }); }
-                finally { setSaving(false); }
-              }} disabled={saving} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Cost Data"}</button>
-            </div>
-          );
-        })()}
-      </div>
+      {/* Cost Summary dipindah ke tab Manage Projects & Finance */}
 
       {/* Risk Entry */}
       <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
