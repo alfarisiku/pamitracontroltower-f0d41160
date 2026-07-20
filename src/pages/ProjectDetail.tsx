@@ -36,7 +36,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
 };
 
 type MediaTab = "weekly" | "video" | "cctv";
-type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media";
+type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report";
 
 const riskCategoryLabels: Record<string, string> = {
   technical: "Technical", schedule: "Schedule", cost: "Cost",
@@ -222,6 +222,7 @@ const ProjectDetail = () => {
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
               { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
+              { key: "weekly-report" as const, label: "Weekly Report", icon: FileText },
               { key: "media" as const, label: "Media", icon: Camera },
             ]).map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
