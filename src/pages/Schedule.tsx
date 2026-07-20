@@ -133,7 +133,7 @@ const Schedule = () => {
           </div>
 
           <div className="flex items-center gap-4 mb-3 flex-wrap">
-            {(["on-track", "at-risk", "delayed", "completed"] as ProjectStatus[]).map(s => (
+            {(["planning","execution","on-hold","completed","closed"]).map(s => (
               <div key={s} className="flex items-center gap-1.5 text-[10px]">
                 <div className={`w-3 h-2 rounded-sm ${statusColors[s]}`} />
                 <span className="text-muted-foreground">{statusLabels[s]}</span>
