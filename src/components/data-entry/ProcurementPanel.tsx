@@ -138,7 +138,20 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
               <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-20">Actions</th>
             </tr></thead>
             <tbody>
-              {items.map(item => (
+              {items.map(item => {
+                const dateInput = (field: keyof typeof item, current: string | null) => (
+                  <input type="date" defaultValue={current || ""}
+                    onBlur={async e => {
+                      const v = e.target.value || null;
+                      if (v === (current || null)) return;
+                      await supabase.from("procurement_items").update({ [field]: v }).eq("id", item.id);
+                      await logActivity(supabase, "procurement", "update", `${item.item_name} ${String(field)} → ${v || "cleared"}`, projectId, item.id);
+                      queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
+                      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+                    }}
+                    className="bg-transparent text-[10px] font-mono-data text-foreground border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 focus:outline-none w-[120px]" />
+                );
+                return (
                 <tr key={item.id} className="border-b border-border/30">
                   <td className="py-1.5 px-2 font-medium text-foreground">{item.item_name}<div className="text-[9px] text-muted-foreground">{item.qty} {item.unit}</div></td>
                   <td className="py-1.5 px-2 text-muted-foreground">{item.vendor}</td>
@@ -149,13 +162,14 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
                       {Object.entries(statusLabels).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   </td>
-                  <td className="py-1.5 px-2 text-[9px] font-mono-data text-muted-foreground">{item.rfq_date ? new Date(item.rfq_date).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—"}</td>
-                  <td className="py-1.5 px-2 text-[9px] font-mono-data text-muted-foreground">{item.po_date ? new Date(item.po_date).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—"}</td>
-                  <td className="py-1.5 px-2 text-[9px] font-mono-data text-muted-foreground">{item.delivery_date ? new Date(item.delivery_date).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—"}</td>
-                  <td className="py-1.5 px-2 text-[9px] font-mono-data text-muted-foreground">{item.install_date ? new Date(item.install_date).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—"}</td>
+                  <td className="py-1.5 px-2">{dateInput("rfq_date", item.rfq_date)}</td>
+                  <td className="py-1.5 px-2">{dateInput("po_date", item.po_date)}</td>
+                  <td className="py-1.5 px-2">{dateInput("delivery_date", item.delivery_date)}</td>
+                  <td className="py-1.5 px-2">{dateInput("install_date", item.install_date)}</td>
                   <td className="py-1.5 px-2"><button onClick={() => handleDelete(item.id, item.item_name)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
