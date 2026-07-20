@@ -215,6 +215,53 @@ export type DbProjectCashflow = {
   created_at: string;
 };
 
+export type FinanceCategory =
+  | "project_management" | "material" | "services" | "mob_demob"
+  | "tools_consumables" | "equipment" | "testing_commissioning"
+  | "special_approval" | "bank_guarantee" | "overhead" | "other";
+
+export type FinanceEntryKind = "rap" | "po" | "actual" | "forecast";
+export type FinanceDirection = "in" | "out";
+export type FinanceFrequency = "weekly" | "monthly";
+
+export const FINANCE_CATEGORIES: { value: FinanceCategory; label: string }[] = [
+  { value: "project_management", label: "Project Management" },
+  { value: "material", label: "Material" },
+  { value: "services", label: "Services" },
+  { value: "mob_demob", label: "Mobilisation / Demob" },
+  { value: "tools_consumables", label: "Tools & Consumables" },
+  { value: "equipment", label: "Equipment" },
+  { value: "testing_commissioning", label: "Testing & Commissioning" },
+  { value: "special_approval", label: "Special Approval" },
+  { value: "bank_guarantee", label: "Bank Guarantee" },
+  { value: "overhead", label: "Overhead" },
+  { value: "other", label: "Other" },
+];
+
+export const FINANCE_KIND_LABELS: Record<FinanceEntryKind, string> = {
+  rap: "RAP (Plan)",
+  po: "PO (Committed)",
+  actual: "Actual",
+  forecast: "Forecast",
+};
+
+export type DbFinanceEntry = {
+  id: string;
+  project_id: string;
+  direction: FinanceDirection;
+  category: FinanceCategory | null;
+  entry_kind: FinanceEntryKind;
+  frequency: FinanceFrequency;
+  period_date: string;
+  period_label: string;
+  amount: number;
+  description: string | null;
+  related_activity: string | null;
+  po_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export function formatRupiah(jutaRupiah: number): string {
   if (jutaRupiah >= 1000000) return `Rp ${(jutaRupiah / 1000000).toFixed(1)}T`;
   if (jutaRupiah >= 1000) return `Rp ${(jutaRupiah / 1000).toFixed(1)}M`;
