@@ -7,13 +7,15 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Share2, Download, Printer } from "lucide-react";
 import jsPDF from "jspdf";
 
-type ProjectStatus = DbProject["status"];
+type ProjectStatus = string;
 
-const statusColors: Record<ProjectStatus, string> = {
-  "on-track": "bg-success", "at-risk": "bg-warning", "delayed": "bg-destructive", "completed": "bg-primary",
+const statusColors: Record<string, string> = {
+  "planning": "bg-info", "execution": "bg-success", "on-hold": "bg-warning", "completed": "bg-primary", "closed": "bg-muted-foreground",
+  "on-track": "bg-success", "at-risk": "bg-warning", "delayed": "bg-destructive",
 };
-const statusLabels: Record<ProjectStatus, string> = {
-  "on-track": "On Track", "at-risk": "At Risk", "delayed": "Delayed", "completed": "Selesai",
+const statusLabels: Record<string, string> = {
+  "planning": "Planning", "execution": "Execution", "on-hold": "On Hold", "completed": "Completed", "closed": "Closed",
+  "on-track": "On Track", "at-risk": "At Risk", "delayed": "Delayed",
 };
 
 const Schedule = () => {
