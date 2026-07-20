@@ -59,7 +59,8 @@ function getYoutubeThumbnail(url: string): string | null {
   return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
 }
 
-const phaseLabels: Record<string, string> = { "Engineering": "E", "Procurement": "P", "Construction": "C", "Commissioning": "Co" };
+const phaseLabels: Record<string, string> = { "Production I": "PI", "Production II": "PII", "Production III": "PIII", "Production IV": "PIV", "Engineering": "E", "Procurement": "P", "Construction": "C", "Commissioning": "Co" };
+const EPC_PHASES = ["Production I", "Production II", "Production III", "Production IV"] as const;
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,11 +77,13 @@ const ProjectDetail = () => {
   const { data: procurementItems = [] } = useProcurementItems(id);
   const { data: purchaseOrders = [] } = usePurchaseOrders(id);
   const { data: cashflowData = [] } = useProjectCashflow(id);
+  const { data: financeEntries = [] } = useFinanceEntries(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>("health");
+  const [epcFilter, setEpcFilter] = useState<string>("all");
 
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
   useEffect(() => {
