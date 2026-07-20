@@ -296,11 +296,51 @@ export type DbFinanceEntry = {
   updated_at: string;
 };
 
+/**
+ * SATUAN NILAI FINANCE (STANDAR DASHBOARD)
+ * ----------------------------------------
+ * Semua field finance di tabel `projects`, `finance_entries`, `purchase_orders`
+ * disimpan dalam satuan **Juta Rupiah (Jt)**.
+ *   - Contoh input 500  → Rp 500 Jt   (Rp 500.000.000)
+ *   - Contoh input 5.000 → Rp 5 Mia   (Rp 5.000.000.000)
+ *   - Contoh input 1.500.000 → Rp 1,5 Trl
+ *
+ * Kecuali tabel `procurement_items.amount` yang disimpan dalam **Rupiah mentah (IDR)**
+ *   - Gunakan formatIDR() untuk menampilkan.
+ *
+ * Notasi tampil:
+ *   Jt  = Juta Rupiah
+ *   Mia = Miliar Rupiah (1 Miliar = 1.000 Juta)
+ *   Trl = Triliun Rupiah (1 Triliun = 1.000 Miliar = 1.000.000 Juta)
+ */
 export function formatRupiah(jutaRupiah: number): string {
-  if (jutaRupiah >= 1000000) return `Rp ${(jutaRupiah / 1000000).toFixed(1)}T`;
-  if (jutaRupiah >= 1000) return `Rp ${(jutaRupiah / 1000).toFixed(1)}M`;
-  return `Rp ${jutaRupiah}Jt`;
+  const v = Number(jutaRupiah) || 0;
+  const sign = v < 0 ? "-" : "";
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `${sign}Rp ${(abs / 1_000_000).toFixed(2)} Trl`;
+  if (abs >= 1_000) return `${sign}Rp ${(abs / 1_000).toFixed(2)} Mia`;
+  if (abs >= 1) return `${sign}Rp ${abs.toFixed(0)} Jt`;
+  return `Rp 0`;
 }
+
+/** Format nilai Rupiah MENTAH (IDR utuh, bukan juta) — dipakai untuk procurement_items.amount */
+export function formatIDR(rupiah: number): string {
+  const v = Number(rupiah) || 0;
+  const sign = v < 0 ? "-" : "";
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000_000_000) return `${sign}Rp ${(abs / 1_000_000_000_000).toFixed(2)} Trl`;
+  if (abs >= 1_000_000_000) return `${sign}Rp ${(abs / 1_000_000_000).toFixed(2)} Mia`;
+  if (abs >= 1_000_000) return `${sign}Rp ${(abs / 1_000_000).toFixed(1)} Jt`;
+  if (abs >= 1_000) return `${sign}Rp ${(abs / 1_000).toFixed(0)} Rb`;
+  return `${sign}Rp ${abs.toFixed(0)}`;
+}
+
+/** Konversi Rupiah mentah → Juta (untuk preview inline saat user mengetik) */
+export function rupiahToJuta(rupiah: number): number { return (Number(rupiah) || 0) / 1_000_000; }
+export function jutaToRupiah(juta: number): number { return (Number(juta) || 0) * 1_000_000; }
+
+/** Legend/hint singkat untuk ditampilkan dekat angka finance */
+export const MONEY_UNIT_HINT = "Notasi: Jt=Juta • Mia=Miliar (1.000 Jt) • Trl=Triliun (1.000 Mia)";
 
 export async function logActivity(
   supabase: any,
