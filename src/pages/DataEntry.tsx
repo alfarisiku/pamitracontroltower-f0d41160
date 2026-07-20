@@ -4,15 +4,20 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Download, Share2,
+  Layers, Camera, AlertTriangle, Package,
 } from "lucide-react";
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
 import { ProjectCrudTab } from "@/components/data-entry/ProjectCrudTab";
 import { AddendumTab } from "@/components/data-entry/AddendumTab";
-import { FinanceEditor } from "@/components/data-entry/FinanceEditor";
 import { FinanceEntriesEditor } from "@/components/data-entry/FinanceEntriesEditor";
 import { SCurveEditor } from "@/components/data-entry/SCurveEditor";
+import { WBSCrudPanel } from "@/components/data-entry/WBSCrudPanel";
+import { PhotoUploader } from "@/components/data-entry/PhotoUploader";
+import { WeeklyReportEditor } from "@/components/data-entry/WeeklyReportEditor";
+import { RiskResolvePanel } from "@/components/data-entry/RiskResolvePanel";
+import { ProcurementPanel } from "@/components/data-entry/ProcurementPanel";
 
-type ActiveTab = "regular" | "project-crud" | "addendum" | "scurve" | "finance" | "finance-entries";
+type ActiveTab = "regular" | "wbs" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
@@ -25,16 +30,20 @@ const DataEntry = () => {
   const projects = allProjects;
 
   const tabs = [
-    { key: "regular" as const, label: "Regular Update", icon: FileText },
-    { key: "finance" as const, label: "Finance & PO", icon: DollarSign },
-    { key: "finance-entries" as const, label: "Finance Entries", icon: DollarSign },
-    { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
-    { key: "scurve" as const, label: "S-Curve Editor", icon: FileBarChart },
+    { key: "regular" as const, label: "Progress Update", icon: FileText },
+    { key: "wbs" as const, label: "WBS (Full CRUD)", icon: Layers },
+    { key: "risk" as const, label: "Risk & Issue", icon: AlertTriangle },
+    { key: "photos" as const, label: "Weekly Photos", icon: Camera },
+    { key: "weekly-report" as const, label: "Weekly Report", icon: FileText },
+    { key: "procurement" as const, label: "Procurement / PO", icon: Package },
+    { key: "finance" as const, label: "Finance (Cash Flow)", icon: DollarSign },
+    { key: "scurve" as const, label: "S-Curve", icon: FileBarChart },
     { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
+    { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
   ];
 
   const downloadTemplate = () => {
-    const csv = "project_code,work_area_code,work_area_name,work_item_code,work_item_name,unit,qty_total,qty_completed,weight,status\nPMT-001,WA-001,Area Tangki,WI-001,Tangki T-101,unit,10,5,30,in-progress";
+    const csv = "project_code,work_area_code,work_area_name,epcc,work_item_code,work_item_name,unit,qty_total,qty_completed,weight\nPMT-001,WA-001,Area Tangki,construction,WI-001,Tangki T-101,unit,10,5,30";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = "project_data_template.csv"; a.click();
@@ -56,7 +65,7 @@ const DataEntry = () => {
           <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
             <div>
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2"><Database className="h-5 w-5 text-primary" /> Data Entry Center</h2>
-              <p className="text-xs text-muted-foreground">Update data proyek, risk, procurement, budget, TKDN, addendum & manajemen proyek</p>
+              <p className="text-xs text-muted-foreground">Project Control System — Full CRUD, search, filter, export, dan integrasi ke dashboard.</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-3 py-1.5 bg-success text-success-foreground rounded-lg text-xs font-medium hover:bg-success/90"><Download className="h-3.5 w-3.5" /> Template CSV</button>
@@ -83,29 +92,16 @@ const DataEntry = () => {
             </div>
           )}
 
-          {activeTab === "regular" && updateProjectId && (
-            <RegularUpdateTab projectId={updateProjectId} projects={projects} />
-          )}
-
-          {activeTab === "project-crud" && (
-            <ProjectCrudTab projects={projects} />
-          )}
-
-          {activeTab === "addendum" && updateProjectId && (
-            <AddendumTab projectId={updateProjectId} projects={projects} />
-          )}
-
-          {activeTab === "finance" && updateProjectId && (
-            <FinanceEditor projectId={updateProjectId} projects={projects} />
-          )}
-
-          {activeTab === "finance-entries" && updateProjectId && (
-            <FinanceEntriesEditor projectId={updateProjectId} />
-          )}
-
-          {activeTab === "scurve" && updateProjectId && (
-            <SCurveEditor projectId={updateProjectId} />
-          )}
+          {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} />}
+          {activeTab === "wbs" && updateProjectId && <WBSCrudPanel projectId={updateProjectId} />}
+          {activeTab === "risk" && updateProjectId && <RiskResolvePanel projectId={updateProjectId} />}
+          {activeTab === "photos" && updateProjectId && <PhotoUploader projectId={updateProjectId} />}
+          {activeTab === "weekly-report" && updateProjectId && <WeeklyReportEditor projectId={updateProjectId} />}
+          {activeTab === "procurement" && updateProjectId && <ProcurementPanel projectId={updateProjectId} />}
+          {activeTab === "finance" && updateProjectId && <FinanceEntriesEditor projectId={updateProjectId} />}
+          {activeTab === "scurve" && updateProjectId && <SCurveEditor projectId={updateProjectId} />}
+          {activeTab === "addendum" && updateProjectId && <AddendumTab projectId={updateProjectId} projects={projects} />}
+          {activeTab === "project-crud" && <ProjectCrudTab projects={projects} />}
 
           {!updateProjectId && activeTab !== "project-crud" && (
             <div className="glass-card rounded-lg shadow-card p-8 text-center">
