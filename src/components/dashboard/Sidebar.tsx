@@ -23,17 +23,11 @@ const allMenuItems = [
 
 export function Sidebar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { role, profile, signOut } = useAuth();
+  const { role, profile } = useAuth();
 
   const menuItems = allMenuItems.filter(item => !role || item.roles.includes(role));
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
-  };
 
   const sidebarContent = (
     <>
