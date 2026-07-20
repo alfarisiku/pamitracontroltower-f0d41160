@@ -8,15 +8,20 @@ import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModa
 import { Progress } from "@/components/ui/progress";
 import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv, ExternalLink } from "lucide-react";
 
-type ProjectStatus = DbProject["status"];
-type ProjectPhase = DbProject["phase"];
+type ProjectStatus = string;
+type ProjectPhase = string;
 
-const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
-  "on-track": { label: "On Track", className: "bg-success/15 text-success border-success/30" },
-  "at-risk": { label: "At Risk", className: "bg-warning/15 text-warning border-warning/30" },
-  "delayed": { label: "Delayed", className: "bg-destructive/15 text-destructive border-destructive/30" },
-  "completed": { label: "Selesai", className: "bg-primary/15 text-primary border-primary/30" },
+const statusConfig: Record<string, { label: string; className: string }> = {
+  "planning":  { label: "Planning",  className: "bg-info/15 text-info border-info/30" },
+  "execution": { label: "Execution", className: "bg-success/15 text-success border-success/30" },
+  "on-hold":   { label: "On Hold",   className: "bg-warning/15 text-warning border-warning/30" },
+  "completed": { label: "Completed", className: "bg-primary/15 text-primary border-primary/30" },
+  "closed":    { label: "Closed",    className: "bg-muted text-muted-foreground border-border" },
+  "on-track":  { label: "On Track",  className: "bg-success/15 text-success border-success/30" },
+  "at-risk":   { label: "At Risk",   className: "bg-warning/15 text-warning border-warning/30" },
+  "delayed":   { label: "Delayed",   className: "bg-destructive/15 text-destructive border-destructive/30" },
 };
+const FALLBACK_STATUS = { label: "—", className: "bg-muted text-muted-foreground border-border" };
 
 const ProjectSummary = () => {
   const navigate = useNavigate();
@@ -33,8 +38,8 @@ const ProjectSummary = () => {
     return true;
   });
 
-  const statuses: ProjectStatus[] = ["on-track", "at-risk", "delayed", "completed"];
-  const phases: ProjectPhase[] = ["Engineering", "Procurement", "Construction", "Commissioning"];
+  const statuses: string[] = ["planning","execution","on-hold","completed","closed"];
+  const phases: string[] = ["Production I","Production II","Production III","Production IV"];
 
   if (isLoading) {
     return (
