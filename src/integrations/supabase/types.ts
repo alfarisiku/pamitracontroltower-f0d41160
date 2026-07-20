@@ -429,13 +429,18 @@ export type Database = {
       project_alerts: {
         Row: {
           category: string
+          closed_at: string | null
+          completion_percentage: number
           created_at: string
+          current_status: string
           description: string | null
           due_date: string | null
           id: string
           impact: string | null
           is_resolved: boolean
           mitigation_plan: string | null
+          pic: string
+          priority: string
           probability: string | null
           project_id: string
           resolved_at: string | null
@@ -445,13 +450,18 @@ export type Database = {
         }
         Insert: {
           category?: string
+          closed_at?: string | null
+          completion_percentage?: number
           created_at?: string
+          current_status?: string
           description?: string | null
           due_date?: string | null
           id?: string
           impact?: string | null
           is_resolved?: boolean
           mitigation_plan?: string | null
+          pic?: string
+          priority?: string
           probability?: string | null
           project_id: string
           resolved_at?: string | null
@@ -461,13 +471,18 @@ export type Database = {
         }
         Update: {
           category?: string
+          closed_at?: string | null
+          completion_percentage?: number
           created_at?: string
+          current_status?: string
           description?: string | null
           due_date?: string | null
           id?: string
           impact?: string | null
           is_resolved?: boolean
           mitigation_plan?: string | null
+          pic?: string
+          priority?: string
           probability?: string | null
           project_id?: string
           resolved_at?: string | null
@@ -487,26 +502,41 @@ export type Database = {
       }
       project_photos: {
         Row: {
+          activity_category: string
           caption: string | null
+          description: string
           id: string
+          location: string
+          photo_date: string | null
           photo_url: string
           project_id: string
+          title: string
           uploaded_at: string
           week_label: string | null
         }
         Insert: {
+          activity_category?: string
           caption?: string | null
+          description?: string
           id?: string
+          location?: string
+          photo_date?: string | null
           photo_url: string
           project_id: string
+          title?: string
           uploaded_at?: string
           week_label?: string | null
         }
         Update: {
+          activity_category?: string
           caption?: string | null
+          description?: string
           id?: string
+          location?: string
+          photo_date?: string | null
           photo_url?: string
           project_id?: string
+          title?: string
           uploaded_at?: string
           week_label?: string | null
         }
@@ -801,10 +831,61 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_progress_reports: {
+        Row: {
+          achievements: Json
+          created_at: string
+          escalations: Json
+          id: string
+          next_week_targets: Json
+          outstanding_items: Json
+          project_id: string
+          summary: string
+          updated_at: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Insert: {
+          achievements?: Json
+          created_at?: string
+          escalations?: Json
+          id?: string
+          next_week_targets?: Json
+          outstanding_items?: Json
+          project_id: string
+          summary?: string
+          updated_at?: string
+          week_end_date: string
+          week_start_date: string
+        }
+        Update: {
+          achievements?: Json
+          created_at?: string
+          escalations?: Json
+          id?: string
+          next_week_targets?: Json
+          outstanding_items?: Json
+          project_id?: string
+          summary?: string
+          updated_at?: string
+          week_end_date?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_progress_reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_areas: {
         Row: {
           code: string
           created_at: string
+          epcc_category: string
           id: string
           name: string
           progress: number
@@ -815,6 +896,7 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          epcc_category?: string
           id?: string
           name: string
           progress?: number
@@ -825,6 +907,7 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          epcc_category?: string
           id?: string
           name?: string
           progress?: number
@@ -847,6 +930,7 @@ export type Database = {
           code: string
           created_at: string
           end_date: string | null
+          epcc_category: string
           id: string
           name: string
           progress: number
@@ -863,6 +947,7 @@ export type Database = {
           code: string
           created_at?: string
           end_date?: string | null
+          epcc_category?: string
           id?: string
           name: string
           progress?: number
@@ -879,6 +964,7 @@ export type Database = {
           code?: string
           created_at?: string
           end_date?: string | null
+          epcc_category?: string
           id?: string
           name?: string
           progress?: number
