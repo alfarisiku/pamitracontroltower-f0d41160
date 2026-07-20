@@ -292,7 +292,7 @@ const ProjectDetail = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground flex items-center">Budget Utilization<FormulaTooltip {...FORMULAS.budgetUtil} /></span>
+                        <span className="text-muted-foreground flex items-center">Actual Spent vs Contract<FormulaTooltip {...FORMULAS.budgetUtil} /></span>
                         <span className={`font-mono-data font-bold ${budgetPct > 85 ? "text-destructive" : "text-foreground"}`}>{budgetPct}%</span>
                       </div>
                       <Progress value={budgetPct} className="h-2" />
@@ -314,7 +314,7 @@ const ProjectDetail = () => {
                       <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1">Remaining Budget</p>
+                      <p className="text-[10px] text-muted-foreground uppercase mb-1">Remaining (Contract − Actual)</p>
                       <p className={`text-lg font-bold font-mono-data ${remainingBudget > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(remainingBudget)}</p>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
@@ -323,7 +323,10 @@ const ProjectDetail = () => {
                       {project.profit_margin_target > 0 && <p className="text-[9px] text-muted-foreground">Target: {project.profit_margin_target}%</p>}
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1">PO Committed</p>
+                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">
+                        PO Committed
+                        <FormulaTooltip title="PO Committed" formula="Σ Amount semua Purchase Order proyek" description="Total nilai kontrak/PO yang sudah diterbitkan ke vendor (belum tentu sudah dibayar). Nilai ini dihitung otomatis dari tabel Purchase Orders — edit melalui Data Entry → Procurement / PO." />
+                      </p>
                       <p className="text-lg font-bold font-mono-data text-foreground">{formatRupiah(poCommitted)}</p>
                     </div>
                   </div>
@@ -337,18 +340,21 @@ const ProjectDetail = () => {
             <div className="space-y-4">
               {/* Budget Breakdown */}
               <div className="glass-card rounded-lg p-4 shadow-card">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Budget Breakdown</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cost Breakdown (Contract / RAP / PO / Actual)</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
                     <p className="text-[9px] text-muted-foreground uppercase">Contract Value</p>
                     <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
                   </div>
                   <div className="bg-info/5 rounded-lg p-3 border border-info/20 text-center">
-                    <p className="text-[9px] text-muted-foreground uppercase">RAP Budget</p>
+                    <p className="text-[9px] text-muted-foreground uppercase">RAP (Rencana)</p>
                     <p className="text-sm font-bold font-mono-data text-info">{formatRupiah(project.rap)}</p>
                   </div>
                   <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
-                    <p className="text-[9px] text-muted-foreground uppercase">PO Committed</p>
+                    <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+                      PO Committed
+                      <FormulaTooltip title="PO Committed" formula="Σ Amount Purchase Orders" description="Otomatis dari Data Entry → Procurement / PO." />
+                    </p>
                     <p className="text-sm font-bold font-mono-data text-warning">{formatRupiah(poCommitted)}</p>
                   </div>
                   <div className="bg-destructive/5 rounded-lg p-3 border border-destructive/20 text-center">
