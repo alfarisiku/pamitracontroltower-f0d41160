@@ -194,14 +194,12 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         </div>
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">💰 Financial & Budget</p>
         <p className="text-[10px] text-muted-foreground mb-2">
-          ⚠️ Semua nilai finance diisi dalam <strong>Juta Rupiah (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5000</code> = Rp 5 Miliar • <code>1500000</code> = Rp 1,5 Triliun. Target Margin diisi <strong>persen 0–100</strong> (contoh: <code>12</code> = 12%).
+          ⚠️ Semua nilai finance diisi dalam <strong>Juta Rupiah (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5.000</code> = Rp 5,00 M (Miliar) • <code>1.500.000</code> = Rp 1,50 T (Triliun). Desimal pakai koma (standar Indonesia).
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
           <div><label className={labelCls}>Contract Value (Juta Rp)</label><input type="number" value={(ef as any).contract_value || ""} onChange={e => set("contract_value", e.target.value)} className={inputCls} placeholder="mis. 5000" /></div>
           <div><label className={labelCls}>Budget / Legacy (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>RAP (Juta Rp)</label><input type="number" value={ef.rap} onChange={e => set("rap", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Actual Spent (Juta Rp)</label><input type="number" value={ef.spent} onChange={e => set("spent", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Target Margin (%)</label><input type="number" step="0.1" min="0" max="100" value={ef.profit_margin_target} onChange={e => set("profit_margin_target", e.target.value)} className={inputCls} placeholder="mis. 12" /></div>
         </div>
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">🖼️ Media & Video / CCTV Links</p>
         <p className="text-[10px] text-muted-foreground mb-2">

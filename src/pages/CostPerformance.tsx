@@ -146,7 +146,7 @@ const CostPerformance = () => {
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <div>
               <h2 className="text-lg font-bold text-foreground">Cost Performance</h2>
-              <p className="text-xs text-muted-foreground">Analisis anggaran, RAP, PO committed & actual cost — <span className="italic">semua nilai finance dalam Juta Rupiah (Jt=Juta, Mia=Miliar, Trl=Triliun)</span></p>
+              <p className="text-xs text-muted-foreground">Analisis anggaran, RAP, PO committed & actual cost — <span className="italic">semua nilai finance dalam Juta Rupiah (Jt = Juta, M = Miliar, T = Triliun; desimal pakai koma)</span></p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">

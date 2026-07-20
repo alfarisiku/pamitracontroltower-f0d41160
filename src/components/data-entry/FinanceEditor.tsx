@@ -112,7 +112,7 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
               {p.margin_locked ? "Margin Locked" : "Lock Margin"}
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
               <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center">Contract Value<FormulaTooltip title="Contract Value" formula="contract_value" description="Nilai kontrak resmi client." /></p>
               <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(p.contract_value || p.budget)}</p>
@@ -129,12 +129,8 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
               <p className="text-[9px] text-muted-foreground uppercase">PO Committed</p>
               <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(totalPO)}</p>
             </div>
-            <div className="bg-destructive/5 rounded-lg p-3 border border-destructive/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Actual Spent</p>
-              <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(p.spent)}</p>
-            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className={`rounded-lg p-3 border text-center ${computedMarginPct > 10 ? "bg-success/5 border-success/30" : "bg-warning/5 border-warning/30"}`}>
               <p className="text-[9px] text-muted-foreground uppercase">Actual Margin %</p>
               <p className={`text-lg font-bold font-mono-data ${computedMarginPct > 10 ? "text-success" : computedMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{computedMarginPct}%</p>
@@ -142,10 +138,6 @@ export function FinanceEditor({ projectId, projects }: { projectId: string; proj
             <div className={`rounded-lg p-3 border text-center ${computedMarginRp > 0 ? "bg-success/5 border-success/30" : "bg-destructive/5 border-destructive/30"}`}>
               <p className="text-[9px] text-muted-foreground uppercase">Actual Margin Rp</p>
               <p className={`text-lg font-bold font-mono-data ${computedMarginRp > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(computedMarginRp)}</p>
-            </div>
-            <div className="bg-info/5 rounded-lg p-3 border border-info/30 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Target Margin %</p>
-              <p className="text-lg font-bold font-mono-data text-info">{p.profit_margin_target}%</p>
             </div>
           </div>
         </div>

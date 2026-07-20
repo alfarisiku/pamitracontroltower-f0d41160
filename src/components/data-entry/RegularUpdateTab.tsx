@@ -42,8 +42,6 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
   // Financial fields
   const [contractValue, setContractValue] = useState("");
   const [rapValue, setRapValue] = useState("");
-  const [spentValue, setSpentValue] = useState("");
-  const [marginTarget, setMarginTarget] = useState("");
 
   const getWeekOptions = () => {
     const options: string[] = [];
@@ -70,8 +68,6 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
         setTkdnValue(String(p.tkdn_percentage || 0));
         setContractValue(String(p.contract_value || p.budget || 0));
         setRapValue(String(p.rap || 0));
-        setSpentValue(String(p.spent || 0));
-        setMarginTarget(String((p as any).profit_margin_target || 0));
       }
     }
   }, [projectId, projects]);
@@ -83,13 +79,11 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
       const updates: Record<string, any> = {
         contract_value: parseFloat(contractValue) || 0,
         rap: parseFloat(rapValue) || 0,
-        spent: parseFloat(spentValue) || 0,
-        profit_margin_target: parseFloat(marginTarget) || 0,
         budget: parseFloat(contractValue) || 0, // keep legacy field aligned
       };
       const { error } = await supabase.from("projects").update(updates).eq("id", projectId);
       if (error) throw error;
-      await logActivity(supabase, "project", "update_finance", `Finance updated → Contract: ${contractValue}, RAP: ${rapValue}, Spent: ${spentValue}, Margin: ${marginTarget}%`, projectId, projectId);
+      await logActivity(supabase, "project", "update_finance", `Finance updated → Contract: ${contractValue}, RAP: ${rapValue}`, projectId, projectId);
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Data keuangan proyek diupdate" });
@@ -242,33 +236,23 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
         </div>
       </div>
 
-      {/* Financial Update — Contract / RAP / Actual Spent / Margin */}
+      {/* Financial Update — Contract Value & RAP saja */}
       <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
         <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2"><DollarSign className="h-4 w-4 text-accent" /> Update Data Keuangan Proyek</h3>
         <p className="text-[10px] text-muted-foreground mb-1">
-          ⚠️ <strong>Semua nilai diisi dalam satuan JUTA RUPIAH (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5000</code> = Rp 5 Miliar • <code>1500000</code> = Rp 1,5 Triliun.
+          ⚠️ <strong>Semua nilai diisi dalam satuan JUTA RUPIAH (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5.000</code> = Rp 5,00 M (Miliar) • <code>1.500.000</code> = Rp 1,50 T (Triliun). Desimal pakai koma standar Indonesia.
         </p>
-        <p className="text-[10px] text-muted-foreground mb-3 italic">Perubahan langsung tersinkron ke Manage Projects, dashboard, Cost Performance & Finance module.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <p className="text-[10px] text-muted-foreground mb-3 italic">Actual Spent otomatis dihitung dari tab <strong>Finance (Cash Flow)</strong>. Perubahan langsung tersinkron ke Manage Projects, dashboard & Cost Performance.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>Contract Value (Juta Rp)</label>
-            <input type="number" min="0" value={contractValue} onChange={e => setContractValue(e.target.value)} className={inputCls} placeholder="mis. 5000 (=Rp 5 Mia)" />
+            <input type="number" min="0" value={contractValue} onChange={e => setContractValue(e.target.value)} className={inputCls} placeholder="mis. 5000 (=Rp 5,00 M)" />
             {contractValue && <p className="text-[9px] text-primary mt-0.5">= {formatRupiah(parseFloat(contractValue)||0)}</p>}
           </div>
           <div>
             <label className={labelCls}>RAP / Rencana Anggaran (Juta Rp)</label>
             <input type="number" min="0" value={rapValue} onChange={e => setRapValue(e.target.value)} className={inputCls} placeholder="mis. 4200" />
             {rapValue && <p className="text-[9px] text-primary mt-0.5">= {formatRupiah(parseFloat(rapValue)||0)}</p>}
-          </div>
-          <div>
-            <label className={labelCls}>Actual Spent (Juta Rp)</label>
-            <input type="number" min="0" value={spentValue} onChange={e => setSpentValue(e.target.value)} className={inputCls} placeholder="Yang sudah dikeluarkan" />
-            {spentValue && <p className="text-[9px] text-primary mt-0.5">= {formatRupiah(parseFloat(spentValue)||0)}</p>}
-          </div>
-          <div>
-            <label className={labelCls}>Target Margin (%)</label>
-            <input type="number" step="0.1" min="0" max="100" value={marginTarget} onChange={e => setMarginTarget(e.target.value)} className={inputCls} placeholder="mis. 12 (=12%)" />
-            <p className="text-[9px] text-muted-foreground mt-0.5">Isi angka 0–100 (persen). Contoh: 12 = 12%.</p>
           </div>
         </div>
         <button onClick={handleFinanceUpdate} disabled={saving} className="mt-3 flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:bg-accent/90 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Update Financial Data"}</button>

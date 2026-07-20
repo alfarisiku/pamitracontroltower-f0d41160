@@ -301,25 +301,28 @@ export type DbFinanceEntry = {
  * ----------------------------------------
  * Semua field finance di tabel `projects`, `finance_entries`, `purchase_orders`
  * disimpan dalam satuan **Juta Rupiah (Jt)**.
- *   - Contoh input 500  → Rp 500 Jt   (Rp 500.000.000)
- *   - Contoh input 5.000 → Rp 5 Mia   (Rp 5.000.000.000)
- *   - Contoh input 1.500.000 → Rp 1,5 Trl
+ *   - Contoh input 500       → Rp 500 Jt   (Rp 500.000.000)
+ *   - Contoh input 5.000     → Rp 5,00 M   (Rp 5.000.000.000  = 5 Miliar)
+ *   - Contoh input 1.500.000 → Rp 1,50 T   (Rp 1,5 Triliun)
  *
  * Kecuali tabel `procurement_items.amount` yang disimpan dalam **Rupiah mentah (IDR)**
  *   - Gunakan formatIDR() untuk menampilkan.
  *
- * Notasi tampil:
- *   Jt  = Juta Rupiah
- *   Mia = Miliar Rupiah (1 Miliar = 1.000 Juta)
- *   Trl = Triliun Rupiah (1 Triliun = 1.000 Miliar = 1.000.000 Juta)
+ * Notasi tampil (pakai koma sebagai desimal, standar Indonesia):
+ *   Jt = Juta Rupiah
+ *   M  = Miliar Rupiah  (1 M = 1.000 Jt)
+ *   T  = Triliun Rupiah (1 T = 1.000 M = 1.000.000 Jt)
  */
+const fmtID = (n: number, d = 2) =>
+  n.toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d });
+
 export function formatRupiah(jutaRupiah: number): string {
   const v = Number(jutaRupiah) || 0;
   const sign = v < 0 ? "-" : "";
   const abs = Math.abs(v);
-  if (abs >= 1_000_000) return `${sign}Rp ${(abs / 1_000_000).toFixed(2)} Trl`;
-  if (abs >= 1_000) return `${sign}Rp ${(abs / 1_000).toFixed(2)} Mia`;
-  if (abs >= 1) return `${sign}Rp ${abs.toFixed(0)} Jt`;
+  if (abs >= 1_000_000) return `${sign}Rp ${fmtID(abs / 1_000_000, 2)} T`;
+  if (abs >= 1_000) return `${sign}Rp ${fmtID(abs / 1_000, 2)} M`;
+  if (abs >= 1) return `${sign}Rp ${fmtID(abs, 0)} Jt`;
   return `Rp 0`;
 }
 
@@ -328,11 +331,11 @@ export function formatIDR(rupiah: number): string {
   const v = Number(rupiah) || 0;
   const sign = v < 0 ? "-" : "";
   const abs = Math.abs(v);
-  if (abs >= 1_000_000_000_000) return `${sign}Rp ${(abs / 1_000_000_000_000).toFixed(2)} Trl`;
-  if (abs >= 1_000_000_000) return `${sign}Rp ${(abs / 1_000_000_000).toFixed(2)} Mia`;
-  if (abs >= 1_000_000) return `${sign}Rp ${(abs / 1_000_000).toFixed(1)} Jt`;
-  if (abs >= 1_000) return `${sign}Rp ${(abs / 1_000).toFixed(0)} Rb`;
-  return `${sign}Rp ${abs.toFixed(0)}`;
+  if (abs >= 1_000_000_000_000) return `${sign}Rp ${fmtID(abs / 1_000_000_000_000, 2)} T`;
+  if (abs >= 1_000_000_000) return `${sign}Rp ${fmtID(abs / 1_000_000_000, 2)} M`;
+  if (abs >= 1_000_000) return `${sign}Rp ${fmtID(abs / 1_000_000, 1)} Jt`;
+  if (abs >= 1_000) return `${sign}Rp ${fmtID(abs / 1_000, 0)} Rb`;
+  return `${sign}Rp ${fmtID(abs, 0)}`;
 }
 
 /** Konversi Rupiah mentah → Juta (untuk preview inline saat user mengetik) */
@@ -340,7 +343,7 @@ export function rupiahToJuta(rupiah: number): number { return (Number(rupiah) ||
 export function jutaToRupiah(juta: number): number { return (Number(juta) || 0) * 1_000_000; }
 
 /** Legend/hint singkat untuk ditampilkan dekat angka finance */
-export const MONEY_UNIT_HINT = "Notasi: Jt=Juta • Mia=Miliar (1.000 Jt) • Trl=Triliun (1.000 Mia)";
+export const MONEY_UNIT_HINT = "Notasi: Jt = Juta • M = Miliar (1.000 Jt) • T = Triliun (1.000 M). Desimal pakai koma.";
 
 export async function logActivity(
   supabase: any,
