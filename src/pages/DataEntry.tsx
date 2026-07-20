@@ -9,9 +9,10 @@ import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
 import { ProjectCrudTab } from "@/components/data-entry/ProjectCrudTab";
 import { AddendumTab } from "@/components/data-entry/AddendumTab";
 import { FinanceEditor } from "@/components/data-entry/FinanceEditor";
+import { FinanceEntriesEditor } from "@/components/data-entry/FinanceEntriesEditor";
 import { SCurveEditor } from "@/components/data-entry/SCurveEditor";
 
-type ActiveTab = "regular" | "project-crud" | "addendum" | "scurve" | "finance";
+type ActiveTab = "regular" | "project-crud" | "addendum" | "scurve" | "finance" | "finance-entries";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
@@ -26,6 +27,7 @@ const DataEntry = () => {
   const tabs = [
     { key: "regular" as const, label: "Regular Update", icon: FileText },
     { key: "finance" as const, label: "Finance & PO", icon: DollarSign },
+    { key: "finance-entries" as const, label: "Finance Entries", icon: DollarSign },
     { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
     { key: "scurve" as const, label: "S-Curve Editor", icon: FileBarChart },
     { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
@@ -95,6 +97,10 @@ const DataEntry = () => {
 
           {activeTab === "finance" && updateProjectId && (
             <FinanceEditor projectId={updateProjectId} projects={projects} />
+          )}
+
+          {activeTab === "finance-entries" && updateProjectId && (
+            <FinanceEntriesEditor projectId={updateProjectId} />
           )}
 
           {activeTab === "scurve" && updateProjectId && (
