@@ -424,44 +424,7 @@ const ProjectDetail = () => {
                 </div>
               )}
 
-              {/* Purchase Orders */}
-              <div className="glass-card rounded-lg shadow-card overflow-hidden">
-                <div className="p-3 border-b border-border">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Purchase Orders ({purchaseOrders.length})</h3>
-                </div>
-                {purchaseOrders.length === 0 ? (
-                  <div className="p-6 text-center text-muted-foreground text-xs">
-                    Belum ada PO. Tambahkan melalui <Link to="/data-entry" className="text-primary hover:underline">Data Entry</Link>.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead><tr className="bg-muted/50 border-b border-border">
-                        <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Description</th>
-                        <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Vendor</th>
-                        <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Amount</th>
-                        <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PO Date</th>
-                        <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Activity</th>
-                        <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Penalty</th>
-                        <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Category</th>
-                      </tr></thead>
-                      <tbody>
-                        {purchaseOrders.map(po => (
-                          <tr key={po.id} className="border-b border-border/30">
-                            <td className="py-2 px-3 font-medium text-foreground">{po.description}</td>
-                            <td className="py-2 px-3 text-muted-foreground">{po.vendor || "—"}</td>
-                            <td className="py-2 px-3 text-right font-mono-data text-accent">{formatRupiah(po.amount)}</td>
-                            <td className="py-2 px-3 text-center font-mono-data text-muted-foreground">{po.po_date ? new Date(po.po_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }) : "—"}</td>
-                            <td className="py-2 px-3 text-muted-foreground">{po.related_activity || "—"}</td>
-                            <td className="py-2 px-3 text-right font-mono-data">{(po as any).penalty_amount > 0 ? <span className="text-destructive" title={(po as any).penalty_note || ""}>{formatRupiah((po as any).penalty_amount)}</span> : <span className="text-muted-foreground">—</span>}</td>
-                            <td className="py-2 px-3 text-center"><span className="text-[9px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">{po.category}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              {/* Purchase Orders dipindah ke tab Procurement & Data Entry → Procurement/PO */}
             </div>
           )}
 
