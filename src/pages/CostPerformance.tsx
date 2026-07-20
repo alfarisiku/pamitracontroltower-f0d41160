@@ -67,7 +67,6 @@ const CostPerformance = () => {
   const barData = filteredProjects.map(p => ({
     name: p.project_code, fullName: p.name, budget: p.budget, spent: p.spent, rap: p.rap,
     committed: committedByProject[p.id] || 0,
-    margin: Math.round((p.budget - p.spent) / p.budget * 100),
   }));
 
   const cashflowData = budgets.sort((a, b) => a.year - b.year || a.month.localeCompare(b.month)).map(b => ({
@@ -93,23 +92,21 @@ const CostPerformance = () => {
     let y = 42;
     pdf.setFontSize(8);
     pdf.setFont("helvetica", "bold");
-    ["Code", "Project", "Contract", "RAP", "Spent", "Remaining", "CPI", "Margin"].forEach((h, i) => {
-      pdf.text(h, 14 + i * 33, y);
+    ["Code", "Project", "Contract", "RAP", "Spent", "Remaining", "CPI"].forEach((h, i) => {
+      pdf.text(h, 14 + i * 38, y);
     });
     y += 5;
     pdf.setFont("helvetica", "normal");
     filteredProjects.forEach(p => {
       if (y > 190) { pdf.addPage(); y = 20; }
       const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
-      const margin = Math.round((p.budget - p.spent) / p.budget * 100);
       pdf.text(p.project_code, 14, y);
-      pdf.text(p.name.slice(0, 18), 47, y);
-      pdf.text(formatRupiah(p.contract_value || p.budget), 80, y);
-      pdf.text(formatRupiah(p.rap), 113, y);
-      pdf.text(formatRupiah(p.spent), 146, y);
-      pdf.text(formatRupiah(p.budget - p.spent), 179, y);
-      pdf.text(cpi.toFixed(2), 212, y);
-      pdf.text(`${margin}%`, 245, y);
+      pdf.text(p.name.slice(0, 18), 52, y);
+      pdf.text(formatRupiah(p.contract_value || p.budget), 90, y);
+      pdf.text(formatRupiah(p.rap), 128, y);
+      pdf.text(formatRupiah(p.spent), 166, y);
+      pdf.text(formatRupiah(p.budget - p.spent), 204, y);
+      pdf.text(cpi.toFixed(2), 242, y);
       y += 5;
     });
     pdf.save(`Cost_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -120,11 +117,10 @@ const CostPerformance = () => {
     if (!printW) return;
     printW.document.write(`<html><head><title>Cost Report</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:4px 8px;text-align:left}th{background:#f5f5f5;font-size:10px;text-transform:uppercase}</style></head><body>`);
     printW.document.write(`<h2>Cost Performance Report</h2><p>Total Budget: ${formatRupiah(totalBudget)} | RAP: ${formatRupiah(totalRap)} | Spent: ${formatRupiah(totalSpent)}</p>`);
-    printW.document.write(`<table><thead><tr><th>Code</th><th>Project</th><th>Contract</th><th>RAP</th><th>Spent</th><th>Remaining</th><th>CPI</th><th>Margin</th></tr></thead><tbody>`);
+    printW.document.write(`<table><thead><tr><th>Code</th><th>Project</th><th>Contract</th><th>RAP</th><th>Spent</th><th>Remaining</th><th>CPI</th></tr></thead><tbody>`);
     filteredProjects.forEach(p => {
       const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
-      const margin = Math.round((p.budget - p.spent) / p.budget * 100);
-      printW.document.write(`<tr><td>${p.project_code}</td><td>${p.name}</td><td>${formatRupiah(p.contract_value || p.budget)}</td><td>${formatRupiah(p.rap)}</td><td>${formatRupiah(p.spent)}</td><td>${formatRupiah(p.budget - p.spent)}</td><td>${cpi.toFixed(2)}</td><td>${margin}%</td></tr>`);
+      printW.document.write(`<tr><td>${p.project_code}</td><td>${p.name}</td><td>${formatRupiah(p.contract_value || p.budget)}</td><td>${formatRupiah(p.rap)}</td><td>${formatRupiah(p.spent)}</td><td>${formatRupiah(p.budget - p.spent)}</td><td>${cpi.toFixed(2)}</td></tr>`);
     });
     printW.document.write(`</tbody></table></body></html>`);
     printW.document.close();
@@ -150,7 +146,7 @@ const CostPerformance = () => {
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <div>
               <h2 className="text-lg font-bold text-foreground">Cost Performance</h2>
-              <p className="text-xs text-muted-foreground">Analisis anggaran, RAP, PO committed, actual cost & profit margin</p>
+              <p className="text-xs text-muted-foreground">Analisis anggaran, RAP, PO committed & actual cost — <span className="italic">semua nilai finance dalam Juta Rupiah (Jt=Juta, Mia=Miliar, Trl=Triliun)</span></p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
