@@ -1,5 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog, DbPurchaseOrder, DbProjectCashflow, DbManpowerLog } from "@/lib/supabase";
+import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog, DbPurchaseOrder, DbProjectCashflow, DbManpowerLog, DbFinanceEntry } from "@/lib/supabase";
+
+export function useFinanceEntries(projectId?: string) {
+  return useQuery<DbFinanceEntry[]>({
+    queryKey: ["finance_entries", projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("finance_entries").select("*").eq("project_id", projectId!).order("period_date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as DbFinanceEntry[];
+    },
+  });
+}
+
+export function useAllFinanceEntries() {
+  return useQuery<DbFinanceEntry[]>({
+    queryKey: ["finance_entries_all"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("finance_entries").select("*").order("period_date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as DbFinanceEntry[];
+    },
+  });
+}
 
 export function useProjects() {
   return useQuery<DbProject[]>({

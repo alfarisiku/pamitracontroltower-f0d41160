@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, LogOut, Monitor, Shield, Activity } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, LogOut, Monitor, Shield, Activity, Wallet } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ const allMenuItems = [
   { icon: FolderKanban, label: "Project Summary", path: "/projects", roles: ["admin", "management"] },
   { icon: CalendarClock, label: "Schedule", path: "/schedule", roles: ["admin", "management", "team"] },
   { icon: DollarSign, label: "Cost Performance", path: "/cost", roles: ["admin", "management", "team"] },
+  { icon: Wallet, label: "Finance", path: "/finance", roles: ["admin", "management", "team"] },
   { icon: AlertTriangle, label: "Risk Monitoring", path: "/risk", roles: ["admin", "management", "team"] },
   { icon: FileText, label: "Reporting", path: "/reporting", roles: ["admin", "management"] },
   { icon: Database, label: "Data Entry", path: "/data-entry", roles: ["admin", "team"] },

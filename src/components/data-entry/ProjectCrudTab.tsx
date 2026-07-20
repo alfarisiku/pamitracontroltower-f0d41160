@@ -130,7 +130,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         supabase.from("work_areas").delete().eq("project_id", id),
         supabase.from("project_alerts").delete().eq("project_id", id),
         supabase.from("purchase_orders").delete().eq("project_id", id),
-        supabase.from("project_cashflow").delete().eq("project_id", id),
+        (supabase as any).from("finance_entries").delete().eq("project_id", id),
         supabase.from("project_photos").delete().eq("project_id", id),
         supabase.from("addendums").delete().eq("project_id", id),
         supabase.from("milestones").delete().eq("project_id", id),

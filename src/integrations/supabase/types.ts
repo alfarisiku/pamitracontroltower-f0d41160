@@ -105,6 +105,72 @@ export type Database = {
           },
         ]
       }
+      finance_entries: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["finance_category"] | null
+          created_at: string
+          description: string | null
+          direction: Database["public"]["Enums"]["finance_direction"]
+          entry_kind: Database["public"]["Enums"]["finance_entry_kind"]
+          frequency: Database["public"]["Enums"]["finance_frequency"]
+          id: string
+          period_date: string
+          period_label: string
+          po_id: string | null
+          project_id: string
+          related_activity: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: Database["public"]["Enums"]["finance_category"] | null
+          created_at?: string
+          description?: string | null
+          direction: Database["public"]["Enums"]["finance_direction"]
+          entry_kind: Database["public"]["Enums"]["finance_entry_kind"]
+          frequency?: Database["public"]["Enums"]["finance_frequency"]
+          id?: string
+          period_date: string
+          period_label: string
+          po_id?: string | null
+          project_id: string
+          related_activity?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["finance_category"] | null
+          created_at?: string
+          description?: string | null
+          direction?: Database["public"]["Enums"]["finance_direction"]
+          entry_kind?: Database["public"]["Enums"]["finance_entry_kind"]
+          frequency?: Database["public"]["Enums"]["finance_frequency"]
+          id?: string
+          period_date?: string
+          period_label?: string
+          po_id?: string | null
+          project_id?: string
+          related_activity?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_entries_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manpower_logs: {
         Row: {
           category: string
@@ -412,50 +478,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_alerts_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      project_cashflow: {
-        Row: {
-          actual_progress: number
-          cash_in: number
-          cash_out: number
-          created_at: string
-          id: string
-          period_label: string
-          period_order: number
-          planned_progress: number
-          project_id: string
-        }
-        Insert: {
-          actual_progress?: number
-          cash_in?: number
-          cash_out?: number
-          created_at?: string
-          id?: string
-          period_label: string
-          period_order?: number
-          planned_progress?: number
-          project_id: string
-        }
-        Update: {
-          actual_progress?: number
-          cash_in?: number
-          cash_out?: number
-          created_at?: string
-          id?: string
-          period_label?: string
-          period_order?: number
-          planned_progress?: number
-          project_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_cashflow_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -881,7 +903,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      project_cashflow: {
+        Row: {
+          actual_progress: number | null
+          cash_in: number | null
+          cash_out: number | null
+          created_at: string | null
+          id: string | null
+          period_label: string | null
+          period_order: number | null
+          planned_progress: number | null
+          project_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
@@ -895,6 +938,21 @@ export type Database = {
     Enums: {
       alert_severity: "critical" | "high" | "medium" | "low"
       app_role: "admin" | "management" | "team" | "client"
+      finance_category:
+        | "project_management"
+        | "material"
+        | "services"
+        | "mob_demob"
+        | "tools_consumables"
+        | "equipment"
+        | "testing_commissioning"
+        | "special_approval"
+        | "bank_guarantee"
+        | "overhead"
+        | "other"
+      finance_direction: "in" | "out"
+      finance_entry_kind: "rap" | "po" | "actual" | "forecast"
+      finance_frequency: "weekly" | "monthly"
       project_phase:
         | "Engineering"
         | "Procurement"
@@ -1030,6 +1088,22 @@ export const Constants = {
     Enums: {
       alert_severity: ["critical", "high", "medium", "low"],
       app_role: ["admin", "management", "team", "client"],
+      finance_category: [
+        "project_management",
+        "material",
+        "services",
+        "mob_demob",
+        "tools_consumables",
+        "equipment",
+        "testing_commissioning",
+        "special_approval",
+        "bank_guarantee",
+        "overhead",
+        "other",
+      ],
+      finance_direction: ["in", "out"],
+      finance_entry_kind: ["rap", "po", "actual", "forecast"],
+      finance_frequency: ["weekly", "monthly"],
       project_phase: [
         "Engineering",
         "Procurement",

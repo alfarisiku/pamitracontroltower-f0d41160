@@ -8,6 +8,7 @@ import ProjectSummary from "./pages/ProjectSummary";
 import ProjectDetail from "./pages/ProjectDetail";
 import Schedule from "./pages/Schedule";
 import CostPerformance from "./pages/CostPerformance";
+import Finance from "./pages/Finance";
 import RiskMonitoring from "./pages/RiskMonitoring";
 import Reporting from "./pages/Reporting";
 import DataEntry from "./pages/DataEntry";
@@ -27,6 +28,7 @@ function AppRoutes() {
       <Route path="/project/:id" element={<ProjectDetail />} />
       <Route path="/schedule" element={<Schedule />} />
       <Route path="/cost" element={<CostPerformance />} />
+      <Route path="/finance" element={<Finance />} />
       <Route path="/risk" element={<RiskMonitoring />} />
       <Route path="/reporting" element={<Reporting />} />
       <Route path="/data-entry" element={<DataEntry />} />
