@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow } from "@/hooks/useProjects";
-import { supabase, formatRupiah } from "@/lib/supabase";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
+import { supabase, formatRupiah, FINANCE_CATEGORIES } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
 import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend, ReferenceLine, ComposedChart, Line } from "recharts";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
