@@ -56,7 +56,39 @@ export type DbAlert = {
   due_date: string | null;
   created_at: string;
   resolved_at: string | null;
+  priority: string;
+  pic: string;
+  current_status: string;
+  completion_percentage: number;
+  closed_at: string | null;
 };
+
+export type DbWeeklyReport = {
+  id: string;
+  project_id: string;
+  week_start_date: string;
+  week_end_date: string;
+  achievements: { category: string; description: string }[];
+  outstanding_items: { item: string; note?: string }[];
+  next_week_targets: { target: string; owner?: string }[];
+  escalations: { issue: string; decision_needed?: string }[];
+  summary: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export const EPCC_CATEGORIES = [
+  { value: "engineering", label: "Engineering" },
+  { value: "procurement", label: "Procurement" },
+  { value: "construction", label: "Construction" },
+  { value: "commissioning", label: "Commissioning" },
+  { value: "hsse", label: "HSSE" },
+  { value: "management", label: "Management" },
+] as const;
+
+export const RISK_PRIORITIES = ["low","medium","high","critical"] as const;
+export const RISK_STATUSES = ["open","in-progress","mitigating","monitoring","closed"] as const;
+export const ACHIEVEMENT_CATEGORIES = ["administration","contract","engineering","procurement","hsse","construction","commissioning"] as const;
 
 export type DbMonthlyBudget = {
   id: string;
@@ -74,6 +106,7 @@ export type DbWorkArea = {
   weight: number;
   progress: number;
   sort_order: number;
+  epcc_category: string;
   created_at: string;
 };
 
@@ -91,6 +124,7 @@ export type DbWorkItem = {
   start_date: string | null;
   end_date: string | null;
   sort_order: number;
+  epcc_category: string;
   created_at: string;
 };
 
