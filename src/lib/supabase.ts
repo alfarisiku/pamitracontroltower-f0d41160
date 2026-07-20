@@ -5,8 +5,8 @@ export type DbProject = {
   project_code: string;
   name: string;
   client: string;
-  status: "on-track" | "at-risk" | "delayed" | "completed";
-  phase: "Engineering" | "Procurement" | "Construction" | "Commissioning";
+  status: string; // planning | execution | on-hold | completed | closed (+ legacy on-track/at-risk/delayed)
+  phase: string;  // Production I | II | III | IV (+ legacy Engineering/Procurement/Construction/Commissioning)
   progress: number;
   budget: number;
   spent: number;
@@ -29,6 +29,35 @@ export type DbProject = {
   created_at: string;
   updated_at: string;
 };
+
+/** Centralized status/phase metadata (supports both new & legacy strings for backward compat) */
+export const STATUS_META: Record<string, { label: string; className: string; color: string }> = {
+  // NEW canonical
+  "planning":  { label: "Planning",  className: "bg-info/15 text-info border-info/30",                        color: "#6366f1" },
+  "execution": { label: "Execution", className: "bg-success/15 text-success border-success/30",               color: "#22c55e" },
+  "on-hold":   { label: "On Hold",   className: "bg-warning/15 text-warning border-warning/30",               color: "#f59e0b" },
+  "completed": { label: "Completed", className: "bg-primary/15 text-primary border-primary/30",               color: "#3b82f6" },
+  "closed":    { label: "Closed",    className: "bg-muted text-muted-foreground border-border",               color: "#6b7280" },
+  // LEGACY (still handled)
+  "on-track":  { label: "On Track",  className: "bg-success/15 text-success border-success/30",               color: "#22c55e" },
+  "at-risk":   { label: "At Risk",   className: "bg-warning/15 text-warning border-warning/30",               color: "#eab308" },
+  "delayed":   { label: "Delayed",   className: "bg-destructive/15 text-destructive border-destructive/30",   color: "#ef4444" },
+};
+export const getStatusMeta = (s: string) => STATUS_META[s] ?? { label: s || "—", className: "bg-muted text-muted-foreground border-border", color: "#6b7280" };
+
+export const PROJECT_STATUS_OPTIONS = [
+  { value: "planning",  label: "Planning" },
+  { value: "execution", label: "Execution" },
+  { value: "on-hold",   label: "On Hold" },
+  { value: "completed", label: "Completed" },
+  { value: "closed",    label: "Closed" },
+];
+export const PROJECT_PHASE_OPTIONS = [
+  { value: "Production I",   label: "Production I" },
+  { value: "Production II",  label: "Production II" },
+  { value: "Production III", label: "Production III" },
+  { value: "Production IV",  label: "Production IV" },
+];
 
 export type DbSCurveData = {
   id: string;
