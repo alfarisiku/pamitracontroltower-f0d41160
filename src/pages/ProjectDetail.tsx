@@ -611,27 +611,29 @@ const ProjectDetail = () => {
               ) : (
                 <>
                   <div className="glass-card rounded-lg p-3 shadow-card">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-[10px] uppercase text-muted-foreground font-semibold">EPC Phase:</span>
-                      {["Engineering", "Procurement", "Construction", "Commissioning"].map(phase => {
-                        const phaseItems = workItems.filter(wi => {
-                          const area = workAreas.find(wa => wa.id === wi.work_area_id);
-                          return area?.name?.toLowerCase().includes(phase.toLowerCase()) || wi.name?.toLowerCase().includes(phase.toLowerCase());
-                        });
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] uppercase text-muted-foreground font-semibold mr-1">EPC Phase Filter:</span>
+                      {(["all", ...EPC_PHASES] as const).map(phase => {
+                        const phaseItems = phase === "all" ? workItems : workItems.filter(wi => (wi as any).epcc_category === phase);
                         const phaseProgress = phaseItems.length > 0 ? Math.round(phaseItems.reduce((s, i) => s + i.progress, 0) / phaseItems.length) : 0;
-                        const isActive = project.phase === phase;
+                        const isActive = epcFilter === phase;
                         return (
-                          <div key={phase} className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] border ${isActive ? "bg-primary/10 border-primary/30 text-primary font-bold" : "bg-muted/30 border-border/50 text-muted-foreground"}`}>
-                            <span className="font-mono-data">{phaseLabels[phase]}</span>
-                            <span>{phase}</span>
-                            {phaseItems.length > 0 && <span className="font-mono-data">({phaseProgress}%)</span>}
-                          </div>
+                          <button
+                            key={phase}
+                            onClick={() => setEpcFilter(phase)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] border transition-colors ${isActive ? "bg-primary text-primary-foreground border-primary font-bold" : "bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted"}`}
+                          >
+                            {phase !== "all" && <span className="font-mono-data">{phaseLabels[phase]}</span>}
+                            <span>{phase === "all" ? "All" : phase}</span>
+                            <span className="font-mono-data opacity-80">({phaseItems.length}{phaseItems.length > 0 ? ` · ${phaseProgress}%` : ""})</span>
+                          </button>
                         );
                       })}
                     </div>
                   </div>
                   {workAreas.map(area => {
-                    const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
+                    const areaItems = workItems.filter(wi => wi.work_area_id === area.id && (epcFilter === "all" || (wi as any).epcc_category === epcFilter));
+                    if (epcFilter !== "all" && areaItems.length === 0) return null;
                     const isExpanded = expandedAreas.has(area.id);
                     const totalQty = areaItems.reduce((s, i) => s + Number(i.qty_total), 0);
                     const doneQty = areaItems.reduce((s, i) => s + Number(i.qty_completed), 0);
