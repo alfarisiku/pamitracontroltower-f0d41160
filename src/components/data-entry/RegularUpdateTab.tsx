@@ -16,8 +16,8 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
   const [saving, setSaving] = useState(false);
 
   const [formProgress, setFormProgress] = useState("");
-  const [formStatus, setFormStatus] = useState("on-track");
-  const [formPhase, setFormPhase] = useState("Construction");
+  const [formStatus, setFormStatus] = useState("execution");
+  const [formPhase, setFormPhase] = useState("Production I");
 
   const { data: workAreas = [] } = useWorkAreas(projectId || undefined);
   const waIds = workAreas.map(wa => wa.id);
@@ -181,8 +181,8 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2">
             <div><label className={labelCls}>Progress %</label><input type="number" min="0" max="100" value={formProgress} onChange={e => setFormProgress(e.target.value)} className={inputCls} placeholder="72" /></div>
-            <div><label className={labelCls}>Status</label><select value={formStatus} onChange={e => setFormStatus(e.target.value)} className={inputCls}><option value="on-track">On Track</option><option value="at-risk">At Risk</option><option value="delayed">Delayed</option><option value="completed">Completed</option></select></div>
-            <div><label className={labelCls}>Phase</label><select value={formPhase} onChange={e => setFormPhase(e.target.value)} className={inputCls}><option>Engineering</option><option>Procurement</option><option>Construction</option><option>Commissioning</option></select></div>
+            <div><label className={labelCls}>Status</label><select value={formStatus} onChange={e => setFormStatus(e.target.value)} className={inputCls}><option value="planning">Planning</option><option value="execution">Execution</option><option value="on-hold">On Hold</option><option value="completed">Completed</option><option value="closed">Closed</option></select></div>
+            <div><label className={labelCls}>Phase</label><select value={formPhase} onChange={e => setFormPhase(e.target.value)} className={inputCls}><option>Production I</option><option>Production II</option><option>Production III</option><option>Production IV</option></select></div>
           </div>
           <button onClick={handleProjectUpdate} disabled={saving} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Update Progress"}</button>
         </div>

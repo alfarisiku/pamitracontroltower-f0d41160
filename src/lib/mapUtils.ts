@@ -13,15 +13,25 @@ export function toLatLng(mapX: number, mapY: number): [number, number] {
 }
 
 export const STATUS_COLORS: Record<string, string> = {
-  "on-track": "#22c55e",
-  "at-risk": "#eab308",
-  "delayed": "#ef4444",
+  // NEW
+  "planning":  "#6366f1",
+  "execution": "#22c55e",
+  "on-hold":   "#f59e0b",
   "completed": "#3b82f6",
+  "closed":    "#6b7280",
+  // LEGACY
+  "on-track": "#22c55e",
+  "at-risk":  "#eab308",
+  "delayed":  "#ef4444",
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  "on-track": "On Track",
-  "at-risk": "At Risk",
-  "delayed": "Delayed",
-  "completed": "Selesai",
+  "planning":  "Planning",
+  "execution": "Execution",
+  "on-hold":   "On Hold",
+  "completed": "Completed",
+  "closed":    "Closed",
+  "on-track":  "On Track",
+  "at-risk":   "At Risk",
+  "delayed":   "Delayed",
 };

@@ -7,13 +7,15 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Share2, Download, Printer } from "lucide-react";
 import jsPDF from "jspdf";
 
-type ProjectStatus = DbProject["status"];
+type ProjectStatus = string;
 
-const statusColors: Record<ProjectStatus, string> = {
-  "on-track": "bg-success", "at-risk": "bg-warning", "delayed": "bg-destructive", "completed": "bg-primary",
+const statusColors: Record<string, string> = {
+  "planning": "bg-info", "execution": "bg-success", "on-hold": "bg-warning", "completed": "bg-primary", "closed": "bg-muted-foreground",
+  "on-track": "bg-success", "at-risk": "bg-warning", "delayed": "bg-destructive",
 };
-const statusLabels: Record<ProjectStatus, string> = {
-  "on-track": "On Track", "at-risk": "At Risk", "delayed": "Delayed", "completed": "Selesai",
+const statusLabels: Record<string, string> = {
+  "planning": "Planning", "execution": "Execution", "on-hold": "On Hold", "completed": "Completed", "closed": "Closed",
+  "on-track": "On Track", "at-risk": "At Risk", "delayed": "Delayed",
 };
 
 const Schedule = () => {
@@ -131,7 +133,7 @@ const Schedule = () => {
           </div>
 
           <div className="flex items-center gap-4 mb-3 flex-wrap">
-            {(["on-track", "at-risk", "delayed", "completed"] as ProjectStatus[]).map(s => (
+            {(["planning","execution","on-hold","completed","closed"]).map(s => (
               <div key={s} className="flex items-center gap-1.5 text-[10px]">
                 <div className={`w-3 h-2 rounded-sm ${statusColors[s]}`} />
                 <span className="text-muted-foreground">{statusLabels[s]}</span>

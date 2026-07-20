@@ -568,14 +568,14 @@ export type Database = {
           map_y: number
           margin_locked: boolean
           name: string
-          phase: Database["public"]["Enums"]["project_phase"]
+          phase: string
           profit_margin_target: number
           progress: number
           project_code: string
           rap: number
           spent: number
           start_date: string
-          status: Database["public"]["Enums"]["project_status"]
+          status: string
           tkdn_percentage: number
           updated_at: string
           video_url: string | null
@@ -597,14 +597,14 @@ export type Database = {
           map_y?: number
           margin_locked?: boolean
           name: string
-          phase?: Database["public"]["Enums"]["project_phase"]
+          phase?: string
           profit_margin_target?: number
           progress?: number
           project_code: string
           rap?: number
           spent?: number
           start_date: string
-          status?: Database["public"]["Enums"]["project_status"]
+          status?: string
           tkdn_percentage?: number
           updated_at?: string
           video_url?: string | null
@@ -626,14 +626,14 @@ export type Database = {
           map_y?: number
           margin_locked?: boolean
           name?: string
-          phase?: Database["public"]["Enums"]["project_phase"]
+          phase?: string
           profit_margin_target?: number
           progress?: number
           project_code?: string
           rap?: number
           spent?: number
           start_date?: string
-          status?: Database["public"]["Enums"]["project_status"]
+          status?: string
           tkdn_percentage?: number
           updated_at?: string
           video_url?: string | null
@@ -1039,12 +1039,6 @@ export type Database = {
       finance_direction: "in" | "out"
       finance_entry_kind: "rap" | "po" | "actual" | "forecast"
       finance_frequency: "weekly" | "monthly"
-      project_phase:
-        | "Engineering"
-        | "Procurement"
-        | "Construction"
-        | "Commissioning"
-      project_status: "on-track" | "at-risk" | "delayed" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1190,13 +1184,6 @@ export const Constants = {
       finance_direction: ["in", "out"],
       finance_entry_kind: ["rap", "po", "actual", "forecast"],
       finance_frequency: ["weekly", "monthly"],
-      project_phase: [
-        "Engineering",
-        "Procurement",
-        "Construction",
-        "Commissioning",
-      ],
-      project_status: ["on-track", "at-risk", "delayed", "completed"],
     },
   },
 } as const

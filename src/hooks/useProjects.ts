@@ -30,7 +30,7 @@ export function useProjects() {
     queryFn: async () => {
       const { data, error } = await supabase.from("projects").select("*").order("project_code");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as DbProject[];
     },
   });
 }
@@ -42,7 +42,7 @@ export function useProject(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase.from("projects").select("*").eq("id", id!).single();
       if (error) throw error;
-      return data;
+      return (data ?? null) as unknown as DbProject | null;
     },
   });
 }

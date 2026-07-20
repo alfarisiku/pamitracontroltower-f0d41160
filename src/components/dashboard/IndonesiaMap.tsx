@@ -119,7 +119,7 @@ export function IndonesiaMap({ projects, onSelectProject }: { projects: DbProjec
           <p className="text-xs text-muted-foreground">{projects.length} proyek tersebar di Indonesia</p>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
-          {(["on-track", "at-risk", "delayed", "completed"] as ProjectStatus[]).map((s) => (
+          {(["planning","execution","on-hold","completed","closed"]).map((s) => (
             <div key={s} className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full" style={{ background: statusColors[s] }} />
               <span className="text-muted-foreground">{statusLabels[s]}</span>
