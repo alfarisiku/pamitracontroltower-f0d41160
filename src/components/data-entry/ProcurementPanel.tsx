@@ -89,7 +89,7 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
       {showAdd && (
         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 mb-3">
           <p className="text-[10px] text-muted-foreground mb-2 italic">
-            Amount diisi dalam <strong className="text-foreground">Rupiah utuh (IDR mentah)</strong> — bukan Juta. Contoh: <code>250000000</code> = Rp 250 Jt • <code>5000000000</code> = Rp 5 Mia • <code>1500000000000</code> = Rp 1,5 Trl. Semua tanggal dapat diisi manual / custom (bisa dilewati / kosong).
+            Amount diisi dalam <strong className="text-foreground">Rupiah utuh (IDR mentah)</strong> — bukan Juta. Contoh: <code>250.000.000</code> = Rp 250 Jt • <code>5.000.000.000</code> = Rp 5,00 M (Miliar) • <code>1.500.000.000.000</code> = Rp 1,50 T (Triliun). Semua tanggal (RFQ, Approval, PO, Fabrication, Delivery, Install) dapat diisi manual / custom dan bisa <strong>diedit langsung di tabel</strong> jika terlewat.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <div><label className={labelCls}>Item Name*</label><input value={form.item_name} onChange={e => setForm({...form, item_name: e.target.value})} className={inputCls} placeholder="Steel Pipe 12&quot;" /></div>
