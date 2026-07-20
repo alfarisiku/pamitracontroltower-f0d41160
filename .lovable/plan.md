@@ -1,48 +1,46 @@
+## Jawaban singkat
 
-## 5 Fitur yang Akan Dibangun
+### 1. "Purchase Order" di tab Finance (Project Detail)
+Bagian itu adalah tabel PO yang menampilkan komitmen pembelian per proyek (vendor, nilai PO, tanggal, status bayar, penalty). Datanya sama persis dengan yang ada di **tab Procurement** dan di **Data Entry → Procurement / PO**, jadi memang **redundan** di tab Finance.
 
-### 1. S-Curve di Project Detail
-- Tambah tab **"S-Curve"** di halaman Project Detail
-- Menampilkan grafik S-Curve (planned vs actual progress over time) menggunakan Recharts AreaChart
-- Data digenerate dari start_date, end_date, progress, dan milestones proyek
-- Sumbu X = timeline (bulan), Sumbu Y = % progress kumulatif
+Sesuai arahan Anda sebelumnya bahwa Finance module fokus ke **Cash Flow (Plan vs Actual)** saja dan PO dipisah, blok ini sebaiknya dihapus dari tab Finance.
 
-### 2. Foto Utama vs Foto Weekly Update
-- **Foto utama proyek** = field `image_url` (satu foto cover/thumbnail proyek)
-- **Foto weekly** = tabel `project_photos` (banyak foto per minggu)
-- Di Project Detail tab Media, pisahkan:
-  - **Cover Photo**: foto utama proyek (dari `image_url`)
-  - **Weekly Progress Gallery**: grid foto-foto mingguan dikelompokkan per minggu
-- Di Data Entry, tambahkan upload foto utama (single file upload ke storage) terpisah dari upload foto weekly
+### 2. "Progress Update" di Data Entry
+Tab ini adalah form update mingguan cepat untuk 1 proyek terpilih. Isinya 5 blok:
 
-### 3. Video & CCTV via YouTube Link
-- Video: hanya terima YouTube URL, auto-convert ke embed format (`youtube.com/embed/VIDEO_ID`)
-- CCTV: sama, hanya terima YouTube/streaming link, buka di tab baru via tombol "Open Stream"
-- Tidak ada iframe embed langsung di dashboard untuk mengurangi beban
-- Tampilkan thumbnail + tombol play yang membuka link di tab baru
+| Blok | Fungsi |
+|---|---|
+| **Weekly Progress Update** | Set Progress %, Status (on-track/at-risk/delayed/completed), dan Phase (E/P/C/Commissioning) proyek |
+| **Work Item Progress** | Update qty completed / qty total per work item → auto-hitung progress & status; tambah/hapus work item cepat |
+| **Update TKDN** | Ubah persentase TKDN proyek |
+| **Cost Summary (Editable)** | Edit Contract Value, Budget, RAP, Actual Spent + lihat variance & margin target |
+| **Weekly Photo (via PhotoGallery)** | Upload foto mingguan dengan caption & week label |
 
-### 4. Info Tooltip (ℹ️) untuk Rumus/Kalkulasi
-- Tambahkan ikon ℹ️ di samping setiap metric yang menggunakan rumus:
-  - **CPI** (Cost Performance Index): `CPI = (Progress% × Budget) / Spent`
-  - **SPI** (Schedule Performance Index): `SPI = Actual Progress / Planned Progress`
-  - **Budget Utilization**: `Spent / Budget × 100%`
-  - **Weekly Progress**: estimasi berdasarkan delta progress
-  - **Profit Margin**: `(Budget - Spent) / Budget × 100%`
-- Klik ikon → muncul popover/tooltip dengan penjelasan rumus + standar interpretasi
+Ada tumpang tindih dengan tab lain yang lebih detail: WBS (Full CRUD), Weekly Photos, Finance (Cash Flow), dan bagian Cost Summary duplikat dengan Manage Projects.
 
-### 5. War Room Redesign — "Investor-Ready Dashboard"
-- Layout **full-screen tanpa scroll** (100vh)
-- Bagian atas: Hero KPI bar (4 cards horizontal)
-- Bagian tengah kiri: **Peta Indonesia interaktif** (Leaflet) dengan marker semua proyek, klik marker → info popup
-- Bagian tengah kanan: **Bar Chart** perbandingan budget vs spent per proyek + **Pie Chart** distribusi status proyek
-- Bagian bawah: ticker/carousel proyek aktif
-- Semua data real-time dari database
+---
 
-### File yang Akan Diubah
-| File | Perubahan |
-|------|-----------|
-| `src/pages/ProjectDetail.tsx` | Tambah tab S-Curve, pisah media foto utama vs weekly, tambah info tooltips, fix video/CCTV |
-| `src/pages/WarRoom.tsx` | Redesign total: map, charts, no-scroll layout |
-| `src/pages/DataEntry.tsx` | Upload foto utama terpisah dari weekly |
-| `src/components/dashboard/SCurveChart.tsx` | **NEW** — komponen S-Curve |
-| `src/components/dashboard/FormulaTooltip.tsx` | **NEW** — komponen info tooltip rumus |
+## Rencana perubahan
+
+### A. Hapus blok Purchase Orders dari tab Finance di Project Detail
+- File: `src/pages/ProjectDetail.tsx` (sekitar baris 427–~500)
+- Hapus section `{/* Purchase Orders */}` beserta tabel PO-nya
+- Hapus import/hook yang jadi tidak terpakai (`usePurchaseOrders`, `Receipt` icon) jika hanya dipakai di section itu
+- PO tetap bisa dikelola & dilihat di tab **Procurement** dan di **Data Entry → Procurement / PO** — tidak ada data yang hilang
+
+### B. Rapikan tab "Progress Update" di Data Entry
+Tujuan: hilangkan duplikasi, jadikan tab ini murni **quick weekly update** satu proyek.
+
+Perubahan di `src/components/data-entry/RegularUpdateTab.tsx`:
+1. **Pertahankan**: Weekly Progress Update, Work Item Progress (update qty), TKDN, dan Weekly Photo shortcut
+2. **Hapus**: blok "Cost Summary (Editable)" — sudah ada di tab **Manage Projects** dan tab **Finance**
+3. **Hapus**: bagian "Add New Work Item" (form dengan id `wi-code`, `wi-name`, dll) — sudah lengkap di tab **WBS (Full CRUD)**
+4. Rename label tab di `DataEntry.tsx` dari "Progress Update" → **"Quick Weekly Update"** biar jelas bedanya dengan tab-tab detail lain
+5. Tambahkan keterangan singkat di header tab: "Update cepat progress mingguan proyek. Untuk edit WBS lengkap gunakan tab WBS, untuk finansial gunakan tab Finance/Manage Projects."
+
+### C. Tidak ada perubahan database
+Semua data (PO, cost, work items) tetap ada — hanya UI yang dirapikan.
+
+---
+
+Konfirmasi apakah setuju dengan rencana ini (hapus PO dari Finance tab + rapikan Progress Update), atau ada bagian yang mau dipertahankan?
