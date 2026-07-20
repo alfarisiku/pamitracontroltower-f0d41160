@@ -28,6 +28,7 @@ function AppRoutes() {
       <Route path="/project/:id" element={<ProjectDetail />} />
       <Route path="/schedule" element={<Schedule />} />
       <Route path="/cost" element={<CostPerformance />} />
+      <Route path="/finance" element={<Finance />} />
       <Route path="/risk" element={<RiskMonitoring />} />
       <Route path="/reporting" element={<Reporting />} />
       <Route path="/data-entry" element={<DataEntry />} />
