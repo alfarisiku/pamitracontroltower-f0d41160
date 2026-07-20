@@ -1,46 +1,76 @@
-## Jawaban singkat
+## 1. Terminologi Status & Phase (global)
 
-### 1. "Purchase Order" di tab Finance (Project Detail)
-Bagian itu adalah tabel PO yang menampilkan komitmen pembelian per proyek (vendor, nilai PO, tanggal, status bayar, penalty). Datanya sama persis dengan yang ada di **tab Procurement** dan di **Data Entry → Procurement / PO**, jadi memang **redundan** di tab Finance.
+**Status baru** (ganti `on-track/at-risk/delayed/completed`):
+- `planning` — Proyek baru, tahap persiapan/perencanaan
+- `execution` — Proyek sedang berjalan
+- `on-hold` — Proyek dihentikan sementara
+- `completed` — Pekerjaan selesai, sisa retensi/denda
+- `closed` — Administrasi, serah terima, close-out selesai
 
-Sesuai arahan Anda sebelumnya bahwa Finance module fokus ke **Cash Flow (Plan vs Actual)** saja dan PO dipisah, blok ini sebaiknya dihapus dari tab Finance.
+**Phase baru** (ganti `Engineering/Procurement/Construction/Commissioning`):
+- `Production I`, `Production II`, `Production III`, `Production IV`
 
-### 2. "Progress Update" di Data Entry
-Tab ini adalah form update mingguan cepat untuk 1 proyek terpilih. Isinya 5 blok:
+**Migrasi data existing:** randomize 15 proyek dummy ke 5 status & 4 phase baru supaya distribusi kelihatan bervariasi untuk demo.
 
-| Blok | Fungsi |
-|---|---|
-| **Weekly Progress Update** | Set Progress %, Status (on-track/at-risk/delayed/completed), dan Phase (E/P/C/Commissioning) proyek |
-| **Work Item Progress** | Update qty completed / qty total per work item → auto-hitung progress & status; tambah/hapus work item cepat |
-| **Update TKDN** | Ubah persentase TKDN proyek |
-| **Cost Summary (Editable)** | Edit Contract Value, Budget, RAP, Actual Spent + lihat variance & margin target |
-| **Weekly Photo (via PhotoGallery)** | Upload foto mingguan dengan caption & week label |
+**File yang diubah:** `src/lib/supabase.ts` (STATUS_CONFIG, PHASE_CONFIG, tipe), semua badge/filter/chart/color mapping di `ProjectTable`, `ProjectSummary`, `WarRoom`, `Index`, `IndonesiaMap`, `ProjectOverviewModal`, `ProjectCrudTab`, `RegularUpdateTab`, `RiskMonitoring`, `Reporting`, `Schedule`, `PhaseChart`, `MilestonesEditor`, `OverallSummary`, `mapUtils`, `useProjects`, plus DB migration ubah kolom `projects.status` & `projects.phase` (drop check constraint lama, isi enum baru) + UPDATE randomize.
 
-Ada tumpang tindih dengan tab lain yang lebih detail: WBS (Full CRUD), Weekly Photos, Finance (Cash Flow), dan bagian Cost Summary duplikat dengan Manage Projects.
+## 2. Project Detail — Finance Tab Overhaul
 
----
+**A. Cashflow & Progress → Bar Chart Bipolar**
+- Recharts `BarChart` dengan sumbu Y ± (cash-in di atas, cash-out di bawah sebagai nilai negatif).
+- 4 series per bulan: `Plan Cash In`, `Actual Cash In` (positif), `Plan Cash Out`, `Actual Cash Out` (negatif).
+- Data dari `finance_entries` agregat bulanan (existing) + plan dari `monthly_budgets`.
 
-## Rencana perubahan
+**B. Cost Breakdown → Tabel + Grafik per Kategori**
+- 10 kategori existing (`finance_entries.category`): Project Management, Material, Jasa/Subcon, Equipment Rental, Logistics, Overhead, Permits, Insurance, Contingency, Others.
+- Tabel: kategori · RAP · Actual · Variance · % consumed.
+- Horizontal bar chart (RAP vs Actual per kategori).
 
-### A. Hapus blok Purchase Orders dari tab Finance di Project Detail
-- File: `src/pages/ProjectDetail.tsx` (sekitar baris 427–~500)
-- Hapus section `{/* Purchase Orders */}` beserta tabel PO-nya
-- Hapus import/hook yang jadi tidak terpakai (`usePurchaseOrders`, `Receipt` icon) jika hanya dipakai di section itu
-- PO tetap bisa dikelola & dilihat di tab **Procurement** dan di **Data Entry → Procurement / PO** — tidak ada data yang hilang
+**C. Margin Calculation → hilangkan**, ganti dengan **Progress vs Cashflow Summary**:
+- Tabel & area/composed chart per periode (bulan): `Progress Plan %`, `Progress Actual %`, `Total Cash In`, `Total Cash Out`.
+- Dummy data disuntik lewat `finance_entries` + `s_curve_data` supaya kelihatan real.
 
-### B. Rapikan tab "Progress Update" di Data Entry
-Tujuan: hilangkan duplikasi, jadikan tab ini murni **quick weekly update** satu proyek.
+**File:** `src/pages/ProjectDetail.tsx` (tab Finance), komponen baru `src/components/dashboard/CashflowBipolarChart.tsx`, `CostBreakdownByCategory.tsx`, `ProgressCashflowSummary.tsx`. Purchase Order table sudah dihapus di iterasi sebelumnya.
 
-Perubahan di `src/components/data-entry/RegularUpdateTab.tsx`:
-1. **Pertahankan**: Weekly Progress Update, Work Item Progress (update qty), TKDN, dan Weekly Photo shortcut
-2. **Hapus**: blok "Cost Summary (Editable)" — sudah ada di tab **Manage Projects** dan tab **Finance**
-3. **Hapus**: bagian "Add New Work Item" (form dengan id `wi-code`, `wi-name`, dll) — sudah lengkap di tab **WBS (Full CRUD)**
-4. Rename label tab di `DataEntry.tsx` dari "Progress Update" → **"Quick Weekly Update"** biar jelas bedanya dengan tab-tab detail lain
-5. Tambahkan keterangan singkat di header tab: "Update cepat progress mingguan proyek. Untuk edit WBS lengkap gunakan tab WBS, untuk finansial gunakan tab Finance/Manage Projects."
+## 3. WBS EPC Phase Filter Berfungsi
 
-### C. Tidak ada perubahan database
-Semua data (PO, cost, work items) tetap ada — hanya UI yang dirapikan.
+- Di `ProjectDetail` tab WBS, tombol filter `Production I/II/III/IV/All` yang benar-benar memfilter `work_items` berdasarkan kolom `epcc_category`.
+- Kolom `epcc_category` di `work_items` sudah ada; tambahkan mapping label baru (Engineering→Production I, dst.) atau ganti nilainya via migration + seed.
+- Seed dummy: variasikan `epcc_category` pada work_items existing supaya tiap filter menghasilkan item (sekarang mayoritas kosong).
 
----
+## 4. Data Entry — Urutan Menu = Project Detail
 
-Konfirmasi apakah setuju dengan rencana ini (hapus PO dari Finance tab + rapikan Progress Update), atau ada bagian yang mau dipertahankan?
+Urutan Project Detail: Overview → S-Curve → WBS → Finance → Procurement → Risk → Milestones → Manpower → Media → Reports.
+
+Urutan Data Entry baru (samakan): Manage Projects → Quick Update → S-Curve → WBS → Finance & PO → Procurement → Risk → Milestones → Manpower → Media/Photos → Weekly Reports → Addendum → Activity Log.
+
+**File:** `src/pages/DataEntry.tsx` — reorder array tabs.
+
+## 5. Account Manager Berfungsi + Login Opsional
+
+- Kembalikan **route `/login`** + `AuthProvider` di `App.tsx`, tapi rute lain tetap public (tidak dibungkus `ProtectedRoute`).
+- Tambah **Login button** di `DashboardHeader` (Sign In / Sign Out toggle).
+- **"Ingat saya / Tetap login"** checkbox di halaman Login → set `localStorage` flag; kalau on, `supabase.auth` pakai `persistSession: true` (default) dan tidak auto sign-out. Kalau off, sign-out saat tab ditutup (`persistSession: false`).
+- `AccountManager` sudah 90% berfungsi — masalahnya cuma tidak ada user login sehingga `useAuth` return default. Setelah login diaktifkan, fitur approve/reject/assign role/assign project sudah jalan. Perbaiki bug kecil `isSystemUser` logic dan tambahkan tombol "Seed Admin Accounts" yang panggil edge function `seed-accounts` untuk membuat akun admin awal (`admin@pamitra.co.id / admin123`).
+- Menu Account Manager di sidebar hanya muncul kalau user login sebagai admin.
+
+**File:** `src/App.tsx` (wrap `AuthProvider`, add `/login`), `src/pages/Login.tsx` (tambah "stay signed in" checkbox), `src/components/dashboard/DashboardHeader.tsx` (auth button), `src/components/dashboard/Sidebar.tsx` (conditional Account Manager), `src/pages/AccountManager.tsx` (seed button + fix isSystemUser).
+
+## 6. Dummy Data Refresh
+
+Satu migration `INSERT`/`UPDATE`:
+- Randomize `projects.status` & `projects.phase` ke enum baru (distribusi ~30% execution, 15% planning, 15% on-hold, 25% completed, 15% closed).
+- Randomize `work_items.epcc_category` ke Production I–IV.
+- Top up `finance_entries` supaya tiap proyek punya 6 bulan data dengan 10 kategori (plan + actual) untuk grafik cost breakdown & cashflow bipolar.
+
+## Teknis Ringkas
+
+- Enum diimplementasi sebagai `TEXT` + CHECK constraint (bukan Postgres enum) supaya migrasi cepat dan chart mapping fleksibel.
+- Formatter `formatRupiah` (M/T) & tooltip formula tetap dipakai.
+- Semua komponen chart pakai token warna semantic dari `index.css` (tidak hardcode).
+- Tidak menyentuh modul Procurement, S-Curve, Milestones yang sudah stabil.
+
+## Diluar Scope (kalau perlu dibahas lanjutan)
+
+- Migrasi role-based route protection penuh (saat ini semua route tetap public, hanya `/account-manager` yang menampilkan konten setelah login).
+- Password reset flow (belum diminta).
