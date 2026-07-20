@@ -8,6 +8,7 @@ import ProjectSummary from "./pages/ProjectSummary";
 import ProjectDetail from "./pages/ProjectDetail";
 import Schedule from "./pages/Schedule";
 import CostPerformance from "./pages/CostPerformance";
+import Finance from "./pages/Finance";
 import RiskMonitoring from "./pages/RiskMonitoring";
 import Reporting from "./pages/Reporting";
 import DataEntry from "./pages/DataEntry";
