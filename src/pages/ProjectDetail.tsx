@@ -7,12 +7,13 @@ import { supabase, formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
+import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
   Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon,
-  Package, DollarSign, Wallet, Receipt, Lock
+  Package, DollarSign, Wallet, Receipt, Lock, FileText
 } from "lucide-react";
 
 const statusConfig = {
@@ -36,7 +37,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
 };
 
 type MediaTab = "weekly" | "video" | "cctv";
-type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media";
+type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report";
 
 const riskCategoryLabels: Record<string, string> = {
   technical: "Technical", schedule: "Schedule", cost: "Cost",
@@ -222,6 +223,7 @@ const ProjectDetail = () => {
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
               { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
+              { key: "weekly-report" as const, label: "Weekly Report", icon: FileText },
               { key: "media" as const, label: "Media", icon: Camera },
             ]).map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -792,6 +794,9 @@ const ProjectDetail = () => {
               )}
             </div>
           )}
+
+          {/* Weekly Report Tab */}
+          {activeTab === "weekly-report" && id && <WeeklyReportView projectId={id} />}
 
           {/* Media Tab */}
           {activeTab === "media" && (
