@@ -152,7 +152,7 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
 
       {Object.keys(grouped).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada foto yang cocok filter.</p>}
 
-      {Object.entries(grouped).map(([week, list]) => (
+      {(Object.entries(grouped) as [string, any[]][]).map(([week, list]) => (
         <div key={week} className="mb-3">
           <h4 className="text-[11px] font-semibold text-foreground mb-1.5 flex items-center gap-1"><Calendar className="h-3 w-3 text-primary" /> {week} <span className="text-muted-foreground font-normal">({list.length} foto)</span></h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
