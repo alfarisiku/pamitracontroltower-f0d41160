@@ -190,35 +190,8 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
                 </div>
               );
             })()}
-            <div className="border-t border-border/50 pt-3">
-              <p className="text-[10px] text-muted-foreground uppercase mb-2 font-semibold">➕ Add New Work Item</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div><label className={labelCls}>Code</label><input id="wi-code" className={inputCls} placeholder="WI-010" /></div>
-                <div><label className={labelCls}>Name</label><input id="wi-name" className={inputCls} placeholder="Item name" /></div>
-                <div><label className={labelCls}>Unit</label><input id="wi-unit" className={inputCls} placeholder="unit" defaultValue="unit" /></div>
-                <div><label className={labelCls}>Qty Total</label><input id="wi-qty" type="number" className={inputCls} placeholder="100" /></div>
-              </div>
-              <button onClick={async () => {
-                const code = (document.getElementById("wi-code") as HTMLInputElement)?.value;
-                const name = (document.getElementById("wi-name") as HTMLInputElement)?.value;
-                const unit = (document.getElementById("wi-unit") as HTMLInputElement)?.value || "unit";
-                const qty = parseFloat((document.getElementById("wi-qty") as HTMLInputElement)?.value) || 0;
-                if (!code || !name || waIds.length === 0) { toast({ title: "❌ Error", description: "Isi code & name, pastikan ada work area", variant: "destructive" }); return; }
-                setSaving(true);
-                try {
-                  const { error } = await supabase.from("work_items").insert({ work_area_id: waIds[0], code, name, unit, qty_total: qty, sort_order: workItems.length });
-                  if (error) throw error;
-                  await logActivity(supabase, "work_item", "create", `Added work item: ${code} - ${name}`, projectId);
-                  queryClient.invalidateQueries({ queryKey: ["work_items"] });
-                  queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-                  toast({ title: "✅ Berhasil", description: "Work item ditambahkan" });
-                  (document.getElementById("wi-code") as HTMLInputElement).value = "";
-                  (document.getElementById("wi-name") as HTMLInputElement).value = "";
-                  (document.getElementById("wi-qty") as HTMLInputElement).value = "";
-                } catch (e: any) { toast({ title: "❌ Error", description: e.message, variant: "destructive" }); }
-                finally { setSaving(false); }
-              }} disabled={saving} className="mt-2 flex items-center gap-1 px-3 py-1.5 bg-success text-success-foreground rounded text-xs font-medium disabled:opacity-50"><Plus className="h-3 w-3" /> Add Work Item</button>
-            </div>
+            <p className="text-[10px] text-muted-foreground italic">Untuk menambah / mengubah struktur WBS lengkap, gunakan tab <span className="font-semibold">WBS (Full CRUD)</span>.</p>
+
           </div>
         )}
       </div>
