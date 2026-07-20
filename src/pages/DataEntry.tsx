@@ -30,7 +30,7 @@ const DataEntry = () => {
   const projects = allProjects;
 
   const tabs = [
-    { key: "regular" as const, label: "Progress Update", icon: FileText },
+    { key: "regular" as const, label: "Quick Weekly Update", icon: FileText },
     { key: "wbs" as const, label: "WBS (Full CRUD)", icon: Layers },
     { key: "risk" as const, label: "Risk & Issue", icon: AlertTriangle },
     { key: "photos" as const, label: "Weekly Photos", icon: Camera },
