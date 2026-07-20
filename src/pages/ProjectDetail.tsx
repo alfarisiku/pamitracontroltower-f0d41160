@@ -7,6 +7,7 @@ import { supabase, formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
+import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
@@ -793,6 +794,9 @@ const ProjectDetail = () => {
               )}
             </div>
           )}
+
+          {/* Weekly Report Tab */}
+          {activeTab === "weekly-report" && id && <WeeklyReportView projectId={id} />}
 
           {/* Media Tab */}
           {activeTab === "media" && (
