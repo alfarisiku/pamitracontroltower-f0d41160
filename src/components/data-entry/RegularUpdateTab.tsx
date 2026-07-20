@@ -68,8 +68,6 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
         setTkdnValue(String(p.tkdn_percentage || 0));
         setContractValue(String(p.contract_value || p.budget || 0));
         setRapValue(String(p.rap || 0));
-        setSpentValue(String(p.spent || 0));
-        setMarginTarget(String((p as any).profit_margin_target || 0));
       }
     }
   }, [projectId, projects]);
@@ -81,13 +79,11 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
       const updates: Record<string, any> = {
         contract_value: parseFloat(contractValue) || 0,
         rap: parseFloat(rapValue) || 0,
-        spent: parseFloat(spentValue) || 0,
-        profit_margin_target: parseFloat(marginTarget) || 0,
         budget: parseFloat(contractValue) || 0, // keep legacy field aligned
       };
       const { error } = await supabase.from("projects").update(updates).eq("id", projectId);
       if (error) throw error;
-      await logActivity(supabase, "project", "update_finance", `Finance updated → Contract: ${contractValue}, RAP: ${rapValue}, Spent: ${spentValue}, Margin: ${marginTarget}%`, projectId, projectId);
+      await logActivity(supabase, "project", "update_finance", `Finance updated → Contract: ${contractValue}, RAP: ${rapValue}`, projectId, projectId);
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Data keuangan proyek diupdate" });
