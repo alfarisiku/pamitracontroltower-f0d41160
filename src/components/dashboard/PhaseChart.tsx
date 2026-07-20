@@ -2,6 +2,11 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { DbProject } from "@/lib/supabase";
 
 const phaseColors: Record<string, string> = {
+  "Production I":   "hsl(215, 80%, 48%)",
+  "Production II":  "hsl(30, 85%, 50%)",
+  "Production III": "hsl(200, 75%, 45%)",
+  "Production IV":  "hsl(152, 55%, 40%)",
+  // legacy fallbacks
   Engineering: "hsl(215, 80%, 48%)",
   Procurement: "hsl(30, 85%, 50%)",
   Construction: "hsl(200, 75%, 45%)",
@@ -22,7 +27,7 @@ export function PhaseChart({ projects }: { projects: DbProject[] }) {
   return (
     <div className="glass-card rounded-lg p-4 animate-slide-up shadow-card">
       <h3 className="text-sm font-semibold text-foreground mb-1">Distribusi Fase</h3>
-      <p className="text-[11px] text-muted-foreground mb-3">Proyek per fase EPC</p>
+      <p className="text-[11px] text-muted-foreground mb-3">Proyek per Production Phase</p>
       <div className="h-[160px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>

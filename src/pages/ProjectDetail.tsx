@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow } from "@/hooks/useProjects";
-import { supabase, formatRupiah } from "@/lib/supabase";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
+import { supabase, formatRupiah, FINANCE_CATEGORIES } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
 import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend, ReferenceLine, ComposedChart, Line } from "recharts";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
@@ -59,7 +59,8 @@ function getYoutubeThumbnail(url: string): string | null {
   return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
 }
 
-const phaseLabels: Record<string, string> = { "Engineering": "E", "Procurement": "P", "Construction": "C", "Commissioning": "Co" };
+const phaseLabels: Record<string, string> = { "Production I": "PI", "Production II": "PII", "Production III": "PIII", "Production IV": "PIV", "Engineering": "E", "Procurement": "P", "Construction": "C", "Commissioning": "Co" };
+const EPC_PHASES = ["Production I", "Production II", "Production III", "Production IV"] as const;
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,11 +77,13 @@ const ProjectDetail = () => {
   const { data: procurementItems = [] } = useProcurementItems(id);
   const { data: purchaseOrders = [] } = usePurchaseOrders(id);
   const { data: cashflowData = [] } = useProjectCashflow(id);
+  const { data: financeEntries = [] } = useFinanceEntries(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>("health");
+  const [epcFilter, setEpcFilter] = useState<string>("all");
 
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
   useEffect(() => {
@@ -363,69 +366,197 @@ const ProjectDetail = () => {
                 </div>
               </div>
 
-              {/* Margin Calculation */}
-              <div className="glass-card rounded-lg p-4 shadow-card">
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Receipt className="h-4 w-4 text-accent" /> Margin Calculation
-                    {project.margin_locked && <span className="text-[9px] px-2 py-0.5 rounded-full bg-warning/15 text-warning border border-warning/30 flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Locked (Admin)</span>}
-                  </h3>
-                  <button
-                    onClick={async () => {
-                      const newVal = !project.margin_locked;
-                      await supabase.from("projects").update({ margin_locked: newVal }).eq("id", project.id);
-                      await supabase.from("activity_logs").insert({ action: newVal ? "margin_locked" : "margin_unlocked", entity_type: "project", entity_id: project.id, project_id: project.id, details: `Margin ${newVal ? "locked" : "unlocked"} by admin` });
-                      window.location.reload();
-                    }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium border transition-colors ${project.margin_locked ? "bg-warning/15 text-warning border-warning/30 hover:bg-warning/25" : "bg-success/15 text-success border-success/30 hover:bg-success/25"}`}
-                  >
-                    <Lock className="h-3 w-3" /> {project.margin_locked ? "Unlock Margin" : "Lock Margin"}
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                    <p className="text-[9px] text-muted-foreground uppercase mb-1">Planned Margin (Contract - RAP)</p>
-                    <p className={`text-lg font-bold font-mono-data ${plannedMarginPct > 0 ? "text-success" : "text-destructive"}`}>{plannedMarginPct}%</p>
-                    <p className="text-[10px] text-muted-foreground">{formatRupiah(plannedMargin)}</p>
+              {/* === Cashflow Bipolar Bar Chart (Cash In ↑ / Cash Out ↓) === */}
+              {(() => {
+                const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
+                financeEntries.forEach(fe => {
+                  const key = fe.period_label || fe.period_date;
+                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
+                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
+                  const isAct = fe.entry_kind === "actual";
+                  const amt = Number(fe.amount) || 0;
+                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
+                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
+                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
+                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
+                });
+                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
+                  label: r.label,
+                  "Plan Cash In": r.planIn,
+                  "Actual Cash In": r.actIn,
+                  "Plan Cash Out": -r.planOut,
+                  "Actual Cash Out": -r.actOut,
+                }));
+                if (bipolar.length === 0) return null;
+                return (
+                  <div className="glass-card rounded-lg p-4 shadow-card">
+                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow & Progress — Plan vs Actual
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif). Nilai dalam {formatRupiah(1000).includes("M") ? "Juta Rupiah" : "IDR"}.</p>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
+                          <Bar dataKey="Plan Cash In" fill="hsl(145, 40%, 65%)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(145, 65%, 40%)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(15, 40%, 70%)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(0, 70%, 50%)" radius={[0,0,3,3]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                    <p className="text-[9px] text-muted-foreground uppercase mb-1">Committed Margin (Contract - PO)</p>
-                    <p className={`text-lg font-bold font-mono-data ${committedMarginPct > 10 ? "text-success" : committedMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{committedMarginPct}%</p>
-                    <p className="text-[10px] text-muted-foreground">{formatRupiah(committedMargin)}</p>
-                  </div>
-                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                    <p className="text-[9px] text-muted-foreground uppercase mb-1">Actual Margin (Contract - Actual)</p>
-                    <p className={`text-lg font-bold font-mono-data ${actualMarginPct > 10 ? "text-success" : actualMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{actualMarginPct}%</p>
-                    <p className="text-[10px] text-muted-foreground">{formatRupiah(actualMargin)}</p>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
-              {/* Cashflow Chart */}
-              {cashflowData.length > 0 && (
-                <div className="glass-card rounded-lg p-4 shadow-card">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Cashflow & Progress</h3>
-                  <div className="h-[260px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={cashflowData.map(c => ({ ...c, net: c.cash_in - c.cash_out }))}>
-                        <defs>
-                          <linearGradient id="cfIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(145,60%,45%)" stopOpacity={0.3} /><stop offset="100%" stopColor="hsl(145,60%,45%)" stopOpacity={0} /></linearGradient>
-                          <linearGradient id="cfOut" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(0,70%,50%)" stopOpacity={0.3} /><stop offset="100%" stopColor="hsl(0,70%,50%)" stopOpacity={0} /></linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                        <XAxis dataKey="period_label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                        <RTooltip contentStyle={chartTooltip} />
-                        <Legend iconSize={8} wrapperStyle={{ fontSize: "10px" }} />
-                        <Area type="monotone" dataKey="cash_in" stroke="hsl(145,60%,45%)" fill="url(#cfIn)" strokeWidth={2} name="Cash In" />
-                        <Area type="monotone" dataKey="cash_out" stroke="hsl(0,70%,50%)" fill="url(#cfOut)" strokeWidth={2} name="Cash Out" />
-                      </AreaChart>
-                    </ResponsiveContainer>
+              {/* === Cost Breakdown by Category === */}
+              {(() => {
+                const rows = FINANCE_CATEGORIES.map(c => {
+                  let rap = 0, actual = 0;
+                  financeEntries.forEach(fe => {
+                    if (fe.direction !== "out" || fe.category !== c.value) return;
+                    const amt = Number(fe.amount) || 0;
+                    if (fe.entry_kind === "rap") rap += amt;
+                    if (fe.entry_kind === "actual") actual += amt;
+                  });
+                  return { key: c.value, label: c.label, rap, actual, variance: rap - actual, pct: rap > 0 ? Math.round((actual / rap) * 100) : 0 };
+                }).filter(r => r.rap > 0 || r.actual > 0);
+                if (rows.length === 0) return null;
+                const totalRap = rows.reduce((s, r) => s + r.rap, 0);
+                const totalAct = rows.reduce((s, r) => s + r.actual, 0);
+                return (
+                  <div className="glass-card rounded-lg p-4 shadow-card">
+                    <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-accent" /> Cost Breakdown per Kategori</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead><tr className="bg-muted/50 border-b border-border">
+                            <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Kategori</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">RAP</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Variance</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">%</th>
+                          </tr></thead>
+                          <tbody>
+                            {rows.map(r => (
+                              <tr key={r.key} className="border-b border-border/30 hover:bg-muted/20">
+                                <td className="py-1.5 px-2 text-foreground">{r.label}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-info">{formatRupiah(r.rap)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.actual)}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data ${r.variance >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.variance)}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data ${r.pct > 100 ? "text-destructive" : r.pct > 85 ? "text-warning" : "text-success"}`}>{r.pct}%</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-muted/40 font-bold">
+                              <td className="py-2 px-2 text-foreground">TOTAL</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-info">{formatRupiah(totalRap)}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-destructive">{formatRupiah(totalAct)}</td>
+                              <td className={`py-2 px-2 text-right font-mono-data ${totalRap - totalAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(totalRap - totalAct)}</td>
+                              <td className={`py-2 px-2 text-right font-mono-data ${totalRap > 0 && (totalAct / totalRap) > 1 ? "text-destructive" : "text-foreground"}`}>{totalRap > 0 ? Math.round((totalAct/totalRap)*100) : 0}%</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={rows} layout="vertical" margin={{ left: 20, right: 12, top: 4, bottom: 4 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                            <XAxis type="number" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
+                            <YAxis type="category" dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} width={120} />
+                            <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(v)} />
+                            <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+                            <Bar dataKey="rap" fill="hsl(215, 80%, 55%)" name="RAP" radius={[0,3,3,0]} />
+                            <Bar dataKey="actual" fill="hsl(0, 70%, 55%)" name="Actual" radius={[0,3,3,0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
-              {/* Purchase Orders dipindah ke tab Procurement & Data Entry → Procurement/PO */}
+              {/* === Progress vs Cashflow Summary per Periode === */}
+              {(() => {
+                const cashMap: Record<string, { in: number; out: number }> = {};
+                financeEntries.forEach(fe => {
+                  if (fe.entry_kind !== "actual") return;
+                  const k = fe.period_label || fe.period_date;
+                  if (!cashMap[k]) cashMap[k] = { in: 0, out: 0 };
+                  const amt = Number(fe.amount) || 0;
+                  if (fe.direction === "in") cashMap[k].in += amt; else cashMap[k].out += amt;
+                });
+                const scurve = scurveData.filter(s => s.curve_type === "monthly" || s.curve_type === "weekly" || s.curve_type === "actual" || s.curve_type === "planned");
+                // Build period rows from union of scurve periods and cash periods
+                const periods = Array.from(new Set([
+                  ...scurve.map(s => s.period_label),
+                  ...Object.keys(cashMap),
+                ]));
+                if (periods.length === 0) return null;
+                const rows = periods.map(p => {
+                  const planRow = scurve.find(s => s.period_label === p && (s.curve_type === "planned" || s.curve_type === "monthly"));
+                  const actRow = scurve.find(s => s.period_label === p && (s.curve_type === "actual" || s.curve_type === "monthly"));
+                  return {
+                    label: p,
+                    planPct: planRow?.planned_progress ?? 0,
+                    actPct: actRow?.actual_progress ?? 0,
+                    cashIn: cashMap[p]?.in ?? 0,
+                    cashOut: cashMap[p]?.out ?? 0,
+                  };
+                });
+                return (
+                  <div className="glass-card rounded-lg p-4 shadow-card">
+                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Menyandingkan progress plan/actual dengan total cash in & cash out di periode yang sama.</p>
+                    <div className="h-[280px] mb-3">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} />
+                          <YAxis yAxisId="left" orientation="left" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => name.includes("%") ? `${Number(v).toFixed(1)}%` : formatRupiah(v)} />
+                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+                          <Bar yAxisId="left" dataKey="cashIn" name="Cash In" fill="hsl(145, 65%, 45%)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashOut" name="Cash Out" fill="hsl(0, 70%, 55%)" radius={[3,3,0,0]} />
+                          <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} />
+                          <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(30, 85%, 50%)" strokeWidth={2} dot={{ r: 3 }} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead><tr className="bg-muted/50 border-b border-border">
+                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash In</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
+                        </tr></thead>
+                        <tbody>
+                          {rows.map(r => (
+                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
+                              <td className="py-1.5 px-2 text-foreground">{r.label}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-info">{Number(r.planPct).toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-accent-foreground">{Number(r.actPct).toFixed(1)}%</td>
+                              <td className={`py-1.5 px-2 text-right font-mono-data ${(r.actPct - r.planPct) >= 0 ? "text-success" : "text-destructive"}`}>{(r.actPct - r.planPct) > 0 ? "+" : ""}{(r.actPct - r.planPct).toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
+                              <td className={`py-1.5 px-2 text-right font-mono-data ${(r.cashIn - r.cashOut) >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.cashIn - r.cashOut)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -480,27 +611,29 @@ const ProjectDetail = () => {
               ) : (
                 <>
                   <div className="glass-card rounded-lg p-3 shadow-card">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-[10px] uppercase text-muted-foreground font-semibold">EPC Phase:</span>
-                      {["Engineering", "Procurement", "Construction", "Commissioning"].map(phase => {
-                        const phaseItems = workItems.filter(wi => {
-                          const area = workAreas.find(wa => wa.id === wi.work_area_id);
-                          return area?.name?.toLowerCase().includes(phase.toLowerCase()) || wi.name?.toLowerCase().includes(phase.toLowerCase());
-                        });
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] uppercase text-muted-foreground font-semibold mr-1">EPC Phase Filter:</span>
+                      {(["all", ...EPC_PHASES] as const).map(phase => {
+                        const phaseItems = phase === "all" ? workItems : workItems.filter(wi => (wi as any).epcc_category === phase);
                         const phaseProgress = phaseItems.length > 0 ? Math.round(phaseItems.reduce((s, i) => s + i.progress, 0) / phaseItems.length) : 0;
-                        const isActive = project.phase === phase;
+                        const isActive = epcFilter === phase;
                         return (
-                          <div key={phase} className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] border ${isActive ? "bg-primary/10 border-primary/30 text-primary font-bold" : "bg-muted/30 border-border/50 text-muted-foreground"}`}>
-                            <span className="font-mono-data">{phaseLabels[phase]}</span>
-                            <span>{phase}</span>
-                            {phaseItems.length > 0 && <span className="font-mono-data">({phaseProgress}%)</span>}
-                          </div>
+                          <button
+                            key={phase}
+                            onClick={() => setEpcFilter(phase)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] border transition-colors ${isActive ? "bg-primary text-primary-foreground border-primary font-bold" : "bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted"}`}
+                          >
+                            {phase !== "all" && <span className="font-mono-data">{phaseLabels[phase]}</span>}
+                            <span>{phase === "all" ? "All" : phase}</span>
+                            <span className="font-mono-data opacity-80">({phaseItems.length}{phaseItems.length > 0 ? ` · ${phaseProgress}%` : ""})</span>
+                          </button>
                         );
                       })}
                     </div>
                   </div>
                   {workAreas.map(area => {
-                    const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
+                    const areaItems = workItems.filter(wi => wi.work_area_id === area.id && (epcFilter === "all" || (wi as any).epcc_category === epcFilter));
+                    if (epcFilter !== "all" && areaItems.length === 0) return null;
                     const isExpanded = expandedAreas.has(area.id);
                     const totalQty = areaItems.reduce((s, i) => s + Number(i.qty_total), 0);
                     const doneQty = areaItems.reduce((s, i) => s + Number(i.qty_completed), 0);

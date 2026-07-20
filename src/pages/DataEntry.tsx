@@ -30,18 +30,19 @@ const DataEntry = () => {
 
   const projects = allProjects;
 
+  // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
   const tabs = [
-    { key: "regular" as const, label: "Quick Weekly Update", icon: FileText },
-    { key: "wbs" as const, label: "WBS (Full CRUD)", icon: Layers },
-    { key: "milestones" as const, label: "Milestones", icon: Target },
-    { key: "risk" as const, label: "Risk & Issue", icon: AlertTriangle },
-    { key: "photos" as const, label: "Weekly Photos", icon: Camera },
-    { key: "weekly-report" as const, label: "Weekly Report", icon: FileText },
-    { key: "procurement" as const, label: "Procurement / PO", icon: Package },
-    { key: "finance" as const, label: "Finance (Cash Flow)", icon: DollarSign },
-    { key: "scurve" as const, label: "S-Curve", icon: FileBarChart },
-    { key: "addendum" as const, label: "Addendum", icon: FileBarChart },
-    { key: "project-crud" as const, label: "Manage Projects", icon: ClipboardList },
+    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText },
+    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign },
+    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart },
+    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers },
+    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package },
+    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle },
+    { key: "milestones" as const,    label: "Milestones",          icon: Target },
+    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText },
+    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera },
+    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart },
+    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList },
   ];
 
   const downloadTemplate = () => {
