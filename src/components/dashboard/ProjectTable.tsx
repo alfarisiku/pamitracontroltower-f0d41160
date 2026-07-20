@@ -4,14 +4,7 @@ import { formatRupiah } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { ExternalLink } from "lucide-react";
 
-type ProjectStatus = DbProject["status"];
-
-const statusConfig: Record<ProjectStatus, { label: string; className: string }> = {
-  "on-track": { label: "On Track", className: "bg-success/15 text-success border-success/30" },
-  "at-risk": { label: "At Risk", className: "bg-warning/15 text-warning border-warning/30" },
-  "delayed": { label: "Delayed", className: "bg-destructive/15 text-destructive border-destructive/30" },
-  "completed": { label: "Selesai", className: "bg-primary/15 text-primary border-primary/30" },
-};
+import { getStatusMeta } from "@/lib/supabase";
 
 export function ProjectTable({ projects, onSelectProject }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void }) {
   const navigate = useNavigate();
@@ -37,7 +30,7 @@ export function ProjectTable({ projects, onSelectProject }: { projects: DbProjec
           </thead>
           <tbody>
             {projects.map((p, i) => {
-              const st = statusConfig[p.status];
+              const st = getStatusMeta(p.status);
               return (
                 <tr
                   key={p.id}

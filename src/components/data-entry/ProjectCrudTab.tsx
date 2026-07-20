@@ -181,12 +181,19 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <div><label className={labelCls}>Status</label>
             <select value={ef.status} onChange={e => set("status", e.target.value)} className={inputCls}>
-              <option value="on-track">On Track</option><option value="at-risk">At Risk</option><option value="delayed">Delayed</option><option value="completed">Completed</option>
+              <option value="planning">Planning — Persiapan / Perencanaan</option>
+              <option value="execution">Execution — Sedang Berjalan</option>
+              <option value="on-hold">On Hold — Dihentikan Sementara</option>
+              <option value="completed">Completed — Selesai (sisa retensi / denda)</option>
+              <option value="closed">Closed — Administrasi & Serah Terima Selesai</option>
             </select>
           </div>
-          <div><label className={labelCls}>Phase</label>
+          <div><label className={labelCls}>Phase (Production)</label>
             <select value={ef.phase} onChange={e => set("phase", e.target.value)} className={inputCls}>
-              <option>Engineering</option><option>Procurement</option><option>Construction</option><option>Commissioning</option>
+              <option value="Production I">Production I</option>
+              <option value="Production II">Production II</option>
+              <option value="Production III">Production III</option>
+              <option value="Production IV">Production IV</option>
             </select>
           </div>
           <div><label className={labelCls}>Progress %</label><input type="number" min="0" max="100" value={ef.progress} onChange={e => set("progress", e.target.value)} className={inputCls} /></div>

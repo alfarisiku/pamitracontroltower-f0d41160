@@ -16,12 +16,7 @@ import {
   Package, DollarSign, Wallet, Receipt, Lock, FileText
 } from "lucide-react";
 
-const statusConfig = {
-  "on-track": { label: "On Track", className: "bg-success/15 text-success border-success/30" },
-  "at-risk": { label: "At Risk", className: "bg-warning/15 text-warning border-warning/30" },
-  "delayed": { label: "Delayed", className: "bg-destructive/15 text-destructive border-destructive/30" },
-  "completed": { label: "Selesai", className: "bg-primary/15 text-primary border-primary/30" },
-};
+import { getStatusMeta } from "@/lib/supabase";
 
 const taskStatusConfig: Record<string, { label: string; className: string; icon: typeof CheckCircle2 }> = {
   "completed": { label: "Selesai", className: "text-success", icon: CheckCircle2 },
@@ -114,7 +109,7 @@ const ProjectDetail = () => {
     );
   }
 
-  const st = statusConfig[project.status];
+  const st = getStatusMeta(project.status);
   const contractValue = project.contract_value || project.budget;
   const poCommitted = purchaseOrders.reduce((s, po) => s + po.amount, 0);
   const actualCost = project.spent;

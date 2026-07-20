@@ -15,15 +15,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-const STATUS_COLORS = {
-  "on-track": SC["on-track"],
-  "at-risk": SC["at-risk"],
-  "delayed": SC["delayed"],
-  "completed": SC["completed"],
-};
+const STATUS_COLORS: Record<string, string> = SC;
 
 function createCustomIcon(status: string) {
-  const color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] || STATUS_COLORS["on-track"];
+  const color = STATUS_COLORS[status] || STATUS_COLORS["planning"] || "#3b82f6";
   return L.divIcon({
     className: "custom-marker",
     html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>`,
@@ -58,10 +53,11 @@ const WarRoom = () => {
     );
   }
 
-  const completed = projects.filter(p => p.status === "completed");
-  const onTrack = projects.filter(p => p.status === "on-track");
-  const atRisk = projects.filter(p => p.status === "at-risk");
+  const completed = projects.filter(p => p.status === "completed" || p.status === "closed");
+  const onTrack = projects.filter(p => p.status === "execution" || p.status === "on-track");
+  const atRisk = projects.filter(p => p.status === "on-hold" || p.status === "at-risk");
   const delayed = projects.filter(p => p.status === "delayed");
+  const planning = projects.filter(p => p.status === "planning");
   const totalBudget = projects.reduce((s, p) => s + p.budget, 0);
   const totalSpent = projects.reduce((s, p) => s + p.spent, 0);
   const avgProgress = projects.length > 0 ? Math.round(projects.reduce((s, p) => s + p.progress, 0) / projects.length) : 0;
@@ -74,9 +70,9 @@ const WarRoom = () => {
   }));
 
   const pieData = [
-    { name: "On Track", value: onTrack.length, color: STATUS_COLORS["on-track"] },
-    { name: "At Risk", value: atRisk.length, color: STATUS_COLORS["at-risk"] },
-    { name: "Delayed", value: delayed.length, color: STATUS_COLORS["delayed"] },
+    { name: "Planning", value: planning.length, color: STATUS_COLORS["planning"] },
+    { name: "Execution", value: onTrack.length, color: STATUS_COLORS["execution"] },
+    { name: "On Hold", value: atRisk.length, color: STATUS_COLORS["on-hold"] },
     { name: "Completed", value: completed.length, color: STATUS_COLORS["completed"] },
   ].filter(d => d.value > 0);
 
