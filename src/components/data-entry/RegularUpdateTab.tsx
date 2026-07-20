@@ -39,6 +39,12 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
   const [photoWeekLabel, setPhotoWeekLabel] = useState("");
   const [photoCaption, setPhotoCaption] = useState("");
 
+  // Financial fields
+  const [contractValue, setContractValue] = useState("");
+  const [rapValue, setRapValue] = useState("");
+  const [spentValue, setSpentValue] = useState("");
+  const [marginTarget, setMarginTarget] = useState("");
+
   const getWeekOptions = () => {
     const options: string[] = [];
     const now = new Date();
@@ -60,9 +66,37 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
   useEffect(() => {
     if (projectId) {
       const p = projects.find(proj => proj.id === projectId);
-      if (p) setTkdnValue(String(p.tkdn_percentage || 0));
+      if (p) {
+        setTkdnValue(String(p.tkdn_percentage || 0));
+        setContractValue(String(p.contract_value || p.budget || 0));
+        setRapValue(String(p.rap || 0));
+        setSpentValue(String(p.spent || 0));
+        setMarginTarget(String((p as any).profit_margin_target || 0));
+      }
     }
   }, [projectId, projects]);
+
+  const handleFinanceUpdate = async () => {
+    if (!projectId) return;
+    setSaving(true);
+    try {
+      const updates: Record<string, any> = {
+        contract_value: parseFloat(contractValue) || 0,
+        rap: parseFloat(rapValue) || 0,
+        spent: parseFloat(spentValue) || 0,
+        profit_margin_target: parseFloat(marginTarget) || 0,
+        budget: parseFloat(contractValue) || 0, // keep legacy field aligned
+      };
+      const { error } = await supabase.from("projects").update(updates).eq("id", projectId);
+      if (error) throw error;
+      await logActivity(supabase, "project", "update_finance", `Finance updated → Contract: ${contractValue}, RAP: ${rapValue}, Spent: ${spentValue}, Margin: ${marginTarget}%`, projectId, projectId);
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "✅ Berhasil", description: "Data keuangan proyek diupdate" });
+    } catch (e: any) {
+      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
 
   const handleProjectUpdate = async () => {
     if (!projectId) return;
@@ -208,7 +242,30 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
         </div>
       </div>
 
-      {/* Cost Summary dipindah ke tab Manage Projects & Finance */}
+      {/* Financial Update — Contract / RAP / Actual Spent / Margin */}
+      <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
+        <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2"><DollarSign className="h-4 w-4 text-accent" /> Update Data Keuangan Proyek</h3>
+        <p className="text-[10px] text-muted-foreground mb-3">Semua nilai dalam Rupiah (IDR). Perubahan langsung tersinkron ke Manage Projects, dashboard, Cost Performance & Finance module.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label className={labelCls}>Contract Value (Rp)</label>
+            <input type="number" min="0" value={contractValue} onChange={e => setContractValue(e.target.value)} className={inputCls} placeholder="Nilai kontrak" />
+          </div>
+          <div>
+            <label className={labelCls}>RAP / Rencana Anggaran (Rp)</label>
+            <input type="number" min="0" value={rapValue} onChange={e => setRapValue(e.target.value)} className={inputCls} placeholder="Rencana Anggaran Pelaksanaan" />
+          </div>
+          <div>
+            <label className={labelCls}>Actual Spent / Yang Sudah Dikeluarkan (Rp)</label>
+            <input type="number" min="0" value={spentValue} onChange={e => setSpentValue(e.target.value)} className={inputCls} placeholder="Total biaya aktual" />
+          </div>
+          <div>
+            <label className={labelCls}>Target Margin (%)</label>
+            <input type="number" step="0.1" min="0" max="100" value={marginTarget} onChange={e => setMarginTarget(e.target.value)} className={inputCls} placeholder="Target profit margin" />
+          </div>
+        </div>
+        <button onClick={handleFinanceUpdate} disabled={saving} className="mt-3 flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:bg-accent/90 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Update Financial Data"}</button>
+      </div>
 
       {/* Risk Entry */}
       <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
