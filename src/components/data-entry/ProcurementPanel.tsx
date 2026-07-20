@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Package, Plus, Save, Trash2 } from "lucide-react";
-import { supabase, formatRupiah, logActivity } from "@/lib/supabase";
+import { supabase, formatIDR, logActivity } from "@/lib/supabase";
 import { useProcurementItems } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
 
@@ -81,18 +81,24 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Package className="h-4 w-4 text-primary" /> Procurement Tracking</h3>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground">Total: <span className="font-bold text-foreground">{formatRupiah(totalAmount)}</span></span>
+          <span className="text-[10px] text-muted-foreground">Total: <span className="font-bold text-foreground">{formatIDR(totalAmount)}</span></span>
           <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><Plus className="h-3 w-3" /> Add Item</button>
         </div>
       </div>
 
       {showAdd && (
         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 mb-3">
-          <p className="text-[10px] text-muted-foreground mb-2 italic">Semua nilai <span className="font-semibold text-foreground">Amount dalam Rupiah (IDR)</span>. Semua tanggal dapat diisi manual / custom.</p>
+          <p className="text-[10px] text-muted-foreground mb-2 italic">
+            Amount diisi dalam <strong className="text-foreground">Rupiah utuh (IDR mentah)</strong> — bukan Juta. Contoh: <code>250000000</code> = Rp 250 Jt • <code>5000000000</code> = Rp 5 Mia • <code>1500000000000</code> = Rp 1,5 Trl. Semua tanggal dapat diisi manual / custom (bisa dilewati / kosong).
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <div><label className={labelCls}>Item Name*</label><input value={form.item_name} onChange={e => setForm({...form, item_name: e.target.value})} className={inputCls} placeholder="Steel Pipe 12&quot;" /></div>
             <div><label className={labelCls}>Vendor</label><input value={form.vendor} onChange={e => setForm({...form, vendor: e.target.value})} className={inputCls} placeholder="PT Vendor" /></div>
-            <div><label className={labelCls}>Amount (Rp / IDR)</label><input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 250000000" /></div>
+            <div>
+              <label className={labelCls}>Amount (Rp / IDR utuh)</label>
+              <input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 250000000" />
+              {form.amount && <p className="text-[9px] text-primary mt-0.5">= {formatIDR(parseFloat(form.amount)||0)}</p>}
+            </div>
             <div><label className={labelCls}>Qty</label><input type="number" value={form.qty} onChange={e => setForm({...form, qty: e.target.value})} className={inputCls} /></div>
             <div><label className={labelCls}>Unit</label><input value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} className={inputCls} placeholder="unit / m / kg" /></div>
             <div><label className={labelCls}>Status</label>
@@ -136,7 +142,7 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
                 <tr key={item.id} className="border-b border-border/30">
                   <td className="py-1.5 px-2 font-medium text-foreground">{item.item_name}<div className="text-[9px] text-muted-foreground">{item.qty} {item.unit}</div></td>
                   <td className="py-1.5 px-2 text-muted-foreground">{item.vendor}</td>
-                  <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatRupiah(item.amount)}</td>
+                  <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatIDR(item.amount)}</td>
                   <td className="py-1.5 px-2 text-center">
                     <select value={item.status} onChange={e => handleStatusUpdate(item.id, e.target.value, item.item_name)}
                       className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${statusColors[item.status] || ""} border-border bg-transparent cursor-pointer`}>

@@ -192,19 +192,25 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           <div><label className={labelCls}>Progress %</label><input type="number" min="0" max="100" value={ef.progress} onChange={e => set("progress", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>TKDN %</label><input type="number" step="0.1" min="0" max="100" value={ef.tkdn_percentage} onChange={e => set("tkdn_percentage", e.target.value)} className={inputCls} /></div>
         </div>
-        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">💰 Financial & Budget</p>
+        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">💰 Financial & Budget</p>
+        <p className="text-[10px] text-muted-foreground mb-2">
+          ⚠️ Semua nilai finance diisi dalam <strong>Juta Rupiah (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5000</code> = Rp 5 Miliar • <code>1500000</code> = Rp 1,5 Triliun. Target Margin diisi <strong>persen 0–100</strong> (contoh: <code>12</code> = 12%).
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-          <div><label className={labelCls}>Contract Value (Juta Rp)</label><input type="number" value={(ef as any).contract_value || ""} onChange={e => set("contract_value", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Budget (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Contract Value (Juta Rp)</label><input type="number" value={(ef as any).contract_value || ""} onChange={e => set("contract_value", e.target.value)} className={inputCls} placeholder="mis. 5000" /></div>
+          <div><label className={labelCls}>Budget / Legacy (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>RAP (Juta Rp)</label><input type="number" value={ef.rap} onChange={e => set("rap", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Actual Spent (Juta Rp)</label><input type="number" value={ef.spent} onChange={e => set("spent", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Target Margin (%)</label><input type="number" step="0.1" value={ef.profit_margin_target} onChange={e => set("profit_margin_target", e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Target Margin (%)</label><input type="number" step="0.1" min="0" max="100" value={ef.profit_margin_target} onChange={e => set("profit_margin_target", e.target.value)} className={inputCls} placeholder="mis. 12" /></div>
         </div>
-        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">🖼️ Media & Links</p>
+        <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">🖼️ Media & Video / CCTV Links</p>
+        <p className="text-[10px] text-muted-foreground mb-2">
+          <strong>Video wajib link YouTube</strong> (contoh: <code>https://youtube.com/watch?v=xxxx</code> atau <code>https://youtu.be/xxxx</code>) — thumbnail otomatis diambil dari YouTube. Untuk <strong>CCTV Live</strong>, isi URL YouTube Live (<code>https://youtube.com/live/xxxx</code>) atau URL stream publik; di halaman Project Detail akan ditampilkan sebagai tombol "Buka Live Stream" (bukan di-embed, agar dashboard tetap ringan). Edit di sini (Data Entry → Manage Projects → Edit).
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           <div><label className={labelCls}>Cover Photo URL (Header)</label><input value={ef.image_url} onChange={e => set("image_url", e.target.value)} className={inputCls} placeholder="https://..." /></div>
           <div><label className={labelCls}>YouTube Video URL</label><input value={ef.video_url} onChange={e => set("video_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/watch?v=..." /></div>
-          <div><label className={labelCls}>CCTV / Stream URL</label><input value={ef.cctv_url} onChange={e => set("cctv_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/live/..." /></div>
+          <div><label className={labelCls}>CCTV / YouTube Live URL</label><input value={ef.cctv_url} onChange={e => set("cctv_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/live/..." /></div>
         </div>
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">🗺️ Map & Description</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">

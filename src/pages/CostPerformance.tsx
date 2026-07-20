@@ -281,7 +281,7 @@ const CostPerformance = () => {
           {/* Breakdown Views */}
           {viewMode === "project" && (
             <div className="glass-card rounded-lg shadow-card overflow-hidden">
-              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya per Proyek — Contract, RAP, Committed (PO), Actual & Margin</h3></div>
+              <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Detail Biaya per Proyek — Contract, RAP, Committed (PO) & Actual</h3></div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead><tr className="bg-muted/50 border-b border-border">
@@ -294,8 +294,6 @@ const CostPerformance = () => {
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Remaining</th>
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Used%</th>
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">CPI</th>
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin %</th>
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Margin Rp</th>
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Penalty</th>
                   </tr></thead>
                   <tbody>
@@ -303,7 +301,6 @@ const CostPerformance = () => {
                       const pct = Math.round(p.spent / p.budget * 100);
                       const cpi = p.spent > 0 ? ((p.progress / 100) * p.budget) / p.spent : 1;
                       const cv = p.contract_value || p.budget;
-                      const margin = cv > 0 ? Math.round((cv - p.spent) / cv * 100) : 0;
                       const committed = committedByProject[p.id] || 0;
                       const penalty = penaltyByProject[p.id] || 0;
                       return (
@@ -322,13 +319,6 @@ const CostPerformance = () => {
                             </div>
                           </td>
                           <td className={`py-2 px-3 font-mono-data font-bold ${cpi >= 1 ? "text-success" : "text-destructive"}`}>{cpi.toFixed(2)}</td>
-                          <td className={`py-2 px-3 font-mono-data font-bold ${margin > 10 ? "text-success" : margin > 0 ? "text-warning" : "text-destructive"}`}>
-                            <div className="flex items-center gap-1">
-                              <span>{margin}%</span>
-                              {p.margin_locked && <span title="Margin manually overridden by admin (locked)" className="inline-flex items-center px-1 py-0.5 rounded bg-warning/15 text-warning border border-warning/30 text-[8px] font-semibold gap-0.5"><Lock className="h-2 w-2" />OVR</span>}
-                            </div>
-                          </td>
-                          <td className={`py-2 px-3 font-mono-data ${margin > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(cv - p.spent)}</td>
                           <td className={`py-2 px-3 font-mono-data ${penalty > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{penalty > 0 ? formatRupiah(penalty) : "—"}</td>
                         </tr>
                       );
