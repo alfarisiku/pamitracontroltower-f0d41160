@@ -88,19 +88,25 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
 
       {showAdd && (
         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 mb-3">
+          <p className="text-[10px] text-muted-foreground mb-2 italic">Semua nilai <span className="font-semibold text-foreground">Amount dalam Rupiah (IDR)</span>. Semua tanggal dapat diisi manual / custom.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <div><label className={labelCls}>Item Name*</label><input value={form.item_name} onChange={e => setForm({...form, item_name: e.target.value})} className={inputCls} placeholder="Steel Pipe 12&quot;" /></div>
             <div><label className={labelCls}>Vendor</label><input value={form.vendor} onChange={e => setForm({...form, vendor: e.target.value})} className={inputCls} placeholder="PT Vendor" /></div>
-            <div><label className={labelCls}>Amount (Rp)</label><input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} /></div>
+            <div><label className={labelCls}>Amount (Rp / IDR)</label><input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 250000000" /></div>
             <div><label className={labelCls}>Qty</label><input type="number" value={form.qty} onChange={e => setForm({...form, qty: e.target.value})} className={inputCls} /></div>
-            <div><label className={labelCls}>Unit</label><input value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} className={inputCls} /></div>
+            <div><label className={labelCls}>Unit</label><input value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} className={inputCls} placeholder="unit / m / kg" /></div>
             <div><label className={labelCls}>Status</label>
               <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className={inputCls}>
                 {Object.entries(statusLabels).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
+            <div className="sm:col-span-2"><label className={labelCls}>Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} className={inputCls} placeholder="Spesifikasi / catatan" /></div>
             <div><label className={labelCls}>RFQ Date</label><input type="date" value={form.rfq_date} onChange={e => setForm({...form, rfq_date: e.target.value})} className={inputCls} /></div>
+            <div><label className={labelCls}>Approval Date</label><input type="date" value={form.approval_date} onChange={e => setForm({...form, approval_date: e.target.value})} className={inputCls} /></div>
             <div><label className={labelCls}>PO Date</label><input type="date" value={form.po_date} onChange={e => setForm({...form, po_date: e.target.value})} className={inputCls} /></div>
+            <div><label className={labelCls}>Fabrication Date</label><input type="date" value={form.fabrication_date} onChange={e => setForm({...form, fabrication_date: e.target.value})} className={inputCls} /></div>
+            <div><label className={labelCls}>Delivery Date</label><input type="date" value={form.delivery_date} onChange={e => setForm({...form, delivery_date: e.target.value})} className={inputCls} /></div>
+            <div><label className={labelCls}>Install Date</label><input type="date" value={form.install_date} onChange={e => setForm({...form, install_date: e.target.value})} className={inputCls} /></div>
           </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={saving || !form.item_name} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-medium disabled:opacity-50"><Save className="h-3 w-3 inline mr-1" />{saving ? "..." : "Save"}</button>
