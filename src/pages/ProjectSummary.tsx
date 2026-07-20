@@ -104,7 +104,7 @@ const ProjectSummary = () => {
           {/* Project Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((project) => {
-              const st = statusConfig[project.status];
+              const st = statusConfig[project.status] || FALLBACK_STATUS;
               const budgetPct = Math.round((project.spent / project.budget) * 100);
               return (
                 <div
