@@ -1,0 +1,190 @@
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase, logActivity, ACHIEVEMENT_CATEGORIES, DbWeeklyReport } from "@/lib/supabase";
+import { FileText, Plus, Trash2, Save, ChevronDown, ChevronRight } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
+const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
+
+type Achievement = { category: string; description: string };
+type Outstanding = { item: string; note?: string };
+type Target = { target: string; owner?: string };
+type Escalation = { issue: string; decision_needed?: string };
+
+function mondayOf(dateStr: string): string {
+  const d = new Date(dateStr); const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff)).toISOString().slice(0,10);
+}
+function sundayOf(mondayStr: string): string {
+  const d = new Date(mondayStr); d.setDate(d.getDate() + 6);
+  return d.toISOString().slice(0,10);
+}
+
+export function WeeklyReportEditor({ projectId }: { projectId: string }) {
+  const qc = useQueryClient();
+  const [reports, setReports] = useState<DbWeeklyReport[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const today = new Date().toISOString().slice(0,10);
+  const [form, setForm] = useState<Omit<DbWeeklyReport, "id"|"project_id"|"created_at"|"updated_at">>({
+    week_start_date: mondayOf(today), week_end_date: sundayOf(mondayOf(today)),
+    achievements: [], outstanding_items: [], next_week_targets: [], escalations: [], summary: "",
+  });
+
+  const load = async () => {
+    const { data } = await (supabase as any).from("weekly_progress_reports").select("*").eq("project_id", projectId).order("week_start_date", { ascending: false });
+    setReports((data || []) as DbWeeklyReport[]);
+  };
+  useEffect(() => { if (projectId) load(); }, [projectId]);
+  useEffect(() => { setForm(f => ({ ...f, week_end_date: sundayOf(f.week_start_date) })); }, [form.week_start_date]);
+
+  const save = async () => {
+    if (!form.week_start_date) { toast({ title: "Isi tanggal minggu", variant: "destructive" }); return; }
+    const { error } = await (supabase as any).from("weekly_progress_reports").insert({ project_id: projectId, ...form });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    await logActivity(supabase, "weekly_report", "create", `Weekly report ${form.week_start_date} → ${form.week_end_date}`, projectId);
+    qc.invalidateQueries({ queryKey: ["weekly_reports"] });
+    setNewOpen(false);
+    setForm({ week_start_date: mondayOf(today), week_end_date: sundayOf(mondayOf(today)), achievements: [], outstanding_items: [], next_week_targets: [], escalations: [], summary: "" });
+    load(); toast({ title: "✅ Weekly report tersimpan" });
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Hapus weekly report ini?")) return;
+    await (supabase as any).from("weekly_progress_reports").delete().eq("id", id);
+    await logActivity(supabase, "weekly_report", "delete", `Weekly report deleted`, projectId, id);
+    load();
+  };
+
+  const updateRow = async (id: string, patch: Partial<DbWeeklyReport>) => {
+    await (supabase as any).from("weekly_progress_reports").update(patch).eq("id", id);
+    load();
+  };
+
+  const addAchievement = () => setForm({ ...form, achievements: [...form.achievements, { category: "construction", description: "" }] });
+  const addOutstanding = () => setForm({ ...form, outstanding_items: [...form.outstanding_items, { item: "" }] });
+  const addTarget = () => setForm({ ...form, next_week_targets: [...form.next_week_targets, { target: "" }] });
+  const addEscalation = () => setForm({ ...form, escalations: [...form.escalations, { issue: "" }] });
+
+  return (
+    <div className="glass-card rounded-lg shadow-card p-4">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Weekly Progress Report</h3>
+        <button onClick={() => setNewOpen(!newOpen)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px]"><Plus className="h-3 w-3" /> New Report</button>
+      </div>
+
+      {newOpen && (
+        <div className="mb-3 p-3 bg-muted/30 rounded border border-border/50 space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div><label className={labelCls}>Week Start*</label><input type="date" value={form.week_start_date} onChange={e => setForm({...form, week_start_date: e.target.value})} className={inputCls} /></div>
+            <div><label className={labelCls}>Week End</label><input type="date" value={form.week_end_date} onChange={e => setForm({...form, week_end_date: e.target.value})} className={inputCls} /></div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1"><p className="text-[10px] uppercase font-semibold text-foreground">Achievements This Week</p>
+              <button onClick={addAchievement} className="text-[10px] text-primary flex items-center gap-0.5"><Plus className="h-3 w-3" />Add</button></div>
+            {form.achievements.map((a, i) => (
+              <div key={i} className="flex gap-1 mb-1">
+                <select value={a.category} onChange={e => { const arr = [...form.achievements]; arr[i] = { ...a, category: e.target.value }; setForm({...form, achievements: arr}); }} className={inputCls + " w-auto"}>
+                  {ACHIEVEMENT_CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+                </select>
+                <input value={a.description} onChange={e => { const arr = [...form.achievements]; arr[i] = { ...a, description: e.target.value }; setForm({...form, achievements: arr}); }} className={inputCls} placeholder="Achievement description" />
+                <button onClick={() => setForm({...form, achievements: form.achievements.filter((_, x) => x!==i)})} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1"><p className="text-[10px] uppercase font-semibold text-foreground">Outstanding Items</p>
+              <button onClick={addOutstanding} className="text-[10px] text-primary flex items-center gap-0.5"><Plus className="h-3 w-3" />Add</button></div>
+            {form.outstanding_items.map((o, i) => (
+              <div key={i} className="flex gap-1 mb-1">
+                <input value={o.item} onChange={e => { const arr = [...form.outstanding_items]; arr[i] = { ...o, item: e.target.value }; setForm({...form, outstanding_items: arr}); }} className={inputCls} placeholder="Outstanding item" />
+                <input value={o.note || ""} onChange={e => { const arr = [...form.outstanding_items]; arr[i] = { ...o, note: e.target.value }; setForm({...form, outstanding_items: arr}); }} className={inputCls} placeholder="Note (opt)" />
+                <button onClick={() => setForm({...form, outstanding_items: form.outstanding_items.filter((_, x) => x!==i)})} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1"><p className="text-[10px] uppercase font-semibold text-foreground">Next Week Targets</p>
+              <button onClick={addTarget} className="text-[10px] text-primary flex items-center gap-0.5"><Plus className="h-3 w-3" />Add</button></div>
+            {form.next_week_targets.map((t, i) => (
+              <div key={i} className="flex gap-1 mb-1">
+                <input value={t.target} onChange={e => { const arr = [...form.next_week_targets]; arr[i] = { ...t, target: e.target.value }; setForm({...form, next_week_targets: arr}); }} className={inputCls} placeholder="Target activity" />
+                <input value={t.owner || ""} onChange={e => { const arr = [...form.next_week_targets]; arr[i] = { ...t, owner: e.target.value }; setForm({...form, next_week_targets: arr}); }} className={inputCls} placeholder="Owner" />
+                <button onClick={() => setForm({...form, next_week_targets: form.next_week_targets.filter((_, x) => x!==i)})} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1"><p className="text-[10px] uppercase font-semibold text-foreground">Management Escalations</p>
+              <button onClick={addEscalation} className="text-[10px] text-primary flex items-center gap-0.5"><Plus className="h-3 w-3" />Add</button></div>
+            {form.escalations.map((es, i) => (
+              <div key={i} className="flex gap-1 mb-1">
+                <input value={es.issue} onChange={e => { const arr = [...form.escalations]; arr[i] = { ...es, issue: e.target.value }; setForm({...form, escalations: arr}); }} className={inputCls} placeholder="Issue" />
+                <input value={es.decision_needed || ""} onChange={e => { const arr = [...form.escalations]; arr[i] = { ...es, decision_needed: e.target.value }; setForm({...form, escalations: arr}); }} className={inputCls} placeholder="Decision needed" />
+                <button onClick={() => setForm({...form, escalations: form.escalations.filter((_, x) => x!==i)})} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <label className={labelCls}>Summary / Meeting Notes</label>
+            <textarea value={form.summary} onChange={e => setForm({...form, summary: e.target.value})} className={inputCls + " min-h-[60px]"} placeholder="Executive summary for weekly meeting..." />
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={save} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs"><Save className="h-3 w-3 inline mr-1" />Save Report</button>
+            <button onClick={() => setNewOpen(false)} className="px-3 py-1.5 bg-muted rounded text-xs border border-border">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {reports.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada weekly report untuk proyek ini.</p>}
+
+      <div className="space-y-2">
+        {reports.map(r => {
+          const isOpen = openId === r.id;
+          return (
+            <div key={r.id} className="border border-border rounded-lg">
+              <button onClick={() => setOpenId(isOpen ? null : r.id)} className="w-full flex items-center justify-between p-2 hover:bg-muted/30">
+                <div className="flex items-center gap-2">
+                  {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  <span className="text-xs font-semibold text-foreground">{new Date(r.week_start_date).toLocaleDateString('id-ID')} → {new Date(r.week_end_date).toLocaleDateString('id-ID')}</span>
+                  <span className="text-[10px] text-muted-foreground">{r.achievements.length} achievements · {r.outstanding_items.length} outstanding · {r.escalations.length} escalations</span>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); del(r.id); }} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+              </button>
+              {isOpen && (
+                <div className="p-3 border-t border-border space-y-2 text-xs bg-muted/10">
+                  {r.summary && <div className="p-2 bg-primary/5 rounded border border-primary/20"><p className="text-[10px] uppercase font-semibold text-primary mb-1">Summary</p><p className="text-foreground whitespace-pre-wrap">{r.summary}</p></div>}
+                  <SectionList title="Achievements" color="success" items={r.achievements.map(a => `[${a.category}] ${a.description}`)} />
+                  <SectionList title="Outstanding" color="warning" items={r.outstanding_items.map(o => `${o.item}${o.note ? ` — ${o.note}` : ''}`)} />
+                  <SectionList title="Next Week Targets" color="primary" items={r.next_week_targets.map(t => `${t.target}${t.owner ? ` (${t.owner})` : ''}`)} />
+                  <SectionList title="Escalations" color="destructive" items={r.escalations.map(es => `${es.issue}${es.decision_needed ? ` → ${es.decision_needed}` : ''}`)} />
+                  <textarea defaultValue={r.summary} onBlur={e => e.target.value !== r.summary && updateRow(r.id, { summary: e.target.value })} className={inputCls + " min-h-[50px] mt-2"} placeholder="Edit summary..." />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SectionList({ title, color, items }: { title: string; color: string; items: string[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <p className={`text-[10px] uppercase font-semibold text-${color} mb-1`}>{title} ({items.length})</p>
+      <ul className="list-disc list-inside space-y-0.5 text-foreground">
+        {items.map((x, i) => <li key={i}>{x}</li>)}
+      </ul>
+    </div>
+  );
+}
