@@ -26,7 +26,7 @@ export function Sidebar() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { role, profile, signOut } = useAuth();
+  const { user, role, profile, signOut } = useAuth();
 
   const menuItems = allMenuItems.filter(item => !role || item.roles.includes(role));
 
