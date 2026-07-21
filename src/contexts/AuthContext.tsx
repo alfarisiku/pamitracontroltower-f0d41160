@@ -140,13 +140,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isTeamRole = role === "team";
   const hasNoProject = !!user && !isPending && isTeamRole && assignedProjectIds.length === 0;
 
+  // Public/guest default: no user → treat as "client" (Level 3 Public)
+  const effectiveRole: AppRole | null = user ? role : "client";
+
   return (
     <AuthContext.Provider value={{
-      user, profile, role, loading, assignedProjectIds, signIn, signUp, signOut, refreshProfile,
-      isAdmin: role === "admin",
-      isManagement: role === "management",
+      user, profile, role: effectiveRole, loading, assignedProjectIds, signIn, signUp, signOut, refreshProfile,
+      isAdmin: effectiveRole === "admin",
+      isManagement: effectiveRole === "management",
       isTeam: isTeamRole,
-      isClient: role === "client",
+      isClient: effectiveRole === "client",
       isPending,
       hasNoProject,
     }}>
