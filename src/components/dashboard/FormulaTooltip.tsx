@@ -48,9 +48,9 @@ export function FormulaTooltip({ title, formula, description, interpretation }: 
 export const FORMULAS = {
   cpi: {
     title: "CPI (Cost Performance Index)",
-    formula: "CPI = (Progress% × Budget) / Spent",
-    description: "Mengukur efisiensi biaya proyek. Berapa nilai pekerjaan yang didapat per rupiah yang dikeluarkan.",
-    interpretation: "CPI > 1.0 = Under budget (baik), CPI = 1.0 = Sesuai budget, CPI < 1.0 = Over budget (buruk)",
+    formula: "CPI = (Progress% × RAP) / Actual Cash Out",
+    description: "Mengukur efisiensi biaya proyek berdasarkan Rencana Anggaran Pelaksanaan (RAP) vs realisasi cash out. Menggambarkan berapa nilai pekerjaan (earned value pada basis RAP) yang didapat per rupiah cash out yang telah dikeluarkan.",
+    interpretation: "CPI > 1.0 = Cost efisien (baik), CPI = 1.0 = Sesuai RAP, CPI < 1.0 = Over RAP (buruk)",
   },
   spi: {
     title: "SPI (Schedule Performance Index)",
@@ -59,10 +59,10 @@ export const FORMULAS = {
     interpretation: "SPI > 1.0 = Ahead of schedule, SPI = 1.0 = On schedule, SPI < 1.0 = Behind schedule",
   },
   budgetUtil: {
-    title: "Budget Utilization",
-    formula: "Budget Util = (Spent / Budget) × 100%",
-    description: "Persentase anggaran yang sudah terpakai dari total budget proyek.",
-    interpretation: "< 85% = Normal, 85-95% = Perlu perhatian, > 95% = Kritis",
+    title: "Actual Cash Out vs RAP",
+    formula: "Utilisasi RAP = (Actual Cash Out / RAP) × 100%",
+    description: "Persentase realisasi cash out proyek terhadap Rencana Anggaran Pelaksanaan (RAP). Bukan terhadap Nilai Kontrak, karena RAP adalah baseline biaya internal proyek.",
+    interpretation: "< 85% = Normal, 85-95% = Perlu perhatian, > 95% = Kritis (risiko over RAP)",
   },
   profitMargin: {
     title: "Profit Margin",
