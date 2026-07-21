@@ -459,36 +459,50 @@ const ProjectDetail = () => {
 
               {/* === Progress vs Cashflow Summary per Periode === */}
               {(() => {
-                const cashMap: Record<string, { in: number; out: number }> = {};
+                // Unified period set = ALL financeEntries (same as Cashflow & Progress card)
+                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number }> = {};
                 financeEntries.forEach(fe => {
+                  const key = fe.period_label || fe.period_date;
+                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0 };
                   if (fe.entry_kind !== "actual") return;
-                  const k = fe.period_label || fe.period_date;
-                  if (!cashMap[k]) cashMap[k] = { in: 0, out: 0 };
                   const amt = Number(fe.amount) || 0;
-                  if (fe.direction === "in") cashMap[k].in += amt; else cashMap[k].out += amt;
+                  if (fe.direction === "in") periodMap[key].cashIn += amt;
+                  else periodMap[key].cashOut += amt;
                 });
-                const scurve = scurveData.filter(s => s.curve_type === "monthly" || s.curve_type === "weekly" || s.curve_type === "actual" || s.curve_type === "planned");
-                // Build period rows from union of scurve periods and cash periods
-                const periods = Array.from(new Set([
-                  ...scurve.map(s => s.period_label),
-                  ...Object.keys(cashMap),
-                ]));
-                if (periods.length === 0) return null;
-                const rows = periods.map(p => {
-                  const planRow = scurve.find(s => s.period_label === p && (s.curve_type === "planned" || s.curve_type === "monthly"));
-                  const actRow = scurve.find(s => s.period_label === p && (s.curve_type === "actual" || s.curve_type === "monthly"));
+                const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
+                if (periodList.length === 0) return null;
+
+                // Lookup progress from S-Curve; if missing, interpolate linearly by date
+                const scurveByLabel: Record<string, { plan: number | null; actual: number | null }> = {};
+                scurveData.forEach(s => {
+                  const k = s.period_label;
+                  if (!scurveByLabel[k]) scurveByLabel[k] = { plan: null, actual: null };
+                  if (s.planned_progress != null) scurveByLabel[k].plan = Number(s.planned_progress);
+                  if (s.actual_progress != null) scurveByLabel[k].actual = Number(s.actual_progress);
+                });
+                const startT = new Date(project.start_date).getTime();
+                const endT = new Date(project.end_date).getTime();
+                const todayT = Date.now();
+                const interpPlan = (t: number) => endT > startT ? Math.max(0, Math.min(100, Math.round(((t - startT) / (endT - startT)) * 100))) : 0;
+
+                const rows = periodList.map(p => {
+                  const sc = scurveByLabel[p.label];
+                  const planPct = sc?.plan ?? interpPlan(p.order);
+                  const isPast = p.order <= todayT;
+                  const actPct = sc?.actual != null ? sc.actual : (isPast ? project.progress : null);
                   return {
-                    label: p,
-                    planPct: planRow?.planned_progress ?? 0,
-                    actPct: actRow?.actual_progress ?? 0,
-                    cashIn: cashMap[p]?.in ?? 0,
-                    cashOut: cashMap[p]?.out ?? 0,
+                    label: p.label,
+                    planPct: Number(planPct),
+                    actPct: actPct == null ? null : Number(actPct),
+                    cashIn: p.cashIn,
+                    cashOut: p.cashOut,
                   };
                 });
+
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Menyandingkan progress plan/actual dengan total cash in & cash out di periode yang sama.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -500,8 +514,8 @@ const ProjectDetail = () => {
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <Bar yAxisId="left" dataKey="cashIn" name="Cash In" fill="hsl(145, 65%, 45%)" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="cashOut" name="Cash Out" fill="hsl(0, 70%, 55%)" radius={[3,3,0,0]} />
-                          <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} />
-                          <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(30, 85%, 50%)" strokeWidth={2} dot={{ r: 3 }} />
+                          <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                          <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(30, 85%, 50%)" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
@@ -517,17 +531,19 @@ const ProjectDetail = () => {
                           <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
                         </tr></thead>
                         <tbody>
-                          {rows.map(r => (
+                          {rows.map(r => {
+                            const dev = (r.actPct ?? 0) - r.planPct;
+                            return (
                             <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-1.5 px-2 text-foreground">{r.label}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-info">{Number(r.planPct).toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-accent-foreground">{Number(r.actPct).toFixed(1)}%</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data ${(r.actPct - r.planPct) >= 0 ? "text-success" : "text-destructive"}`}>{(r.actPct - r.planPct) > 0 ? "+" : ""}{(r.actPct - r.planPct).toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-info">{r.planPct.toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-accent-foreground">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
+                              <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
                               <td className={`py-1.5 px-2 text-right font-mono-data ${(r.cashIn - r.cashOut) >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.cashIn - r.cashOut)}</td>
                             </tr>
-                          ))}
+                          );})}
                         </tbody>
                       </table>
                     </div>
@@ -549,7 +565,7 @@ const ProjectDetail = () => {
                 milestones={milestones}
                 customData={scurveData.length > 0 ? scurveData : undefined}
               />
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 max-w-lg">
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                   <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
@@ -557,14 +573,10 @@ const ProjectDetail = () => {
                   </p>
                 </div>
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi</p>
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress</p>
                   <p className={`text-lg font-bold font-mono-data ${project.progress - elapsedPct >= 0 ? "text-success" : "text-destructive"}`}>
                     {project.progress - elapsedPct > 0 ? "+" : ""}{project.progress - elapsedPct}%
                   </p>
-                </div>
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">CPI<FormulaTooltip {...FORMULAS.cpi} /></p>
-                  <p className={`text-lg font-bold font-mono-data ${cpi >= 0.95 ? "text-success" : cpi >= 0.8 ? "text-warning" : "text-destructive"}`}>{cpi.toFixed(2)}</p>
                 </div>
               </div>
 
