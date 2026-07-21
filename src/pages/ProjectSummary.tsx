@@ -93,7 +93,7 @@ const ProjectSummary = () => {
                 onChange={(e) => setPhaseFilter(e.target.value as any)}
                 className="appearance-none pl-3 pr-8 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
               >
-                <option value="all">Semua Fase</option>
+                <option value="all">Semua Production</option>
                 {phases.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
