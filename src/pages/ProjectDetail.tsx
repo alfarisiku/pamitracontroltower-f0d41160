@@ -336,35 +336,7 @@ const ProjectDetail = () => {
           {/* Finance Tab */}
           {activeTab === "finance" && (
             <div className="space-y-4">
-              {/* Budget Breakdown */}
-              <div className="glass-card rounded-lg p-4 shadow-card">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cost Breakdown (Contract / RAP / PO / Actual)</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
-                    <p className="text-[9px] text-muted-foreground uppercase">Contract Value</p>
-                    <p className="text-sm font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
-                  </div>
-                  <div className="bg-info/5 rounded-lg p-3 border border-info/20 text-center">
-                    <p className="text-[9px] text-muted-foreground uppercase">RAP (Rencana)</p>
-                    <p className="text-sm font-bold font-mono-data text-info">{formatRupiah(project.rap)}</p>
-                  </div>
-                  <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
-                    <p className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1">
-                      PO Committed
-                      <FormulaTooltip title="PO Committed" formula="Σ Amount Purchase Orders" description="Otomatis dari Data Entry → Procurement / PO." />
-                    </p>
-                    <p className="text-sm font-bold font-mono-data text-warning">{formatRupiah(poCommitted)}</p>
-                  </div>
-                  <div className="bg-destructive/5 rounded-lg p-3 border border-destructive/20 text-center">
-                    <p className="text-[9px] text-muted-foreground uppercase">Actual Cost</p>
-                    <p className="text-sm font-bold font-mono-data text-destructive">{formatRupiah(actualCost)}</p>
-                  </div>
-                  <div className={`rounded-lg p-3 border text-center ${remainingBudget > 0 ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
-                    <p className="text-[9px] text-muted-foreground uppercase">Remaining</p>
-                    <p className={`text-sm font-bold font-mono-data ${remainingBudget > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(remainingBudget)}</p>
-                  </div>
-                </div>
-              </div>
+
 
               {/* === Cashflow Bipolar Bar Chart (Cash In ↑ / Cash Out ↓) === */}
               {(() => {
@@ -425,7 +397,7 @@ const ProjectDetail = () => {
                     if (fe.entry_kind === "actual") actual += amt;
                   });
                   return { key: c.value, label: c.label, rap, actual, variance: rap - actual, pct: rap > 0 ? Math.round((actual / rap) * 100) : 0 };
-                }).filter(r => r.rap > 0 || r.actual > 0);
+                }).filter(r => r.rap > 0 || r.actual > 0).sort((a, b) => (b.rap + b.actual) - (a.rap + a.actual));
                 if (rows.length === 0) return null;
                 const totalRap = rows.reduce((s, r) => s + r.rap, 0);
                 const totalAct = rows.reduce((s, r) => s + r.actual, 0);
@@ -462,16 +434,16 @@ const ProjectDetail = () => {
                           </tbody>
                         </table>
                       </div>
-                      <div className="h-[300px]">
+                      <div className="h-[340px]">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={rows} layout="vertical" margin={{ left: 20, right: 12, top: 4, bottom: 4 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                            <XAxis type="number" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
-                            <YAxis type="category" dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} width={120} />
-                            <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(v)} />
-                            <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                            <Bar dataKey="rap" fill="hsl(215, 80%, 55%)" name="RAP" radius={[0,3,3,0]} />
-                            <Bar dataKey="actual" fill="hsl(0, 70%, 55%)" name="Actual" radius={[0,3,3,0]} />
+                          <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }} barCategoryGap={8}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 92%)" horizontal={false} />
+                            <XAxis type="number" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => formatRupiah(v)} axisLine={false} tickLine={false} />
+                            <YAxis type="category" dataKey="label" tick={{ fill: "hsl(215, 15%, 30%)", fontSize: 10 }} width={140} axisLine={false} tickLine={false} />
+                            <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(v)} cursor={{ fill: "hsl(215, 30%, 95%)" }} />
+                            <Legend iconSize={10} wrapperStyle={{ fontSize: "11px", paddingTop: 4 }} />
+                            <Bar dataKey="rap" fill="hsl(215, 80%, 55%)" name="RAP" radius={[0,4,4,0]} barSize={12} />
+                            <Bar dataKey="actual" fill="hsl(0, 70%, 55%)" name="Actual" radius={[0,4,4,0]} barSize={12} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
