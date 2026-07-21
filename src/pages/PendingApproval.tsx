@@ -19,7 +19,7 @@ const PendingApproval = () => {
           <p className="font-medium text-foreground mb-1">Apa yang terjadi selanjutnya?</p>
           <ul className="text-left space-y-1 list-disc list-inside">
             <li>Admin akan mereview akun Anda</li>
-            <li>Role akan ditetapkan (Project Team / Management)</li>
+            <li>Role akan ditetapkan (Project Admin / Director / Public)</li>
             <li>Proyek akan di-assign ke akun Anda</li>
             <li>Anda bisa login kembali setelah disetujui</li>
           </ul>
