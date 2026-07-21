@@ -51,7 +51,7 @@ export function ProjectTable({ projects, onSelectProject }: { projects: DbProjec
                       {st.label}
                     </span>
                   </td>
-                  <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.budget)}</td>
+                  <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.rap || p.budget)}</td>
                   <td className="py-2 px-3 text-muted-foreground">
                     {new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                   </td>
