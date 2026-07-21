@@ -470,14 +470,19 @@ const ProjectDetail = () => {
               {/* === Progress vs Cashflow Summary per Periode === */}
               {(() => {
                 // Unified period set = ALL financeEntries (same as Cashflow & Progress card)
-                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number }> = {};
+                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number }> = {};
                 financeEntries.forEach(fe => {
                   const key = fe.period_label || fe.period_date;
-                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0 };
-                  if (fe.entry_kind !== "actual") return;
+                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
                   const amt = Number(fe.amount) || 0;
-                  if (fe.direction === "in") periodMap[key].cashIn += amt;
-                  else periodMap[key].cashOut += amt;
+                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
+                  if (fe.entry_kind === "actual") {
+                    if (fe.direction === "in") periodMap[key].cashIn += amt;
+                    else periodMap[key].cashOut += amt;
+                  } else if (isPlan) {
+                    if (fe.direction === "in") periodMap[key].planIn += amt;
+                    else periodMap[key].planOut += amt;
+                  }
                 });
                 const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
                 if (periodList.length === 0) return null;
@@ -506,6 +511,8 @@ const ProjectDetail = () => {
                     actPct: actPct == null ? null : Number(actPct),
                     cashIn: p.cashIn,
                     cashOut: p.cashOut,
+                    planIn: p.planIn,
+                    planOut: p.planOut,
                   };
                 });
 
