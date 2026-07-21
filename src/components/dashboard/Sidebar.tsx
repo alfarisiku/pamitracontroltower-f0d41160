@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet, LogOut } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+
 
 import { BookOpen } from "lucide-react";
 
@@ -25,9 +26,12 @@ export function Sidebar() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { role, profile } = useAuth();
+  const { role, profile, signOut } = useAuth();
 
   const menuItems = allMenuItems.filter(item => !role || item.roles.includes(role));
+
+  const roleLabel = role === "team" ? "Project Admin" : role === "client" ? "Public" : role === "management" ? "Director" : role === "admin" ? "Administrator" : "";
+
 
   const sidebarContent = (
     <>
