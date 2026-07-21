@@ -92,7 +92,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         profit_margin_target: parseFloat(editForm.profit_margin_target) || 10,
         tkdn_percentage: parseFloat(editForm.tkdn_percentage) || 0,
         start_date: editForm.start_date, end_date: editForm.end_date,
-        description: editForm.description || null, category: editForm.category || null,
+        description: editForm.description || null, category: editForm.phase || null,
         map_x: parseFloat(editForm.map_x) || 0, map_y: parseFloat(editForm.map_y) || 0,
         status: editForm.status as any, phase: editForm.phase as any,
         progress: parseInt(editForm.progress) || 0,
