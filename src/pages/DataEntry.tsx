@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Download, Share2,
   Layers, Camera, AlertTriangle, Package, Target,
@@ -25,25 +26,30 @@ const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
 const DataEntry = () => {
   const { data: allProjects = [] } = useProjects();
+  const { isTeam, isAdmin, assignedProjectIds } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
 
-  const projects = allProjects;
+  // Project Admin (team) can only edit assigned projects; Admin sees all.
+  const projects = isTeam
+    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
+    : allProjects;
 
   // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
-  const tabs = [
-    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText },
-    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign },
-    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart },
-    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers },
-    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package },
-    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle },
-    { key: "milestones" as const,    label: "Milestones",          icon: Target },
-    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText },
-    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera },
-    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart },
-    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList },
+  const allTabs = [
+    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,      adminOnly: false },
+    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,    adminOnly: false },
+    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,  adminOnly: false },
+    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,        adminOnly: false },
+    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,       adminOnly: false },
+    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle, adminOnly: false },
+    { key: "milestones" as const,    label: "Milestones",          icon: Target,        adminOnly: false },
+    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,      adminOnly: false },
+    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,        adminOnly: false },
+    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,  adminOnly: true },
+    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList, adminOnly: true },
   ];
+  const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
   const downloadTemplate = () => {
     const csv = "project_code,work_area_code,work_area_name,epcc,work_item_code,work_item_name,unit,qty_total,qty_completed,weight\nPMT-001,WA-001,Area Tangki,construction,WI-001,Tangki T-101,unit,10,5,30";

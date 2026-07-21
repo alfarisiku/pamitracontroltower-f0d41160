@@ -1,76 +1,56 @@
-## 1. Terminologi Status & Phase (global)
 
-**Status baru** (ganti `on-track/at-risk/delayed/completed`):
-- `planning` — Proyek baru, tahap persiapan/perencanaan
-- `execution` — Proyek sedang berjalan
-- `on-hold` — Proyek dihentikan sementara
-- `completed` — Pekerjaan selesai, sisa retensi/denda
-- `closed` — Administrasi, serah terima, close-out selesai
+## 1. S-Curve — Period Comparison Table
 
-**Phase baru** (ganti `Engineering/Procurement/Construction/Commissioning`):
-- `Production I`, `Production II`, `Production III`, `Production IV`
+In `src/pages/ProjectDetail.tsx` (S-Curve tab), add a table below the S-Curve chart card showing:
+- **Current period** (row 1)
+- **3 previous periods**
 
-**Migrasi data existing:** randomize 15 proyek dummy ke 5 status & 4 phase baru supaya distribusi kelihatan bervariasi untuk demo.
+Columns: Period | Planned % | Actual % | Deviasi (Actual − Plan, colored red/green)
 
-**File yang diubah:** `src/lib/supabase.ts` (STATUS_CONFIG, PHASE_CONFIG, tipe), semua badge/filter/chart/color mapping di `ProjectTable`, `ProjectSummary`, `WarRoom`, `Index`, `IndonesiaMap`, `ProjectOverviewModal`, `ProjectCrudTab`, `RegularUpdateTab`, `RiskMonitoring`, `Reporting`, `Schedule`, `PhaseChart`, `MilestonesEditor`, `OverallSummary`, `mapUtils`, `useProjects`, plus DB migration ubah kolom `projects.status` & `projects.phase` (drop check constraint lama, isi enum baru) + UPDATE randomize.
+Data source: existing `s_curve_data` sorted by period. Take the most recent period ≤ today plus the three before it.
 
-## 2. Project Detail — Finance Tab Overhaul
+## 2. Remove Sector Categories
 
-**A. Cashflow & Progress → Bar Chart Bipolar**
-- Recharts `BarChart` dengan sumbu Y ± (cash-in di atas, cash-out di bawah sebagai nilai negatif).
-- 4 series per bulan: `Plan Cash In`, `Actual Cash In` (positif), `Plan Cash Out`, `Actual Cash Out` (negatif).
-- Data dari `finance_entries` agregat bulanan (existing) + plan dari `monthly_budgets`.
+Drop the sector concept entirely (Oil & Gas / Infrastructure / Mining / Industrial / etc). Only **Status** and **Production** (I–IV) remain.
 
-**B. Cost Breakdown → Tabel + Grafik per Kategori**
-- 10 kategori existing (`finance_entries.category`): Project Management, Material, Jasa/Subcon, Equipment Rental, Logistics, Overhead, Permits, Insurance, Contingency, Others.
-- Tabel: kategori · RAP · Actual · Variance · % consumed.
-- Horizontal bar chart (RAP vs Actual per kategori).
+Files:
+- `src/components/data-entry/ProjectCrudTab.tsx` — remove the `category` dropdown/field.
+- `src/pages/ProjectSummary.tsx` — remove the category filter chip row; keep status + production filters.
+- `src/pages/Index.tsx`, `src/pages/WarRoom.tsx`, `ProjectTable.tsx`, `ProjectOverviewModal.tsx` — remove any UI that displays or filters by category.
+- Do not drop the DB column (keeps historic data safe); just ignore it in the UI.
 
-**C. Margin Calculation → hilangkan**, ganti dengan **Progress vs Cashflow Summary**:
-- Tabel & area/composed chart per periode (bulan): `Progress Plan %`, `Progress Actual %`, `Total Cash In`, `Total Cash Out`.
-- Dummy data disuntik lewat `finance_entries` + `s_curve_data` supaya kelihatan real.
+## 3. Role-Based Access Control
 
-**File:** `src/pages/ProjectDetail.tsx` (tab Finance), komponen baru `src/components/dashboard/CashflowBipolarChart.tsx`, `CostBreakdownByCategory.tsx`, `ProgressCashflowSummary.tsx`. Purchase Order table sudah dihapus di iterasi sebelumnya.
+Map the 3 requested tiers onto existing roles in `AuthContext`:
 
-## 3. WBS EPC Phase Filter Berfungsi
+| Requested tier | Internal role | Capability |
+|---|---|---|
+| Administrator | `admin` | Everything, Data Entry, Account Manager, all projects |
+| Project Admin | `team` | Only assigned projects (via `user_project_assignments`); weekly CRUD on those projects |
+| Public | `client` | Overview + Project Summary + Project Detail (limited); all financial + risk/issue/report data hidden |
 
-- Di `ProjectDetail` tab WBS, tombol filter `Production I/II/III/IV/All` yang benar-benar memfilter `work_items` berdasarkan kolom `epcc_category`.
-- Kolom `epcc_category` di `work_items` sudah ada; tambahkan mapping label baru (Engineering→Production I, dst.) atau ganti nilainya via migration + seed.
-- Seed dummy: variasikan `epcc_category` pada work_items existing supaya tiap filter menghasilkan item (sekarang mayoritas kosong).
+### Wiring
 
-## 4. Data Entry — Urutan Menu = Project Detail
+- **Re-enable auth gate.** Wrap routes in `src/App.tsx` with `AuthProvider` + `ProtectedRoute`. Restore `/login` and `/pending`. Root layout renders login if no session.
+- **Sidebar** (`src/components/dashboard/Sidebar.tsx`): filter menu by role.
+  - `admin`: all items.
+  - `team` (Project Admin): Overview, Project Summary (assigned only), Schedule, Data Entry, Activity Log, User Guide.
+  - `client` (Public): Overview, Project Summary, User Guide.
+- **Project list scoping** (`useProjects` hook + `ProjectSummary`): if role is `team`, filter to `assignedProjectIds`. If `client`, show all but read-only.
+- **ProjectDetail public-mode**: when `role === "client"`, hide the tabs `Finance`, `S-Curve`, `Cost`, `Risk`, `Weekly Report`, `Data Entry` links; hide Contract/RAP/PO/Cost/Cashflow KPIs in Overview + Health cards; keep progress %, location, photos, milestones (non-financial), general description.
+- **Data Entry** (`/data-entry`): admin + team (scoped to assigned projects). `team` sees the assigned-projects picker only.
+- **Account Manager** (`/account-manager`): admin only. Enable assign-project UI so admin can attach projects to team users via `user_project_assignments`.
+- Add a small `useCanSeeFinance()` helper (`role !== 'client'`) used across finance components (`ProjectDetail` finance tab, `Finance.tsx`, KPI cards).
 
-Urutan Project Detail: Overview → S-Curve → WBS → Finance → Procurement → Risk → Milestones → Manpower → Media → Reports.
+### Seed accounts (already exist via `seed-accounts` function)
 
-Urutan Data Entry baru (samakan): Manage Projects → Quick Update → S-Curve → WBS → Finance & PO → Procurement → Risk → Milestones → Manpower → Media/Photos → Weekly Reports → Addendum → Activity Log.
+Add two more test users through Account Manager UI:
+- `projectadmin@pamitra.co.id` / `project123` → role `team`, assigned to PMT-001.
+- `public@pamitra.co.id` / `public123` → role `client`.
 
-**File:** `src/pages/DataEntry.tsx` — reorder array tabs.
+## Technical notes
 
-## 5. Account Manager Berfungsi + Login Opsional
-
-- Kembalikan **route `/login`** + `AuthProvider` di `App.tsx`, tapi rute lain tetap public (tidak dibungkus `ProtectedRoute`).
-- Tambah **Login button** di `DashboardHeader` (Sign In / Sign Out toggle).
-- **"Ingat saya / Tetap login"** checkbox di halaman Login → set `localStorage` flag; kalau on, `supabase.auth` pakai `persistSession: true` (default) dan tidak auto sign-out. Kalau off, sign-out saat tab ditutup (`persistSession: false`).
-- `AccountManager` sudah 90% berfungsi — masalahnya cuma tidak ada user login sehingga `useAuth` return default. Setelah login diaktifkan, fitur approve/reject/assign role/assign project sudah jalan. Perbaiki bug kecil `isSystemUser` logic dan tambahkan tombol "Seed Admin Accounts" yang panggil edge function `seed-accounts` untuk membuat akun admin awal (`admin@pamitra.co.id / admin123`).
-- Menu Account Manager di sidebar hanya muncul kalau user login sebagai admin.
-
-**File:** `src/App.tsx` (wrap `AuthProvider`, add `/login`), `src/pages/Login.tsx` (tambah "stay signed in" checkbox), `src/components/dashboard/DashboardHeader.tsx` (auth button), `src/components/dashboard/Sidebar.tsx` (conditional Account Manager), `src/pages/AccountManager.tsx` (seed button + fix isSystemUser).
-
-## 6. Dummy Data Refresh
-
-Satu migration `INSERT`/`UPDATE`:
-- Randomize `projects.status` & `projects.phase` ke enum baru (distribusi ~30% execution, 15% planning, 15% on-hold, 25% completed, 15% closed).
-- Randomize `work_items.epcc_category` ke Production I–IV.
-- Top up `finance_entries` supaya tiap proyek punya 6 bulan data dengan 10 kategori (plan + actual) untuk grafik cost breakdown & cashflow bipolar.
-
-## Teknis Ringkas
-
-- Enum diimplementasi sebagai `TEXT` + CHECK constraint (bukan Postgres enum) supaya migrasi cepat dan chart mapping fleksibel.
-- Formatter `formatRupiah` (M/T) & tooltip formula tetap dipakai.
-- Semua komponen chart pakai token warna semantic dari `index.css` (tidak hardcode).
-- Tidak menyentuh modul Procurement, S-Curve, Milestones yang sudah stabil.
-
-## Diluar Scope (kalau perlu dibahas lanjutan)
-
-- Migrasi role-based route protection penuh (saat ini semua route tetap public, hanya `/account-manager` yang menampilkan konten setelah login).
-- Password reset flow (belum diminta).
+- Header/Sidebar labels: rename `Project Team` → `Project Admin`, `War Room` role label → `Public`.
+- `ProtectedRoute` already handles pending + no-project states; reuse as-is.
+- No schema migration needed — `user_roles`, `user_project_assignments`, `profiles.status` already exist.
+- Keep `defaultAuthContext` fallback in `useAuth()` removed inside protected routes so unauthenticated users cannot slip through.

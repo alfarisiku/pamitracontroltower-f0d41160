@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 const roleLabels: Record<string, string> = {
   admin: "Administrator",
   management: "Director",
-  team: "Project Team",
-  client: "War Room",
+  team: "Project Admin",
+  client: "Public",
 };
 
 export function DashboardHeader() {

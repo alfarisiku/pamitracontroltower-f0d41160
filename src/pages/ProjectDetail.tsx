@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { useAuth } from "@/contexts/AuthContext";
 import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
 import { supabase, formatRupiah, FINANCE_CATEGORIES } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
@@ -64,6 +65,7 @@ const EPC_PHASES = ["Production I", "Production II", "Production III", "Producti
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { isClient } = useAuth();
   const { data: project, isLoading } = useProject(id);
   const { data: workAreas = [] } = useWorkAreas(id);
   const workAreaIds = workAreas.map(wa => wa.id);
@@ -199,7 +201,6 @@ const ProjectDetail = () => {
                   <span className="text-xs font-mono-data text-primary bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.project_code}</span>
                   <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
                   <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.phase}</span>
-                  {project.category && <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.category}</span>}
                   {project.margin_locked && <span className="text-[10px] text-warning bg-card/80 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Margin Locked</span>}
                 </div>
                 <h1 className="text-lg sm:text-xl font-bold text-foreground mt-1">{project.name}</h1>
@@ -221,17 +222,17 @@ const ProjectDetail = () => {
 
           {/* Tabs */}
           <div className="flex items-center gap-1 mb-4 border-b border-border pb-2 overflow-x-auto">
-            {([
-              { key: "health" as const, label: "Health", icon: Activity },
-              { key: "finance" as const, label: "Finance", icon: Wallet },
-              { key: "scurve" as const, label: "S-Curve", icon: TrendingUp },
-              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers },
-              { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
-              { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
-              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
-              { key: "weekly-report" as const, label: "Weekly Report", icon: FileText },
-              { key: "media" as const, label: "Media", icon: Camera },
-            ]).map(tab => (
+            {(([
+              { key: "health" as const, label: "Health", icon: Activity, publicOk: true },
+              { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
+              { key: "scurve" as const, label: "S-Curve", icon: TrendingUp, publicOk: true },
+              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
+              { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
+              { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
+              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
+              { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
+              { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
+            ]).filter(t => !isClient || t.publicOk)).map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -615,12 +616,12 @@ const ProjectDetail = () => {
                 const list = Object.values(rows)
                   .filter(r => !r.date || r.date <= today.getTime())
                   .sort((a, b) => (b.date || b.order) - (a.date || a.order))
-                  .slice(0, 3)
+                  .slice(0, 4)
                   .reverse();
                 if (list.length === 0) return null;
                 return (
                   <div className="mt-4 overflow-x-auto">
-                    <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">3 Periode Pelaporan Terakhir</p>
+                    <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">Ringkasan Periode Pelaporan (Saat Ini & 3 Sebelumnya)</p>
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-muted/50 border-b border-border">

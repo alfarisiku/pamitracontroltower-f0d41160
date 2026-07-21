@@ -92,7 +92,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         profit_margin_target: parseFloat(editForm.profit_margin_target) || 10,
         tkdn_percentage: parseFloat(editForm.tkdn_percentage) || 0,
         start_date: editForm.start_date, end_date: editForm.end_date,
-        description: editForm.description || null, category: editForm.category || null,
+        description: editForm.description || null, category: editForm.phase || null,
         map_x: parseFloat(editForm.map_x) || 0, map_y: parseFloat(editForm.map_y) || 0,
         status: editForm.status as any, phase: editForm.phase as any,
         progress: parseInt(editForm.progress) || 0,
@@ -168,11 +168,6 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           <div><label className={labelCls}>Project Name</label><input value={ef.name} onChange={e => set("name", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Client</label><input value={ef.client} onChange={e => set("client", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Project Manager</label><input value={ef.manager} onChange={e => set("manager", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Category</label>
-            <select value={ef.category} onChange={e => set("category", e.target.value)} className={inputCls}>
-              <option>Production I</option><option>Production II</option><option>Production III</option><option>Production IV</option>
-            </select>
-          </div>
           <div><label className={labelCls}>Location</label><input value={ef.location} onChange={e => set("location", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Start Date</label><input type="date" value={ef.start_date} onChange={e => set("start_date", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>End Date</label><input type="date" value={ef.end_date} onChange={e => set("end_date", e.target.value)} className={inputCls} /></div>

@@ -137,26 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-const defaultAuthContext: AuthContextType = {
-  user: null,
-  profile: null,
-  role: "admin",
-  loading: false,
-  assignedProjectIds: [],
-  signIn: async () => ({ error: null }),
-  signUp: async () => ({ error: null }),
-  signOut: async () => {},
-  isAdmin: true,
-  isManagement: false,
-  isTeam: false,
-  isClient: false,
-  isPending: false,
-  hasNoProject: false,
-  refreshProfile: async () => {},
-};
-
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) return defaultAuthContext;
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet, LogOut } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+
 
 import { BookOpen } from "lucide-react";
 
@@ -25,9 +26,12 @@ export function Sidebar() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { role, profile } = useAuth();
+  const { role, profile, signOut } = useAuth();
 
   const menuItems = allMenuItems.filter(item => !role || item.roles.includes(role));
+
+  const roleLabel = role === "team" ? "Project Admin" : role === "client" ? "Public" : role === "management" ? "Director" : role === "admin" ? "Administrator" : "";
+
 
   const sidebarContent = (
     <>
@@ -67,13 +71,20 @@ export function Sidebar() {
       </nav>
       <div className="p-3 border-t border-sidebar-border space-y-2">
         <div className="px-3 py-2 rounded-lg bg-sidebar-accent/50">
-          <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{profile?.display_name || "Administrator"}</p>
-          <p className="text-[10px] text-sidebar-foreground capitalize">{role || "admin"}</p>
+          <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{profile?.display_name || "User"}</p>
+          <p className="text-[10px] text-sidebar-foreground">{roleLabel}</p>
         </div>
+        <button
+          onClick={() => signOut()}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground border border-sidebar-border/60 transition-colors"
+        >
+          <LogOut className="h-3.5 w-3.5" /> Logout
+        </button>
         <p className="text-[10px] text-sidebar-foreground text-center pt-1">© 2026 PT Pamitra Jaya Konstruksi</p>
       </div>
     </>
   );
+
 
   if (isMobile) {
     return (

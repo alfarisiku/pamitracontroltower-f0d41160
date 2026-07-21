@@ -318,10 +318,10 @@ const AccountManager = () => {
                 <label className="text-xs font-medium text-muted-foreground block mb-1.5">Role</label>
                 <select value={editRole} onChange={e => setEditRole(e.target.value)}
                   className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground">
-                  <option value="team">Project Team</option>
-                  <option value="management">Management / Director</option>
-                  <option value="admin">Admin</option>
-                  <option value="client">Client / War Room</option>
+                  <option value="team">Project Admin — CRUD proyek yang di-assign</option>
+                  <option value="management">Director — read-only semua dashboard</option>
+                  <option value="admin">Administrator — full access + user management</option>
+                  <option value="client">Public — Overview & Project Summary (tanpa finansial)</option>
                 </select>
               </div>
 
