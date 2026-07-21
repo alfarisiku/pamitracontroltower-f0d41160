@@ -225,7 +225,7 @@ const ProjectDetail = () => {
               { key: "health" as const, label: "Health", icon: Activity },
               { key: "finance" as const, label: "Finance", icon: Wallet },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp },
-              { key: "wbs" as const, label: "WBS", icon: Layers },
+              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
               { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
@@ -261,7 +261,7 @@ const ProjectDetail = () => {
                     <FormulaTooltip {...FORMULAS.cpi} />
                   </div>
                   <p className={`text-sm font-bold ${healthColor(costHealth)}`}>CPI {cpi.toFixed(2)}</p>
-                  <p className="text-[10px] text-muted-foreground">{formatRupiah(actualCost)} / {formatRupiah(project.budget)}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatRupiah(actualCashOutTotal)} / {formatRupiah(rapValue)} RAP</p>
                 </div>
                 <div className={`glass-card rounded-lg p-3 border ${healthBg(riskHealth)}`}>
                   <div className="flex items-center gap-1.5 mb-1"><Shield className={`h-3.5 w-3.5 ${healthColor(riskHealth)}`} /><span className="text-[10px] text-muted-foreground uppercase">Risk</span></div>
@@ -298,10 +298,10 @@ const ProjectDetail = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground flex items-center">Actual Spent vs Contract<FormulaTooltip {...FORMULAS.budgetUtil} /></span>
-                        <span className={`font-mono-data font-bold ${budgetPct > 85 ? "text-destructive" : "text-foreground"}`}>{budgetPct}%</span>
+                        <span className="text-muted-foreground flex items-center">Actual Cash Out vs RAP<FormulaTooltip {...FORMULAS.budgetUtil} /></span>
+                        <span className={`font-mono-data font-bold ${budgetPct > 95 ? "text-destructive" : budgetPct > 85 ? "text-warning" : "text-foreground"}`}>{budgetPct}%</span>
                       </div>
-                      <Progress value={budgetPct} className="h-2" />
+                      <Progress value={Math.min(100, budgetPct)} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
