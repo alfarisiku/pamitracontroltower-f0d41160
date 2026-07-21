@@ -584,7 +584,7 @@ const ProjectDetail = () => {
                 milestones={milestones}
                 customData={scurveData.length > 0 ? scurveData : undefined}
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 max-w-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                   <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
