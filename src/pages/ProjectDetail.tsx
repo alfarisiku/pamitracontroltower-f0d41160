@@ -561,15 +561,59 @@ const ProjectDetail = () => {
                   <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">CPI<FormulaTooltip {...FORMULAS.cpi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${cpi >= 0.95 ? "text-success" : cpi >= 0.8 ? "text-warning" : "text-destructive"}`}>{cpi.toFixed(2)}</p>
                 </div>
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1">RAP vs Actual</p>
-                  <p className={`text-lg font-bold font-mono-data ${project.rap > 0 && actualCost <= project.rap ? "text-success" : "text-destructive"}`}>
-                    {project.rap > 0 ? `${Math.round((actualCost / project.rap) * 100)}%` : "N/A"}
-                  </p>
-                </div>
               </div>
+
+              {/* Last 3 Reporting Periods Summary */}
+              {(() => {
+                const today = new Date();
+                const rows = scurveData
+                  .filter(s => (s.curve_type === "planned" || s.curve_type === "actual" || s.curve_type === "monthly" || s.curve_type === "weekly"))
+                  .reduce((acc: Record<string, { label: string; order: number; date: number; plan: number | null; actual: number | null }>, s) => {
+                    const key = s.period_label;
+                    const d = (s as any).period_date ? new Date((s as any).period_date).getTime() : s.period_order;
+                    if (!acc[key]) acc[key] = { label: key, order: s.period_order, date: d, plan: null, actual: null };
+                    if (s.curve_type === "planned" || s.curve_type === "monthly") acc[key].plan = Number(s.planned_progress ?? acc[key].plan ?? 0);
+                    if (s.curve_type === "actual" || s.curve_type === "monthly") acc[key].actual = s.actual_progress != null ? Number(s.actual_progress) : acc[key].actual;
+                    return acc;
+                  }, {});
+                const list = Object.values(rows)
+                  .filter(r => !r.date || r.date <= today.getTime())
+                  .sort((a, b) => (b.date || b.order) - (a.date || a.order))
+                  .slice(0, 3)
+                  .reverse();
+                if (list.length === 0) return null;
+                return (
+                  <div className="mt-4 overflow-x-auto">
+                    <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">3 Periode Pelaporan Terakhir</p>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-muted/50 border-b border-border">
+                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Planned</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {list.map(r => {
+                          const dev = (r.actual ?? 0) - (r.plan ?? 0);
+                          return (
+                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
+                              <td className="py-2 px-2 text-foreground">{r.label}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-foreground">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
+                              <td className={`py-2 px-2 text-right font-mono-data ${dev >= 0 ? "text-success" : "text-destructive"}`}>{dev > 0 ? "+" : ""}{dev.toFixed(1)}%</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
           )}
+
 
           {/* WBS Tab */}
           {activeTab === "wbs" && (
@@ -582,30 +626,8 @@ const ProjectDetail = () => {
                 </div>
               ) : (
                 <>
-                  <div className="glass-card rounded-lg p-3 shadow-card">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] uppercase text-muted-foreground font-semibold mr-1">EPC Phase Filter:</span>
-                      {(["all", ...EPC_PHASES] as const).map(phase => {
-                        const phaseItems = phase === "all" ? workItems : workItems.filter(wi => (wi as any).epcc_category === phase);
-                        const phaseProgress = phaseItems.length > 0 ? Math.round(phaseItems.reduce((s, i) => s + i.progress, 0) / phaseItems.length) : 0;
-                        const isActive = epcFilter === phase;
-                        return (
-                          <button
-                            key={phase}
-                            onClick={() => setEpcFilter(phase)}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] border transition-colors ${isActive ? "bg-primary text-primary-foreground border-primary font-bold" : "bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted"}`}
-                          >
-                            {phase !== "all" && <span className="font-mono-data">{phaseLabels[phase]}</span>}
-                            <span>{phase === "all" ? "All" : phase}</span>
-                            <span className="font-mono-data opacity-80">({phaseItems.length}{phaseItems.length > 0 ? ` · ${phaseProgress}%` : ""})</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                   {workAreas.map(area => {
-                    const areaItems = workItems.filter(wi => wi.work_area_id === area.id && (epcFilter === "all" || (wi as any).epcc_category === epcFilter));
-                    if (epcFilter !== "all" && areaItems.length === 0) return null;
+                    const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                     const isExpanded = expandedAreas.has(area.id);
                     const totalQty = areaItems.reduce((s, i) => s + Number(i.qty_total), 0);
                     const doneQty = areaItems.reduce((s, i) => s + Number(i.qty_completed), 0);
