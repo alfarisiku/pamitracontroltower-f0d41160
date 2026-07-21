@@ -117,7 +117,14 @@ const ProjectDetail = () => {
   const poCommitted = purchaseOrders.reduce((s, po) => s + po.amount, 0);
   const actualCost = project.spent;
   const remainingBudget = project.budget - actualCost;
-  const budgetPct = project.budget > 0 ? Math.round((actualCost / project.budget) * 100) : 0;
+
+  // Actual Cash Out (from finance entries — used for CPI, budget utilization and margins)
+  const actualCashOutTotal = financeEntries
+    .filter(fe => fe.direction === "out" && fe.entry_kind === "actual")
+    .reduce((s, fe) => s + (Number(fe.amount) || 0), 0);
+  const rapValue = project.rap || 0;
+  // Utilisasi RAP: Actual Cash Out / RAP
+  const budgetPct = rapValue > 0 ? Math.round((actualCashOutTotal / rapValue) * 100) : 0;
 
   // Margin calculations
   const plannedMargin = contractValue > 0 && project.rap > 0 ? contractValue - project.rap : 0;
@@ -134,7 +141,8 @@ const ProjectDetail = () => {
   const elapsedPct = totalDuration > 0 ? Math.min(100, Math.round(((totalDuration - Math.max(0, daysRemaining)) / totalDuration) * 100)) : 100;
 
   const scheduleHealth = project.progress >= elapsedPct - 5 ? "good" : project.progress >= elapsedPct - 15 ? "warning" : "critical";
-  const cpi = actualCost > 0 ? ((project.progress / 100) * project.budget) / actualCost : 1;
+  // CPI berdasarkan Actual Cash Out vs RAP (bukan Budget/Contract)
+  const cpi = actualCashOutTotal > 0 && rapValue > 0 ? ((project.progress / 100) * rapValue) / actualCashOutTotal : 1;
   const costHealth = cpi >= 0.95 ? "good" : cpi >= 0.8 ? "warning" : "critical";
   const criticalAlerts = projectAlerts.filter(a => a.severity === "critical" || a.severity === "high").length;
   const riskHealth = criticalAlerts === 0 ? "good" : criticalAlerts <= 1 ? "warning" : "critical";
