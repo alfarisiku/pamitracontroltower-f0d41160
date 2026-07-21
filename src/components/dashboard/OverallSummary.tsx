@@ -4,12 +4,12 @@ import { Briefcase, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
 
 export function OverallSummary({ projects }: { projects: DbProject[] }) {
   const totalProjects = projects.length;
-  const active = projects.filter((p) => p.status !== "completed").length;
-  const totalBudget = projects.reduce((s, p) => s + p.budget, 0);
-  const totalSpent = projects.reduce((s, p) => s + p.spent, 0);
-  const avgProgress = Math.round(projects.reduce((s, p) => s + p.progress, 0) / (totalProjects || 1));
-  const onTrack = projects.filter((p) => p.status === "on-track").length;
-  const atRisk = projects.filter((p) => p.status === "at-risk" || p.status === "delayed").length;
+  const active = projects.filter((p) => p.status !== "completed" && p.status !== "closed").length;
+  const totalBudget = projects.reduce((s, p) => s + (p.contract_value || p.budget || 0), 0);
+  const totalSpent = projects.reduce((s, p) => s + (p.spent || 0), 0);
+  const avgProgress = Math.round(projects.reduce((s, p) => s + (p.progress || 0), 0) / (totalProjects || 1));
+  const onTrack = projects.filter((p) => p.status === "execution" || p.status === "on-track").length;
+  const atRisk = projects.filter((p) => p.status === "on-hold" || p.status === "at-risk" || p.status === "delayed").length;
 
   return (
     <div className="glass-card rounded-lg p-4 animate-slide-up shadow-card">
@@ -18,8 +18,8 @@ export function OverallSummary({ projects }: { projects: DbProject[] }) {
         {[
           { label: "Total Proyek", value: totalProjects, icon: Briefcase, color: "text-primary" },
           { label: "Proyek Aktif", value: active, icon: Clock, color: "text-info" },
-          { label: "On Track", value: onTrack, icon: CheckCircle2, color: "text-success" },
-          { label: "Berisiko", value: atRisk, icon: TrendingUp, color: "text-warning" },
+          { label: "Execution", value: onTrack, icon: CheckCircle2, color: "text-success" },
+          { label: "On Hold / Berisiko", value: atRisk, icon: TrendingUp, color: "text-warning" },
         ].map((s) => (
           <div key={s.label} className="flex items-center gap-2">
             <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
