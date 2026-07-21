@@ -11,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -21,7 +22,7 @@ const Login = () => {
     setLoading(true);
     try {
       if (mode === "login") {
-        const res = await signIn(email, password);
+        const res = await signIn(email, password, rememberMe);
         if (res.error) { setError(res.error); return; }
         navigate("/");
       } else {
