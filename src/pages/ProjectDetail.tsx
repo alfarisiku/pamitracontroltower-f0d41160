@@ -199,7 +199,6 @@ const ProjectDetail = () => {
                   <span className="text-xs font-mono-data text-primary bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.project_code}</span>
                   <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
                   <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.phase}</span>
-                  {project.category && <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.category}</span>}
                   {project.margin_locked && <span className="text-[10px] text-warning bg-card/80 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Margin Locked</span>}
                 </div>
                 <h1 className="text-lg sm:text-xl font-bold text-foreground mt-1">{project.name}</h1>
@@ -615,12 +614,12 @@ const ProjectDetail = () => {
                 const list = Object.values(rows)
                   .filter(r => !r.date || r.date <= today.getTime())
                   .sort((a, b) => (b.date || b.order) - (a.date || a.order))
-                  .slice(0, 3)
+                  .slice(0, 4)
                   .reverse();
                 if (list.length === 0) return null;
                 return (
                   <div className="mt-4 overflow-x-auto">
-                    <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">3 Periode Pelaporan Terakhir</p>
+                    <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">Ringkasan Periode Pelaporan (Saat Ini & 3 Sebelumnya)</p>
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-muted/50 border-b border-border">

@@ -63,8 +63,8 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
         <div className="p-5 space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs text-muted-foreground">Fase: <strong className="text-foreground">{project.phase}</strong></span>
-            {project.category && <span className="text-xs px-2 py-0.5 rounded bg-accent/10 text-accent-foreground border border-accent/20">{project.category}</span>}
           </div>
+
 
           {project.description && <p className="text-sm text-muted-foreground leading-relaxed">{project.description}</p>}
 
