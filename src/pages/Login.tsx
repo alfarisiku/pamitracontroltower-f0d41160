@@ -161,18 +161,26 @@ const Login = () => {
           {mode === "login" && (
             <div className="mt-8 pt-6 border-t border-border">
               <p className="text-xs text-muted-foreground text-center mb-3">Default Accounts</p>
-              <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="grid grid-cols-3 gap-2 text-[10px]">
                 <button onClick={() => { setEmail("admin@pamitra.co.id"); setPassword("admin123"); }}
                   className="p-2 rounded border border-border hover:bg-muted text-left">
-                  <p className="font-medium text-foreground">Admin</p>
-                  <p className="text-muted-foreground">admin@pamitra.co.id</p>
+                  <p className="font-medium text-foreground">Administrator</p>
+                  <p className="text-muted-foreground truncate">admin@pamitra.co.id</p>
                 </button>
                 <button onClick={() => { setEmail("director@pamitra.co.id"); setPassword("director123"); }}
                   className="p-2 rounded border border-border hover:bg-muted text-left">
                   <p className="font-medium text-foreground">Director</p>
-                  <p className="text-muted-foreground">director@pamitra.co.id</p>
+                  <p className="text-muted-foreground truncate">director@pamitra.co.id</p>
+                </button>
+                <button onClick={() => { setEmail("proyek1@pamitra.co.id"); setPassword("proyek123"); }}
+                  className="p-2 rounded border border-border hover:bg-muted text-left">
+                  <p className="font-medium text-foreground">Project Admin</p>
+                  <p className="text-muted-foreground truncate">proyek1@pamitra.co.id</p>
                 </button>
               </div>
+              <p className="text-[10px] text-muted-foreground text-center mt-3">
+                Password default: <code className="font-mono">admin123 / director123 / proyek123</code>
+              </p>
             </div>
           )}
         </div>
