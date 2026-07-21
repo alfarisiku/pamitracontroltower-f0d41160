@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { useAuth } from "@/contexts/AuthContext";
 import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
 import { supabase, formatRupiah, FINANCE_CATEGORIES } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
@@ -64,6 +65,7 @@ const EPC_PHASES = ["Production I", "Production II", "Production III", "Producti
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { isClient } = useAuth();
   const { data: project, isLoading } = useProject(id);
   const { data: workAreas = [] } = useWorkAreas(id);
   const workAreaIds = workAreas.map(wa => wa.id);
@@ -220,17 +222,17 @@ const ProjectDetail = () => {
 
           {/* Tabs */}
           <div className="flex items-center gap-1 mb-4 border-b border-border pb-2 overflow-x-auto">
-            {([
-              { key: "health" as const, label: "Health", icon: Activity },
-              { key: "finance" as const, label: "Finance", icon: Wallet },
-              { key: "scurve" as const, label: "S-Curve", icon: TrendingUp },
-              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers },
-              { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
-              { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
-              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
-              { key: "weekly-report" as const, label: "Weekly Report", icon: FileText },
-              { key: "media" as const, label: "Media", icon: Camera },
-            ]).map(tab => (
+            {(([
+              { key: "health" as const, label: "Health", icon: Activity, publicOk: true },
+              { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
+              { key: "scurve" as const, label: "S-Curve", icon: TrendingUp, publicOk: true },
+              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
+              { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
+              { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
+              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
+              { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
+              { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
+            ]).filter(t => !isClient || t.publicOk)).map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
