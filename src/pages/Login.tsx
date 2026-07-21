@@ -129,6 +129,20 @@ const Login = () => {
 
             {error && <p className="text-xs text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
 
+            {mode === "login" && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Remember me — keep me signed in on this device
+                </span>
+              </label>
+            )}
+
             <button type="submit" disabled={loading}
               className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> :
