@@ -17,7 +17,7 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   assignedProjectIds: string[];
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
