@@ -128,6 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem("auth_no_remember");
+    sessionStorage.removeItem("auth_session_active");
     setUser(null);
     setProfile(null);
     setRole(null);
