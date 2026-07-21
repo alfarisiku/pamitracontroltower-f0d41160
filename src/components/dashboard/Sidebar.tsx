@@ -8,8 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { BookOpen } from "lucide-react";
 
 const allMenuItems = [
-  { icon: LayoutDashboard, label: "Overview", path: "/", roles: ["admin", "management", "team"] },
-  { icon: FolderKanban, label: "Project Summary", path: "/projects", roles: ["admin", "management"] },
+  { icon: LayoutDashboard, label: "Overview", path: "/", roles: ["admin", "management", "team", "client"] },
+  { icon: FolderKanban, label: "Project Summary", path: "/projects", roles: ["admin", "management", "client"] },
   { icon: CalendarClock, label: "Schedule", path: "/schedule", roles: ["admin", "management", "team"] },
   { icon: DollarSign, label: "Cost Performance", path: "/cost", roles: ["admin", "management", "team"] },
   { icon: Wallet, label: "Finance", path: "/finance", roles: ["admin", "management", "team"] },
