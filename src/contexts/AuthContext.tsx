@@ -67,6 +67,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // "Remember Me" enforcement: if user chose not to remember, sign out when a new browser session starts.
+    const noRemember = localStorage.getItem("auth_no_remember") === "1";
+    const sessionActive = sessionStorage.getItem("auth_session_active") === "1";
+    if (noRemember && !sessionActive) {
+      supabase.auth.signOut();
+      localStorage.removeItem("auth_no_remember");
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
@@ -91,8 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) {
+      sessionStorage.setItem("auth_session_active", "1");
+      if (rememberMe) {
+        localStorage.removeItem("auth_no_remember");
+      } else {
+        localStorage.setItem("auth_no_remember", "1");
+      }
+    }
     return { error: error?.message ?? null };
   };
 
