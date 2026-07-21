@@ -15,14 +15,14 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
 
   const [newProject, setNewProject] = useState({
     project_code: "", name: "", client: "", manager: "", location: "",
-    budget: "", start_date: "", end_date: "", description: "", category: "Energy",
+    budget: "", start_date: "", end_date: "", description: "", category: "Production I",
     map_x: "50", map_y: "50",
   });
 
   const [editForm, setEditForm] = useState({
     project_code: "", name: "", client: "", manager: "", location: "",
     budget: "", spent: "", rap: "", profit_margin_target: "10", tkdn_percentage: "0",
-    start_date: "", end_date: "", description: "", category: "Energy",
+    start_date: "", end_date: "", description: "", category: "Production I",
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
     image_url: "", video_url: "", cctv_url: "",
   });
@@ -38,7 +38,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           rap: String(p.rap || 0), profit_margin_target: String(p.profit_margin_target || 10),
           tkdn_percentage: String(p.tkdn_percentage || 0),
           start_date: p.start_date || "", end_date: p.end_date || "",
-          description: p.description || "", category: p.category || "Energy",
+          description: p.description || "", category: p.category || "Production I",
           map_x: String(p.map_x || 0), map_y: String(p.map_y || 0),
           status: p.status || "on-track", phase: p.phase || "Engineering",
           progress: String(p.progress || 0), image_url: p.image_url || "",
@@ -74,7 +74,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Proyek baru + default Work Area dibuat. Silakan tambah work items." });
       setShowNewProject(false);
-      setNewProject({ project_code: "", name: "", client: "", manager: "", location: "", budget: "", start_date: "", end_date: "", description: "", category: "Energy", map_x: "50", map_y: "50" });
+      setNewProject({ project_code: "", name: "", client: "", manager: "", location: "", budget: "", start_date: "", end_date: "", description: "", category: "Production I", map_x: "50", map_y: "50" });
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -170,7 +170,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           <div><label className={labelCls}>Project Manager</label><input value={ef.manager} onChange={e => set("manager", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Category</label>
             <select value={ef.category} onChange={e => set("category", e.target.value)} className={inputCls}>
-              <option>Energy</option><option>Oil & Gas</option><option>Mining</option><option>Infrastructure</option><option>Industrial</option><option>Other</option>
+              <option>Production I</option><option>Production II</option><option>Production III</option><option>Production IV</option>
             </select>
           </div>
           <div><label className={labelCls}>Location</label><input value={ef.location} onChange={e => set("location", e.target.value)} className={inputCls} /></div>

@@ -117,7 +117,14 @@ const ProjectDetail = () => {
   const poCommitted = purchaseOrders.reduce((s, po) => s + po.amount, 0);
   const actualCost = project.spent;
   const remainingBudget = project.budget - actualCost;
-  const budgetPct = project.budget > 0 ? Math.round((actualCost / project.budget) * 100) : 0;
+
+  // Actual Cash Out (from finance entries — used for CPI, budget utilization and margins)
+  const actualCashOutTotal = financeEntries
+    .filter(fe => fe.direction === "out" && fe.entry_kind === "actual")
+    .reduce((s, fe) => s + (Number(fe.amount) || 0), 0);
+  const rapValue = project.rap || 0;
+  // Utilisasi RAP: Actual Cash Out / RAP
+  const budgetPct = rapValue > 0 ? Math.round((actualCashOutTotal / rapValue) * 100) : 0;
 
   // Margin calculations
   const plannedMargin = contractValue > 0 && project.rap > 0 ? contractValue - project.rap : 0;
@@ -134,7 +141,8 @@ const ProjectDetail = () => {
   const elapsedPct = totalDuration > 0 ? Math.min(100, Math.round(((totalDuration - Math.max(0, daysRemaining)) / totalDuration) * 100)) : 100;
 
   const scheduleHealth = project.progress >= elapsedPct - 5 ? "good" : project.progress >= elapsedPct - 15 ? "warning" : "critical";
-  const cpi = actualCost > 0 ? ((project.progress / 100) * project.budget) / actualCost : 1;
+  // CPI berdasarkan Actual Cash Out vs RAP (bukan Budget/Contract)
+  const cpi = actualCashOutTotal > 0 && rapValue > 0 ? ((project.progress / 100) * rapValue) / actualCashOutTotal : 1;
   const costHealth = cpi >= 0.95 ? "good" : cpi >= 0.8 ? "warning" : "critical";
   const criticalAlerts = projectAlerts.filter(a => a.severity === "critical" || a.severity === "high").length;
   const riskHealth = criticalAlerts === 0 ? "good" : criticalAlerts <= 1 ? "warning" : "critical";
@@ -217,7 +225,7 @@ const ProjectDetail = () => {
               { key: "health" as const, label: "Health", icon: Activity },
               { key: "finance" as const, label: "Finance", icon: Wallet },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp },
-              { key: "wbs" as const, label: "WBS", icon: Layers },
+              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle },
               { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target },
@@ -253,7 +261,7 @@ const ProjectDetail = () => {
                     <FormulaTooltip {...FORMULAS.cpi} />
                   </div>
                   <p className={`text-sm font-bold ${healthColor(costHealth)}`}>CPI {cpi.toFixed(2)}</p>
-                  <p className="text-[10px] text-muted-foreground">{formatRupiah(actualCost)} / {formatRupiah(project.budget)}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatRupiah(actualCashOutTotal)} / {formatRupiah(rapValue)} RAP</p>
                 </div>
                 <div className={`glass-card rounded-lg p-3 border ${healthBg(riskHealth)}`}>
                   <div className="flex items-center gap-1.5 mb-1"><Shield className={`h-3.5 w-3.5 ${healthColor(riskHealth)}`} /><span className="text-[10px] text-muted-foreground uppercase">Risk</span></div>
@@ -290,10 +298,10 @@ const ProjectDetail = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground flex items-center">Actual Spent vs Contract<FormulaTooltip {...FORMULAS.budgetUtil} /></span>
-                        <span className={`font-mono-data font-bold ${budgetPct > 85 ? "text-destructive" : "text-foreground"}`}>{budgetPct}%</span>
+                        <span className="text-muted-foreground flex items-center">Actual Cash Out vs RAP<FormulaTooltip {...FORMULAS.budgetUtil} /></span>
+                        <span className={`font-mono-data font-bold ${budgetPct > 95 ? "text-destructive" : budgetPct > 85 ? "text-warning" : "text-foreground"}`}>{budgetPct}%</span>
                       </div>
-                      <Progress value={budgetPct} className="h-2" />
+                      <Progress value={Math.min(100, budgetPct)} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
@@ -343,53 +351,7 @@ const ProjectDetail = () => {
             <div className="space-y-4">
 
 
-              {/* === Cashflow Bipolar Bar Chart (Cash In ↑ / Cash Out ↓) === */}
-              {(() => {
-                const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
-                financeEntries.forEach(fe => {
-                  const key = fe.period_label || fe.period_date;
-                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
-                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
-                  const isAct = fe.entry_kind === "actual";
-                  const amt = Number(fe.amount) || 0;
-                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
-                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
-                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
-                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
-                });
-                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
-                  label: r.label,
-                  "Plan Cash In": r.planIn,
-                  "Actual Cash In": r.actIn,
-                  "Plan Cash Out": -r.planOut,
-                  "Actual Cash Out": -r.actOut,
-                }));
-                if (bipolar.length === 0) return null;
-                return (
-                  <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow & Progress — Plan vs Actual
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif). Nilai dalam {formatRupiah(1000).includes("M") ? "Juta Rupiah" : "IDR"}.</p>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
-                          <Bar dataKey="Plan Cash In" fill="hsl(145, 40%, 65%)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Actual Cash In" fill="hsl(145, 65%, 40%)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(15, 40%, 70%)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(0, 70%, 50%)" radius={[0,0,3,3]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* (Cost Breakdown is rendered first) */}
 
               {/* === Cost Breakdown by Category === */}
               {(() => {
@@ -457,17 +419,70 @@ const ProjectDetail = () => {
                 );
               })()}
 
+              {/* === Cashflow Bipolar Bar Chart (Cash In ↑ / Cash Out ↓) === */}
+              {(() => {
+                const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
+                financeEntries.forEach(fe => {
+                  const key = fe.period_label || fe.period_date;
+                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
+                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
+                  const isAct = fe.entry_kind === "actual";
+                  const amt = Number(fe.amount) || 0;
+                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
+                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
+                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
+                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
+                });
+                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
+                  label: r.label,
+                  "Plan Cash In": r.planIn,
+                  "Actual Cash In": r.actIn,
+                  "Plan Cash Out": -r.planOut,
+                  "Actual Cash Out": -r.actOut,
+                }));
+                if (bipolar.length === 0) return null;
+                return (
+                  <div className="glass-card rounded-lg p-4 shadow-card">
+                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow & Progress — Plan vs Actual
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
+                          <Bar dataKey="Plan Cash In" fill="hsl(145, 40%, 65%)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(145, 65%, 40%)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(15, 40%, 70%)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(0, 70%, 50%)" radius={[0,0,3,3]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* === Progress vs Cashflow Summary per Periode === */}
               {(() => {
                 // Unified period set = ALL financeEntries (same as Cashflow & Progress card)
-                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number }> = {};
+                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number }> = {};
                 financeEntries.forEach(fe => {
                   const key = fe.period_label || fe.period_date;
-                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0 };
-                  if (fe.entry_kind !== "actual") return;
+                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
                   const amt = Number(fe.amount) || 0;
-                  if (fe.direction === "in") periodMap[key].cashIn += amt;
-                  else periodMap[key].cashOut += amt;
+                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
+                  if (fe.entry_kind === "actual") {
+                    if (fe.direction === "in") periodMap[key].cashIn += amt;
+                    else periodMap[key].cashOut += amt;
+                  } else if (isPlan) {
+                    if (fe.direction === "in") periodMap[key].planIn += amt;
+                    else periodMap[key].planOut += amt;
+                  }
                 });
                 const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
                 if (periodList.length === 0) return null;
@@ -496,6 +511,8 @@ const ProjectDetail = () => {
                     actPct: actPct == null ? null : Number(actPct),
                     cashIn: p.cashIn,
                     cashOut: p.cashOut,
+                    planIn: p.planIn,
+                    planOut: p.planOut,
                   };
                 });
 
@@ -512,8 +529,10 @@ const ProjectDetail = () => {
                           <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
                           <RTooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => name.includes("%") ? `${Number(v).toFixed(1)}%` : formatRupiah(v)} />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <Bar yAxisId="left" dataKey="cashIn" name="Cash In" fill="hsl(145, 65%, 45%)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashOut" name="Cash Out" fill="hsl(0, 70%, 55%)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(145, 40%, 75%)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(145, 65%, 45%)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(15, 40%, 78%)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(0, 70%, 55%)" radius={[3,3,0,0]} />
                           <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
                           <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(30, 85%, 50%)" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                         </ComposedChart>
@@ -537,7 +556,7 @@ const ProjectDetail = () => {
                             <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-1.5 px-2 text-foreground">{r.label}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-info">{r.planPct.toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-accent-foreground">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-warning">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                               <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
@@ -565,7 +584,7 @@ const ProjectDetail = () => {
                 milestones={milestones}
                 customData={scurveData.length > 0 ? scurveData : undefined}
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 max-w-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                   <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
                   <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
