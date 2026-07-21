@@ -39,12 +39,12 @@ export function OverallSummary({ projects }: { projects: DbProject[] }) {
           <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${avgProgress}%` }} />
         </div>
         <div className="flex justify-between text-xs mt-2">
-          <span className="text-muted-foreground">Total Nilai Kontrak</span>
-          <span className="font-mono-data font-medium text-accent">{formatRupiah(totalBudget)}</span>
+          <span className="text-muted-foreground">Total RAP</span>
+          <span className="font-mono-data font-medium text-accent">{formatRupiah(totalRap)}</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-muted-foreground">Terpakai</span>
-          <span className="font-mono-data font-medium text-foreground">{formatRupiah(totalSpent)}</span>
+          <span className="text-muted-foreground">Actual Cash Out</span>
+          <span className="font-mono-data font-medium text-foreground">{formatRupiah(totalActualCashOut)}</span>
         </div>
       </div>
     </div>
