@@ -11,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -21,7 +22,7 @@ const Login = () => {
     setLoading(true);
     try {
       if (mode === "login") {
-        const res = await signIn(email, password);
+        const res = await signIn(email, password, rememberMe);
         if (res.error) { setError(res.error); return; }
         navigate("/");
       } else {
@@ -128,6 +129,20 @@ const Login = () => {
 
             {error && <p className="text-xs text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
 
+            {mode === "login" && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Remember me — keep me signed in on this device
+                </span>
+              </label>
+            )}
+
             <button type="submit" disabled={loading}
               className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
               {loading ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> :
@@ -146,18 +161,26 @@ const Login = () => {
           {mode === "login" && (
             <div className="mt-8 pt-6 border-t border-border">
               <p className="text-xs text-muted-foreground text-center mb-3">Default Accounts</p>
-              <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="grid grid-cols-3 gap-2 text-[10px]">
                 <button onClick={() => { setEmail("admin@pamitra.co.id"); setPassword("admin123"); }}
                   className="p-2 rounded border border-border hover:bg-muted text-left">
-                  <p className="font-medium text-foreground">Admin</p>
-                  <p className="text-muted-foreground">admin@pamitra.co.id</p>
+                  <p className="font-medium text-foreground">Administrator</p>
+                  <p className="text-muted-foreground truncate">admin@pamitra.co.id</p>
                 </button>
                 <button onClick={() => { setEmail("director@pamitra.co.id"); setPassword("director123"); }}
                   className="p-2 rounded border border-border hover:bg-muted text-left">
                   <p className="font-medium text-foreground">Director</p>
-                  <p className="text-muted-foreground">director@pamitra.co.id</p>
+                  <p className="text-muted-foreground truncate">director@pamitra.co.id</p>
+                </button>
+                <button onClick={() => { setEmail("proyek1@pamitra.co.id"); setPassword("proyek123"); }}
+                  className="p-2 rounded border border-border hover:bg-muted text-left">
+                  <p className="font-medium text-foreground">Project Admin</p>
+                  <p className="text-muted-foreground truncate">proyek1@pamitra.co.id</p>
                 </button>
               </div>
+              <p className="text-[10px] text-muted-foreground text-center mt-3">
+                Password default: <code className="font-mono">admin123 / director123 / proyek123</code>
+              </p>
             </div>
           )}
         </div>

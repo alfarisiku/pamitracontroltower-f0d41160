@@ -21,7 +21,15 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  // Public access: unauthenticated visitors are treated as "client" (Level 3 Public).
+  // They can access routes that allow "client" role; restricted routes redirect them home.
+  if (!user) {
+    if (allowedRoles && !allowedRoles.includes("client")) {
+      return <Navigate to="/login" replace />;
+    }
+    return <>{children}</>;
+  }
+
   if (isPending) return <Navigate to="/pending" replace />;
 
   // Team user with no project assigned
@@ -50,7 +58,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
-    if (role === "client") return <Navigate to="/war-room" replace />;
+    if (role === "client") return <Navigate to="/" replace />;
     return <Navigate to="/" replace />;
   }
 
