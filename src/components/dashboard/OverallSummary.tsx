@@ -5,8 +5,8 @@ import { Briefcase, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
 export function OverallSummary({ projects }: { projects: DbProject[] }) {
   const totalProjects = projects.length;
   const active = projects.filter((p) => p.status !== "completed" && p.status !== "closed").length;
-  const totalBudget = projects.reduce((s, p) => s + (p.contract_value || p.budget || 0), 0);
-  const totalSpent = projects.reduce((s, p) => s + (p.spent || 0), 0);
+  const totalRap = projects.reduce((s, p) => s + (p.rap || p.contract_value || p.budget || 0), 0);
+  const totalActualCashOut = projects.reduce((s, p) => s + (p.spent || 0), 0);
   const avgProgress = Math.round(projects.reduce((s, p) => s + (p.progress || 0), 0) / (totalProjects || 1));
   const onTrack = projects.filter((p) => p.status === "execution" || p.status === "on-track").length;
   const atRisk = projects.filter((p) => p.status === "on-hold" || p.status === "at-risk" || p.status === "delayed").length;
@@ -39,12 +39,12 @@ export function OverallSummary({ projects }: { projects: DbProject[] }) {
           <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${avgProgress}%` }} />
         </div>
         <div className="flex justify-between text-xs mt-2">
-          <span className="text-muted-foreground">Total Nilai Kontrak</span>
-          <span className="font-mono-data font-medium text-accent">{formatRupiah(totalBudget)}</span>
+          <span className="text-muted-foreground">Total RAP</span>
+          <span className="font-mono-data font-medium text-accent">{formatRupiah(totalRap)}</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-muted-foreground">Terpakai</span>
-          <span className="font-mono-data font-medium text-foreground">{formatRupiah(totalSpent)}</span>
+          <span className="text-muted-foreground">Actual Cash Out</span>
+          <span className="font-mono-data font-medium text-foreground">{formatRupiah(totalActualCashOut)}</span>
         </div>
       </div>
     </div>

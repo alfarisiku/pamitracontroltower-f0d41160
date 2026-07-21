@@ -22,7 +22,7 @@ export function ProjectTable({ projects, onSelectProject }: { projects: DbProjec
               <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">P#</th>
               <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Project</th>
               <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
-              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Value</th>
+              <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">RAP</th>
               <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">End Date</th>
               <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress</th>
               <th className="text-center py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Detail</th>
@@ -51,7 +51,7 @@ export function ProjectTable({ projects, onSelectProject }: { projects: DbProjec
                       {st.label}
                     </span>
                   </td>
-                  <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.budget)}</td>
+                  <td className="py-2 px-3 font-mono-data text-foreground">{formatRupiah(p.rap || p.budget)}</td>
                   <td className="py-2 px-3 text-muted-foreground">
                     {new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                   </td>

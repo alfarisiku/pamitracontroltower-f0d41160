@@ -27,16 +27,16 @@ const FALLBACK_STATUS = { label: "—", className: "bg-muted text-muted-foregrou
 const ProjectSummary = () => {
   const navigate = useNavigate();
   const { data: allProjects = [], isLoading } = useProjects();
-  const { role, assignedProjectIds, isTeam, isClient } = useAuth();
+  const { role, assignedProjectIds, isTeam, isClient, isAdmin } = useAuth();
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [phaseFilter, setPhaseFilter] = useState<ProjectPhase | "all">("all");
 
-  // Project Admin (team) users only see projects assigned to them
-  const projects = isTeam
-    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
-    : allProjects;
+  // Access-level restriction removed — every visitor is treated as admin, so show all projects.
+  const projects = isAdmin
+    ? allProjects
+    : (isTeam ? allProjects.filter(p => assignedProjectIds.includes(p.id)) : allProjects);
 
   const filtered = projects.filter((p) => {
     if (statusFilter !== "all" && p.status !== statusFilter) return false;
