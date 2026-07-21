@@ -19,11 +19,11 @@ const Index = () => {
 
   const projects = allProjects;
 
-  const active = projects.filter((p) => p.status !== "completed").length;
-  const atRisk = projects.filter((p) => p.status === "at-risk" || p.status === "delayed").length;
-  const completed = projects.filter((p) => p.status === "completed").length;
-  const totalBudget = projects.reduce((s, p) => s + p.budget, 0);
-  const totalSpent = projects.reduce((s, p) => s + p.spent, 0);
+  const active = projects.filter((p) => p.status !== "completed" && p.status !== "closed").length;
+  const atRisk = projects.filter((p) => p.status === "on-hold" || p.status === "at-risk" || p.status === "delayed").length;
+  const completed = projects.filter((p) => p.status === "completed" || p.status === "closed").length;
+  const totalBudget = projects.reduce((s, p) => s + (p.contract_value || p.budget || 0), 0);
+  const totalSpent = projects.reduce((s, p) => s + (p.spent || 0), 0);
   const budgetPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
 
   if (isLoading) {
