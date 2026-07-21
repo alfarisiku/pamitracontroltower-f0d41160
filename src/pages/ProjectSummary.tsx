@@ -6,6 +6,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { DbProject, formatRupiah } from "@/lib/supabase";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv, ExternalLink } from "lucide-react";
 
 type ProjectStatus = string;
@@ -25,11 +26,17 @@ const FALLBACK_STATUS = { label: "—", className: "bg-muted text-muted-foregrou
 
 const ProjectSummary = () => {
   const navigate = useNavigate();
-  const { data: projects = [], isLoading } = useProjects();
+  const { data: allProjects = [], isLoading } = useProjects();
+  const { role, assignedProjectIds, isTeam, isClient } = useAuth();
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [phaseFilter, setPhaseFilter] = useState<ProjectPhase | "all">("all");
+
+  // Project Admin (team) users only see projects assigned to them
+  const projects = isTeam
+    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
+    : allProjects;
 
   const filtered = projects.filter((p) => {
     if (statusFilter !== "all" && p.status !== statusFilter) return false;
@@ -168,17 +175,19 @@ const ProjectSummary = () => {
                       <Progress value={project.progress} className="h-1.5" />
                     </div>
 
-                    {/* Budget */}
-                    <div className="flex justify-between text-xs pt-2 border-t border-border">
-                      <div>
-                        <p className="text-muted-foreground">Nilai Kontrak</p>
-                        <p className="font-mono-data font-medium text-accent">{formatRupiah(project.budget)}</p>
+                    {/* Budget — hidden for Public role */}
+                    {!isClient && (
+                      <div className="flex justify-between text-xs pt-2 border-t border-border">
+                        <div>
+                          <p className="text-muted-foreground">Nilai Kontrak</p>
+                          <p className="font-mono-data font-medium text-accent">{formatRupiah(project.budget)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-muted-foreground">Terpakai</p>
+                          <p className={`font-mono-data font-medium ${budgetPct > 85 ? "text-destructive" : "text-foreground"}`}>{budgetPct}%</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-muted-foreground">Terpakai</p>
-                        <p className={`font-mono-data font-medium ${budgetPct > 85 ? "text-destructive" : "text-foreground"}`}>{budgetPct}%</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               );
