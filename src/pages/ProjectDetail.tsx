@@ -556,7 +556,7 @@ const ProjectDetail = () => {
                             <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-1.5 px-2 text-foreground">{r.label}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-info">{r.planPct.toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-accent-foreground">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-warning">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                               <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
