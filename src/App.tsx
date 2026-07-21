@@ -24,34 +24,31 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Role-based access control:
-// - admin: full system access (CRUD + user management)
-// - management: read-only dashboards/reports (director view)
-// - team (Project Admin): CRUD only on assigned projects; no user/system mgmt
-// - client (Public): Overview + Project Summary only; no financial/risk data
+// Access levels removed — every route is open to all visitors.
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/pending" element={<PendingApproval />} />
 
-      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-      <Route path="/projects" element={<ProtectedRoute><ProjectSummary /></ProtectedRoute>} />
-      <Route path="/project/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-      <Route path="/schedule" element={<ProtectedRoute allowedRoles={["admin","management","team"]}><Schedule /></ProtectedRoute>} />
-      <Route path="/cost" element={<ProtectedRoute allowedRoles={["admin","management","team"]}><CostPerformance /></ProtectedRoute>} />
-      <Route path="/finance" element={<ProtectedRoute allowedRoles={["admin","management","team"]}><Finance /></ProtectedRoute>} />
-      <Route path="/risk" element={<ProtectedRoute allowedRoles={["admin","management","team"]}><RiskMonitoring /></ProtectedRoute>} />
-      <Route path="/reporting" element={<ProtectedRoute allowedRoles={["admin","management"]}><Reporting /></ProtectedRoute>} />
-      <Route path="/data-entry" element={<ProtectedRoute allowedRoles={["admin","team"]}><DataEntry /></ProtectedRoute>} />
-      <Route path="/war-room" element={<ProtectedRoute allowedRoles={["admin"]}><WarRoom /></ProtectedRoute>} />
-      <Route path="/activity-log" element={<ProtectedRoute allowedRoles={["admin","management","team"]}><ActivityLog /></ProtectedRoute>} />
-      <Route path="/guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
-      <Route path="/account-manager" element={<ProtectedRoute allowedRoles={["admin"]}><AccountManager /></ProtectedRoute>} />
+      <Route path="/" element={<Index />} />
+      <Route path="/projects" element={<ProjectSummary />} />
+      <Route path="/project/:id" element={<ProjectDetail />} />
+      <Route path="/schedule" element={<Schedule />} />
+      <Route path="/cost" element={<CostPerformance />} />
+      <Route path="/finance" element={<Finance />} />
+      <Route path="/risk" element={<RiskMonitoring />} />
+      <Route path="/reporting" element={<Reporting />} />
+      <Route path="/data-entry" element={<DataEntry />} />
+      <Route path="/war-room" element={<WarRoom />} />
+      <Route path="/activity-log" element={<ActivityLog />} />
+      <Route path="/guide" element={<UserGuide />} />
+      <Route path="/account-manager" element={<AccountManager />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
