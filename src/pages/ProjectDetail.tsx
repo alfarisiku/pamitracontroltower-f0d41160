@@ -306,28 +306,33 @@ const ProjectDetail = () => {
                 </div>
                 <div className="glass-card rounded-lg p-4 shadow-card">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Quick Financial Summary</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1">Contract Value</p>
-                      <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1">Remaining (Contract − Actual)</p>
-                      <p className={`text-lg font-bold font-mono-data ${remainingBudget > 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(remainingBudget)}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">Actual Margin<FormulaTooltip {...FORMULAS.profitMargin} /></p>
-                      <p className={`text-lg font-bold font-mono-data ${actualMarginPct > 10 ? "text-success" : actualMarginPct > 0 ? "text-warning" : "text-destructive"}`}>{actualMarginPct}%</p>
-                      {project.profit_margin_target > 0 && <p className="text-[9px] text-muted-foreground">Target: {project.profit_margin_target}%</p>}
-                    </div>
-                    <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">
-                        PO Committed
-                        <FormulaTooltip title="PO Committed" formula="Σ Amount semua Purchase Order proyek" description="Total nilai kontrak/PO yang sudah diterbitkan ke vendor (belum tentu sudah dibayar). Nilai ini dihitung otomatis dari tabel Purchase Orders — edit melalui Data Entry → Procurement / PO." />
-                      </p>
-                      <p className="text-lg font-bold font-mono-data text-foreground">{formatRupiah(poCommitted)}</p>
-                    </div>
-                  </div>
+                  {(() => {
+                    const actualCashOut = financeEntries
+                      .filter(fe => fe.direction === "out" && fe.entry_kind === "actual")
+                      .reduce((s, fe) => s + (Number(fe.amount) || 0), 0);
+                    const rapValue = project.rap || 0;
+                    const remainingRap = rapValue - actualCashOut;
+                    return (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Contract Value</p>
+                          <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1">RAP</p>
+                          <p className="text-lg font-bold font-mono-data text-info">{formatRupiah(rapValue)}</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Actual Cash Out</p>
+                          <p className="text-lg font-bold font-mono-data text-destructive">{formatRupiah(actualCashOut)}</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Remaining (RAP − Actual)</p>
+                          <p className={`text-lg font-bold font-mono-data ${remainingRap >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(remainingRap)}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
