@@ -30,10 +30,10 @@ const DataEntry = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
 
-  // Project Admin (team) can only edit assigned projects; Admin sees all.
-  const projects = isTeam
-    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
-    : allProjects;
+  // Access-level restriction removed — every visitor is treated as admin, so show all projects.
+  const projects = isAdmin
+    ? allProjects
+    : (isTeam ? allProjects.filter(p => assignedProjectIds.includes(p.id)) : allProjects);
 
   // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
   const allTabs = [
