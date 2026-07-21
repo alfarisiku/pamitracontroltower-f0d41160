@@ -136,27 +136,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAssignedProjectIds([]);
   };
 
-  const isPending = !!user && (!profile || profile.status !== "active");
-  const isTeamRole = role === "team";
-  const hasNoProject = !!user && !isPending && isTeamRole && assignedProjectIds.length === 0;
-
-  // Public/guest default: no user → treat as "client" (Level 3 Public)
-  const effectiveRole: AppRole | null = user ? role : "client";
+  // Access levels removed — every visitor is treated as full admin.
+  const effectiveRole: AppRole = "admin";
 
   return (
     <AuthContext.Provider value={{
       user, profile, role: effectiveRole, loading, assignedProjectIds, signIn, signUp, signOut, refreshProfile,
-      isAdmin: effectiveRole === "admin",
-      isManagement: effectiveRole === "management",
-      isTeam: isTeamRole,
-      isClient: effectiveRole === "client",
-      isPending,
-      hasNoProject,
+      isAdmin: true,
+      isManagement: true,
+      isTeam: true,
+      isClient: false,
+      isPending: false,
+      hasNoProject: false,
     }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export function useAuth() {
   const ctx = useContext(AuthContext);

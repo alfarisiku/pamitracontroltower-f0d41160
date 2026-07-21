@@ -8,29 +8,27 @@ import { useAuth } from "@/contexts/AuthContext";
 import { BookOpen } from "lucide-react";
 
 const allMenuItems = [
-  { icon: LayoutDashboard, label: "Overview", path: "/", roles: ["admin", "management", "team", "client"] },
-  { icon: FolderKanban, label: "Project Summary", path: "/projects", roles: ["admin", "management", "client"] },
-  { icon: CalendarClock, label: "Schedule", path: "/schedule", roles: ["admin", "management", "team"] },
-  { icon: DollarSign, label: "Cost Performance", path: "/cost", roles: ["admin", "management", "team"] },
-  { icon: Wallet, label: "Finance", path: "/finance", roles: ["admin", "management", "team"] },
-  { icon: AlertTriangle, label: "Risk Monitoring", path: "/risk", roles: ["admin", "management", "team"] },
-  { icon: FileText, label: "Reporting", path: "/reporting", roles: ["admin", "management"] },
-  { icon: Database, label: "Data Entry", path: "/data-entry", roles: ["admin", "team"] },
-  { icon: Activity, label: "Activity Log", path: "/activity-log", roles: ["admin", "management", "team"] },
-  { icon: BookOpen, label: "User Guide", path: "/guide", roles: ["admin", "management", "team"] },
-  { icon: Monitor, label: "War Room", path: "/war-room", roles: ["admin"] },
-  { icon: Shield, label: "Account Manager", path: "/account-manager", roles: ["admin"] },
+  { icon: LayoutDashboard, label: "Overview", path: "/" },
+  { icon: FolderKanban, label: "Project Summary", path: "/projects" },
+  { icon: CalendarClock, label: "Schedule", path: "/schedule" },
+  { icon: DollarSign, label: "Cost Performance", path: "/cost" },
+  { icon: Wallet, label: "Finance", path: "/finance" },
+  { icon: AlertTriangle, label: "Risk Monitoring", path: "/risk" },
+  { icon: FileText, label: "Reporting", path: "/reporting" },
+  { icon: Database, label: "Data Entry", path: "/data-entry" },
+  { icon: Activity, label: "Activity Log", path: "/activity-log" },
+  { icon: BookOpen, label: "User Guide", path: "/guide" },
+  { icon: Monitor, label: "War Room", path: "/war-room" },
+  { icon: Shield, label: "Account Manager", path: "/account-manager" },
 ];
 
 export function Sidebar() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, role, profile, signOut } = useAuth();
 
-  const menuItems = allMenuItems.filter(item => !role || item.roles.includes(role));
+  const menuItems = allMenuItems;
 
-  const roleLabel = role === "team" ? "Project Admin" : role === "client" ? "Public" : role === "management" ? "Director" : role === "admin" ? "Administrator" : "";
 
 
   const sidebarContent = (
@@ -70,27 +68,9 @@ export function Sidebar() {
         })}
       </nav>
       <div className="p-3 border-t border-sidebar-border space-y-2">
-        <div className="px-3 py-2 rounded-lg bg-sidebar-accent/50">
-          <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{user ? (profile?.display_name || "User") : "Guest"}</p>
-          <p className="text-[10px] text-sidebar-foreground">{roleLabel || "Public"}</p>
-        </div>
-        {user ? (
-          <button
-            onClick={() => signOut()}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground border border-sidebar-border/60 transition-colors"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Logout
-          </button>
-        ) : (
-          <NavLink
-            to="/login"
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 transition-colors font-semibold"
-          >
-            Login
-          </NavLink>
-        )}
         <p className="text-[10px] text-sidebar-foreground text-center pt-1">© 2026 PT Pamitra Jaya Konstruksi</p>
       </div>
+
     </>
   );
 
