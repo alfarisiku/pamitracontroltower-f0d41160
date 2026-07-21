@@ -127,8 +127,8 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
                   <span className={`text-xs font-mono-data ${budgetPct > 85 ? "text-destructive" : budgetPct > 70 ? "text-warning" : "text-success"}`}>{budgetPct}% terpakai</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Terpakai: <strong className="text-foreground font-mono-data">{formatRupiah(project.spent)}</strong></span>
-                  <span className="text-muted-foreground">Total: <strong className="text-accent font-mono-data">{formatRupiah(project.budget)}</strong></span>
+                  <span className="text-muted-foreground">Actual Cash Out: <strong className="text-foreground font-mono-data">{formatRupiah(project.spent)}</strong></span>
+                  <span className="text-muted-foreground">RAP: <strong className="text-accent font-mono-data">{formatRupiah(project.rap || project.budget)}</strong></span>
                 </div>
                 <Progress value={budgetPct} className="h-1.5 mt-2" />
               </div>
