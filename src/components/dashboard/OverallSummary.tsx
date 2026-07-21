@@ -18,8 +18,8 @@ export function OverallSummary({ projects }: { projects: DbProject[] }) {
         {[
           { label: "Total Proyek", value: totalProjects, icon: Briefcase, color: "text-primary" },
           { label: "Proyek Aktif", value: active, icon: Clock, color: "text-info" },
-          { label: "On Track", value: onTrack, icon: CheckCircle2, color: "text-success" },
-          { label: "Berisiko", value: atRisk, icon: TrendingUp, color: "text-warning" },
+          { label: "Execution", value: onTrack, icon: CheckCircle2, color: "text-success" },
+          { label: "On Hold / Berisiko", value: atRisk, icon: TrendingUp, color: "text-warning" },
         ].map((s) => (
           <div key={s.label} className="flex items-center gap-2">
             <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
