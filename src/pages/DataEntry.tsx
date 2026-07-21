@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Download, Share2,
   Layers, Camera, AlertTriangle, Package, Target,
@@ -25,10 +26,14 @@ const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
 const DataEntry = () => {
   const { data: allProjects = [] } = useProjects();
+  const { isTeam, isAdmin, assignedProjectIds } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
 
-  const projects = allProjects;
+  // Project Admin (team) can only edit assigned projects; Admin sees all.
+  const projects = isTeam
+    ? allProjects.filter(p => assignedProjectIds.includes(p.id))
+    : allProjects;
 
   // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
   const tabs = [

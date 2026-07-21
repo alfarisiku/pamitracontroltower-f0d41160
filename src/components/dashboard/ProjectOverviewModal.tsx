@@ -4,12 +4,14 @@ import { formatRupiah } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import { X, MapPin, Calendar, User, Play, Camera, Video, Cctv, DollarSign, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { getStatusMeta } from "@/lib/supabase";
 
 type MediaTab = "weekly" | "video" | "cctv";
 
 export function ProjectOverviewModal({ project, onClose }: { project: DbProject; onClose: () => void }) {
+  const { isClient } = useAuth();
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
   const st = getStatusMeta(project.status);
@@ -97,37 +99,42 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
           </div>
 
           {/* Enterprise Data: TKDN, Margin, Budget */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">Contract Value</p>
-              <p className="text-xs font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
-            </div>
-            <div className="bg-warning/5 rounded-lg p-2.5 border border-warning/20 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">RAP</p>
-              <p className="text-xs font-bold font-mono-data text-warning">{formatRupiah(project.rap)}</p>
-            </div>
-            <div className="rounded-lg p-2.5 border border-border text-center">
-              <p className="text-[9px] text-muted-foreground uppercase">🇮🇩 TKDN</p>
-              <p className="text-xs font-bold font-mono-data text-foreground">{project.tkdn_percentage}%</p>
-            </div>
-            <div className={`rounded-lg p-2.5 border text-center ${margin >= 10 ? "bg-success/5 border-success/20" : "bg-warning/5 border-warning/20"}`}>
-              <p className="text-[9px] text-muted-foreground uppercase">Margin</p>
-              <p className={`text-xs font-bold font-mono-data ${margin >= 10 ? "text-success" : "text-warning"}`}>{margin}%</p>
-            </div>
-          </div>
+          {/* Financial block — hidden for Public role (client) */}
+          {!isClient && (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/20 text-center">
+                  <p className="text-[9px] text-muted-foreground uppercase">Contract Value</p>
+                  <p className="text-xs font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
+                </div>
+                <div className="bg-warning/5 rounded-lg p-2.5 border border-warning/20 text-center">
+                  <p className="text-[9px] text-muted-foreground uppercase">RAP</p>
+                  <p className="text-xs font-bold font-mono-data text-warning">{formatRupiah(project.rap)}</p>
+                </div>
+                <div className="rounded-lg p-2.5 border border-border text-center">
+                  <p className="text-[9px] text-muted-foreground uppercase">🇮🇩 TKDN</p>
+                  <p className="text-xs font-bold font-mono-data text-foreground">{project.tkdn_percentage}%</p>
+                </div>
+                <div className={`rounded-lg p-2.5 border text-center ${margin >= 10 ? "bg-success/5 border-success/20" : "bg-warning/5 border-warning/20"}`}>
+                  <p className="text-[9px] text-muted-foreground uppercase">Margin</p>
+                  <p className={`text-xs font-bold font-mono-data ${margin >= 10 ? "text-success" : "text-warning"}`}>{margin}%</p>
+                </div>
+              </div>
 
-          {/* Budget Bar */}
-          <div className="bg-muted/50 rounded-lg p-3 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-foreground">Anggaran Proyek</span>
-              <span className={`text-xs font-mono-data ${budgetPct > 85 ? "text-destructive" : budgetPct > 70 ? "text-warning" : "text-success"}`}>{budgetPct}% terpakai</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Terpakai: <strong className="text-foreground font-mono-data">{formatRupiah(project.spent)}</strong></span>
-              <span className="text-muted-foreground">Total: <strong className="text-accent font-mono-data">{formatRupiah(project.budget)}</strong></span>
-            </div>
-            <Progress value={budgetPct} className="h-1.5 mt-2" />
-          </div>
+              <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-foreground">Anggaran Proyek</span>
+                  <span className={`text-xs font-mono-data ${budgetPct > 85 ? "text-destructive" : budgetPct > 70 ? "text-warning" : "text-success"}`}>{budgetPct}% terpakai</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Terpakai: <strong className="text-foreground font-mono-data">{formatRupiah(project.spent)}</strong></span>
+                  <span className="text-muted-foreground">Total: <strong className="text-accent font-mono-data">{formatRupiah(project.budget)}</strong></span>
+                </div>
+                <Progress value={budgetPct} className="h-1.5 mt-2" />
+              </div>
+            </>
+          )}
+
 
           {/* Media Tabs - Weekly Photos first */}
           <div>
