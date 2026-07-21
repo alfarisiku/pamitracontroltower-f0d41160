@@ -419,6 +419,54 @@ const ProjectDetail = () => {
                 );
               })()}
 
+              {/* === Cashflow Bipolar Bar Chart (Cash In ↑ / Cash Out ↓) === */}
+              {(() => {
+                const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
+                financeEntries.forEach(fe => {
+                  const key = fe.period_label || fe.period_date;
+                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
+                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
+                  const isAct = fe.entry_kind === "actual";
+                  const amt = Number(fe.amount) || 0;
+                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
+                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
+                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
+                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
+                });
+                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
+                  label: r.label,
+                  "Plan Cash In": r.planIn,
+                  "Actual Cash In": r.actIn,
+                  "Plan Cash Out": -r.planOut,
+                  "Actual Cash Out": -r.actOut,
+                }));
+                if (bipolar.length === 0) return null;
+                return (
+                  <div className="glass-card rounded-lg p-4 shadow-card">
+                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow & Progress — Plan vs Actual
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
+                          <Bar dataKey="Plan Cash In" fill="hsl(145, 40%, 65%)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(145, 65%, 40%)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(15, 40%, 70%)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(0, 70%, 50%)" radius={[0,0,3,3]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* === Progress vs Cashflow Summary per Periode === */}
               {(() => {
                 // Unified period set = ALL financeEntries (same as Cashflow & Progress card)
