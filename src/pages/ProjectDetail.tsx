@@ -351,8 +351,7 @@ const ProjectDetail = () => {
             <div className="space-y-4">
 
 
-              {/* === Cost Breakdown by Category moved to top === */}
-              {/* placeholder — moved above */}
+              {/* (Cost Breakdown is rendered first) */}
 
               {/* === Cost Breakdown by Category === */}
               {(() => {
