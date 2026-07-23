@@ -320,15 +320,36 @@ export function ExcelSyncPanel({ project }: { project: DbProject }) {
         status: asStr(r.status, "pending"), weight: asNum(r.weight), sort_order: asNum(r.sort_order),
       }));
 
+      // Human-readable parsers for weekly report list columns
+      const splitLines = (v: any): string[] => asStr(v).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const parseAchievements = (v: any) => splitLines(v).map(line => {
+        const m = line.match(/^\[([^\]]+)\]\s*(.*)$/);
+        return m ? { category: m[1].trim().toLowerCase(), description: m[2].trim() } : { category: "construction", description: line };
+      });
+      const parseOutstanding = (v: any) => splitLines(v).map(line => {
+        const [item, ...rest] = line.split(/\s+—\s+|\s+-\s+/);
+        return { item: (item || "").trim(), note: rest.join(" — ").trim() || undefined };
+      });
+      const parseTargets = (v: any) => splitLines(v).map(line => {
+        const m = line.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+        return m ? { target: m[1].trim(), owner: m[2].trim() } : { target: line };
+      });
+      const parseEscalations = (v: any) => splitLines(v).map(line => {
+        const [issue, ...rest] = line.split(/\s+→\s+|\s+->\s+/);
+        return { issue: (issue || "").trim(), decision_needed: rest.join(" → ").trim() || undefined };
+      });
+
       await syncSimple("weekly_progress_reports", "WeeklyReports", wRes.data || [], (r) => ({
         week_start_date: asDate(r.week_start_date) || new Date().toISOString().slice(0, 10),
         week_end_date: asDate(r.week_end_date) || new Date().toISOString().slice(0, 10),
         summary: asStr(r.summary),
-        achievements: asJson(r.achievements_json),
-        outstanding_items: asJson(r.outstanding_json),
-        next_week_targets: asJson(r.targets_json),
-        escalations: asJson(r.escalations_json),
+        // Accept both new human-friendly columns and legacy _json columns for backward compat
+        achievements: r.achievements != null && r.achievements !== "" ? parseAchievements(r.achievements) : asJson(r.achievements_json),
+        outstanding_items: r.outstanding != null && r.outstanding !== "" ? parseOutstanding(r.outstanding) : asJson(r.outstanding_json),
+        next_week_targets: r.next_week_targets != null && r.next_week_targets !== "" ? parseTargets(r.next_week_targets) : asJson(r.targets_json),
+        escalations: r.escalations != null && r.escalations !== "" ? parseEscalations(r.escalations) : asJson(r.escalations_json),
       }));
+
 
       await logActivity(supabase, "excel_sync", "import", `Imported project data from ${file.name}`, projectId);
       queryClient.invalidateQueries();
