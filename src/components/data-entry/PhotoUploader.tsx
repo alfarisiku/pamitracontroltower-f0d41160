@@ -137,18 +137,30 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-3 text-[11px]">
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className={inputCls + " w-auto"}>
-          <option value="all">All Categories</option>
-          {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-        <select value={filterWeek} onChange={e => setFilterWeek(e.target.value)} className={inputCls + " w-auto"}>
-          <option value="all">All Weeks</option>
-          {weekOptions.map(w => <option key={w} value={w}>{w}</option>)}
-        </select>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title/description/location..." className={inputCls + " flex-1 min-w-[160px]"} />
-        <span className="text-[10px] text-muted-foreground">{filtered.length}/{photos.length} foto</span>
+      <div className="bg-muted/20 border border-border/50 rounded-lg p-3 mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground font-semibold"><Camera className="h-3 w-3" /> Filter & Search</div>
+          <span className="text-[10px] text-muted-foreground">{filtered.length}/{photos.length} foto</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div><label className={labelCls}>Category</label>
+            <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className={inputCls}>
+              <option value="all">All Categories</option>
+              {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+          <div><label className={labelCls}>Week</label>
+            <select value={filterWeek} onChange={e => setFilterWeek(e.target.value)} className={inputCls}>
+              <option value="all">All Weeks</option>
+              {weekOptions.map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
+          </div>
+          <div><label className={labelCls}>Search</label>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Title / description / location..." className={inputCls} />
+          </div>
+        </div>
       </div>
+
 
       {Object.keys(grouped).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada foto yang cocok filter.</p>}
 
