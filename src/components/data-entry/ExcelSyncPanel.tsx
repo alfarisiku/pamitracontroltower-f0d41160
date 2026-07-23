@@ -262,7 +262,7 @@ export function ExcelSyncPanel({ project }: { project: DbProject }) {
         }
         const toDelete = existing.map((x: any) => x.id).filter(id => !idsSheet.has(id));
         for (const u of updates) { const { error } = await supabase.from(table as any).update(u).eq("id", u.id); if (error) throw new Error(`${sheet} update: ${error.message}`); }
-        if (inserts.length) { const { error } = await supabase.from(table as any).insert(inserts.map(x => ({ project_id: projectId, ...x }))); if (error) throw new Error(`${sheet} insert: ${error.message}`); }
+        if (inserts.length) { const { error } = await supabase.from(table as any).insert(inserts); if (error) throw new Error(`${sheet} insert: ${error.message}`); }
         if (toDelete.length) { await supabase.from(table as any).delete().in("id", toDelete); }
         addLog(`${sheet}: +${inserts.length} ~${updates.length} -${toDelete.length}`);
       };
