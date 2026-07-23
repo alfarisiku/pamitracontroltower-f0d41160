@@ -191,7 +191,7 @@ const ProjectDetail = () => {
           <div className="glass-card rounded-lg overflow-hidden shadow-card mb-5">
             <div className="relative h-32 sm:h-44 overflow-hidden">
               {project.image_url ? (
-                <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(project.image_url)} alt={project.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/10 to-accent/10" />
               )}
