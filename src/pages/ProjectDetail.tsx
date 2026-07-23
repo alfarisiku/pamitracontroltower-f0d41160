@@ -410,8 +410,8 @@ const ProjectDetail = () => {
                             <YAxis type="category" dataKey="label" tick={{ fill: "hsl(215, 15%, 30%)", fontSize: 10 }} width={140} axisLine={false} tickLine={false} />
                             <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(v)} cursor={{ fill: "hsl(215, 30%, 95%)" }} />
                             <Legend iconSize={10} wrapperStyle={{ fontSize: "11px", paddingTop: 4 }} />
-                            <Bar dataKey="rap" fill="hsl(215, 80%, 55%)" name="RAP" radius={[0,4,4,0]} barSize={12} />
-                            <Bar dataKey="actual" fill="hsl(0, 70%, 55%)" name="Actual" radius={[0,4,4,0]} barSize={12} />
+                            <Bar dataKey="rap" fill="hsl(var(--primary))" name="RAP" radius={[0,4,4,0]} barSize={12} />
+                            <Bar dataKey="actual" fill="hsl(var(--accent))" name="Actual" radius={[0,4,4,0]} barSize={12} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
