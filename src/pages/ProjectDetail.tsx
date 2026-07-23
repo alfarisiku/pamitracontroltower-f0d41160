@@ -519,7 +519,7 @@ const ProjectDetail = () => {
 
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
+                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
                     <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
