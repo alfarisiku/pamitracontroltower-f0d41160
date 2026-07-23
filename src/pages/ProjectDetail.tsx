@@ -535,7 +535,9 @@ const ProjectDetail = () => {
                   const d = new Date(p.order);
                   const ym = d.getFullYear() * 12 + d.getMonth();
                   const planPct = interpAt(ym, "plan") ?? 0;
-                  const actPct = (ym <= Math.max(todayYm, lastActualYm)) ? interpAt(ym, "actual") : null;
+                  // Cut-off = periode terakhir yang punya actual data (bukan calendar today)
+                  const cutoffYm = lastActualYm === -Infinity ? todayYm : lastActualYm;
+                  const actPct = (ym <= cutoffYm) ? interpAt(ym, "actual") : null;
                   return {
                     label: p.label,
                     planPct: Number(planPct),
