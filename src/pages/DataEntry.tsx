@@ -38,17 +38,18 @@ const DataEntry = () => {
 
   // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
   const allTabs = [
-    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,      adminOnly: false },
-    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,    adminOnly: false },
-    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,  adminOnly: false },
-    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,        adminOnly: false },
-    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,       adminOnly: false },
-    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle, adminOnly: false },
-    { key: "milestones" as const,    label: "Milestones",          icon: Target,        adminOnly: false },
-    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,      adminOnly: false },
-    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,        adminOnly: false },
-    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,  adminOnly: true },
-    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList, adminOnly: true },
+    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,        adminOnly: false },
+    { key: "excel" as const,         label: "Excel Import/Export", icon: FileSpreadsheet, adminOnly: false },
+    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false },
+    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,    adminOnly: false },
+    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false },
+    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,         adminOnly: false },
+    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle,   adminOnly: false },
+    { key: "milestones" as const,    label: "Milestones",          icon: Target,          adminOnly: false },
+    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false },
+    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,          adminOnly: false },
+    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,    adminOnly: true },
+    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList,   adminOnly: true },
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
