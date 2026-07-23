@@ -247,10 +247,11 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.direction === "in" ? "bg-success/15 text-success border-success/30" : "bg-destructive/15 text-destructive border-destructive/30"}`}>{e.direction === "in" ? "IN" : "OUT"}</span></td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.entry_kind === "rap" ? "bg-warning/15 text-warning border-warning/30" : "bg-primary/15 text-primary border-primary/30"}`}>{e.entry_kind === "rap" ? "PLAN" : "ACTUAL"}</span></td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground">{e.category ? (FINANCE_CATEGORIES.find(c => c.value === e.category)?.label || e.category) : "—"}</td>
-                    <td className={`py-1.5 px-2 text-right font-mono-data font-medium ${e.direction === "in" ? "text-success" : "text-destructive"}`}>{formatRupiah(Number(e.amount))}</td>
+                    <td className={`py-1.5 px-2 text-right font-mono-data font-medium ${e.direction === "in" ? "text-success" : "text-destructive"}`}>{formatIDR(jutaToRupiah(Number(e.amount)))}</td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground truncate max-w-[240px]">{e.description || "—"}</td>
-                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); setEdit({...e}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); setEdit({...e, amount: jutaToRupiah(Number(e.amount))}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
                   </tr>
+
                 ))}
               </tbody>
             </table>
