@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2, Wallet, Filter, Search, Edit3, X, Download } from "lucide-react";
-import { supabase, formatRupiah, logActivity, FINANCE_CATEGORIES, DbFinanceEntry, FinanceCategory, FinanceDirection } from "@/lib/supabase";
+import { supabase, formatRupiah, formatIDR, jutaToRupiah, rupiahToJuta, logActivity, FINANCE_CATEGORIES, DbFinanceEntry, FinanceCategory, FinanceDirection } from "@/lib/supabase";
 import { useFinanceEntries } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
 
