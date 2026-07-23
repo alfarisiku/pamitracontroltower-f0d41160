@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
-import { supabase, formatRupiah, FINANCE_CATEGORIES } from "@/lib/supabase";
+import { supabase, formatRupiah, FINANCE_CATEGORIES, resolveImageUrl } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
@@ -191,7 +191,7 @@ const ProjectDetail = () => {
           <div className="glass-card rounded-lg overflow-hidden shadow-card mb-5">
             <div className="relative h-32 sm:h-44 overflow-hidden">
               {project.image_url ? (
-                <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(project.image_url)} alt={project.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/10 to-accent/10" />
               )}
@@ -371,7 +371,7 @@ const ProjectDetail = () => {
                 const totalAct = rows.reduce((s, r) => s + r.actual, 0);
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-accent" /> Cost Breakdown per Kategori</h3>
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Cost Breakdown per Kategori</h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
@@ -410,8 +410,8 @@ const ProjectDetail = () => {
                             <YAxis type="category" dataKey="label" tick={{ fill: "hsl(215, 15%, 30%)", fontSize: 10 }} width={140} axisLine={false} tickLine={false} />
                             <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(v)} cursor={{ fill: "hsl(215, 30%, 95%)" }} />
                             <Legend iconSize={10} wrapperStyle={{ fontSize: "11px", paddingTop: 4 }} />
-                            <Bar dataKey="rap" fill="hsl(215, 80%, 55%)" name="RAP" radius={[0,4,4,0]} barSize={12} />
-                            <Bar dataKey="actual" fill="hsl(0, 70%, 55%)" name="Actual" radius={[0,4,4,0]} barSize={12} />
+                            <Bar dataKey="rap" fill="hsl(var(--primary))" name="RAP" radius={[0,4,4,0]} barSize={12} />
+                            <Bar dataKey="actual" fill="hsl(var(--accent))" name="Actual" radius={[0,4,4,0]} barSize={12} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -444,8 +444,8 @@ const ProjectDetail = () => {
                 if (bipolar.length === 0) return null;
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow & Progress — Plan vs Actual
+                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
                     </h3>
                     <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
                     <div className="h-[300px]">
@@ -457,10 +457,10 @@ const ProjectDetail = () => {
                           <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
-                          <Bar dataKey="Plan Cash In" fill="hsl(145, 40%, 65%)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Actual Cash In" fill="hsl(145, 65%, 40%)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(15, 40%, 70%)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(0, 70%, 50%)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--destructive))" radius={[0,0,3,3]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -519,7 +519,7 @@ const ProjectDetail = () => {
 
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
+                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
                     <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
@@ -530,12 +530,12 @@ const ProjectDetail = () => {
                           <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
                           <RTooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => name.includes("%") ? `${Number(v).toFixed(1)}%` : formatRupiah(v)} />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(145, 40%, 75%)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(145, 65%, 45%)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(15, 40%, 78%)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(0, 70%, 55%)" radius={[3,3,0,0]} />
-                          <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                          <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(30, 85%, 50%)" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                          <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--destructive))" radius={[3,3,0,0]} />
+                          <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                          <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
@@ -575,32 +575,34 @@ const ProjectDetail = () => {
 
           {/* S-Curve Tab */}
           {activeTab === "scurve" && (
-            <div className="glass-card rounded-lg shadow-card p-4">
-              <h3 className="text-sm font-semibold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
-              <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor.</p>
-              <SCurveChart
-                startDate={project.start_date}
-                endDate={project.end_date}
-                progress={project.progress}
-                milestones={milestones}
-                customData={scurveData.length > 0 ? scurveData : undefined}
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
-                  <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
-                    {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
-                  </p>
-                </div>
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress</p>
-                  <p className={`text-lg font-bold font-mono-data ${project.progress - elapsedPct >= 0 ? "text-success" : "text-destructive"}`}>
-                    {project.progress - elapsedPct > 0 ? "+" : ""}{project.progress - elapsedPct}%
-                  </p>
+            <div className="space-y-4">
+              <div className="glass-card rounded-lg shadow-card p-4">
+                <h3 className="text-sm font-bold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
+                <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor.</p>
+                <SCurveChart
+                  startDate={project.start_date}
+                  endDate={project.end_date}
+                  progress={project.progress}
+                  milestones={milestones}
+                  customData={scurveData.length > 0 ? scurveData : undefined}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
+                    <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
+                      {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress</p>
+                    <p className={`text-lg font-bold font-mono-data ${project.progress - elapsedPct >= 0 ? "text-success" : "text-destructive"}`}>
+                      {project.progress - elapsedPct > 0 ? "+" : ""}{project.progress - elapsedPct}%
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Last 3 Reporting Periods Summary */}
+              {/* Last 3 Reporting Periods Summary — dedicated card */}
               {(() => {
                 const today = new Date();
                 const rows = scurveData
@@ -620,36 +622,44 @@ const ProjectDetail = () => {
                   .reverse();
                 if (list.length === 0) return null;
                 return (
-                  <div className="mt-4 overflow-x-auto">
-                    <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">Ringkasan Periode Pelaporan (Saat Ini & 3 Sebelumnya)</p>
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="bg-muted/50 border-b border-border">
-                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Planned</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {list.map(r => {
-                          const dev = (r.actual ?? 0) - (r.plan ?? 0);
-                          return (
-                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
-                              <td className="py-2 px-2 text-foreground">{r.label}</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-foreground">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
-                              <td className={`py-2 px-2 text-right font-mono-data ${dev >= 0 ? "text-success" : "text-destructive"}`}>{dev > 0 ? "+" : ""}{dev.toFixed(1)}%</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <div className="glass-card rounded-lg shadow-card p-4">
+                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Ringkasan Periode Pelaporan</h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Periode saat ini dan 3 periode sebelumnya — Planned vs Actual Progress dan deviasinya.</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted/50 border-b border-border">
+                            <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {list.map((r, i) => {
+                            const dev = (r.actual ?? 0) - (r.plan ?? 0);
+                            const isCurrent = i === list.length - 1;
+                            return (
+                              <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
+                                <td className="py-2 px-2 text-foreground font-medium">
+                                  {r.label}
+                                  {isCurrent && <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Saat ini</span>}
+                                </td>
+                                <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
+                                <td className="py-2 px-2 text-right font-mono-data text-foreground font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
+                                <td className={`py-2 px-2 text-right font-mono-data font-semibold ${dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 );
               })()}
             </div>
           )}
+
 
 
           {/* WBS Tab */}

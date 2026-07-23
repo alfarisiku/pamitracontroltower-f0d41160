@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DbProject } from "@/lib/supabase";
+import { DbProject, resolveImageUrl } from "@/lib/supabase";
 import { formatRupiah } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import { X, MapPin, Calendar, User, Play, Camera, Video, Cctv, DollarSign, Target } from "lucide-react";
@@ -40,7 +40,7 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
           {weeklyPhotos[0]?.photo_url ? (
             <img src={weeklyPhotos[0].photo_url} alt={`${project.name} - ${weeklyPhotos[0].week_label || 'Latest'}`} className="w-full h-full object-cover" />
           ) : project.image_url ? (
-            <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+            <img src={resolveImageUrl(project.image_url)} alt={project.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
           )}

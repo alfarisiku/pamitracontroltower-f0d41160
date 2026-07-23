@@ -1,5 +1,26 @@
 export { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Resolve an image URL, converting Google Drive share links into
+ * direct-view URLs that can be rendered inside <img> tags.
+ * Accepts formats:
+ *   https://drive.google.com/file/d/{ID}/view
+ *   https://drive.google.com/open?id={ID}
+ *   https://drive.google.com/uc?id={ID}
+ * Falls back to returning the input unchanged.
+ */
+export function resolveImageUrl(url?: string | null): string {
+  if (!url) return "";
+  const u = url.trim();
+  if (u.includes("drive.google.com")) {
+    const m =
+      u.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+      u.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m) return `https://lh3.googleusercontent.com/d/${m[1]}=w1600`;
+  }
+  return u;
+}
+
 export type DbProject = {
   id: string;
   project_code: string;

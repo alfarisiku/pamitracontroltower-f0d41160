@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
-import { formatRupiah } from "@/lib/supabase";
+import { formatRupiah, resolveImageUrl } from "@/lib/supabase";
 import { toLatLng, STATUS_COLORS as SC } from "@/lib/mapUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Activity, CheckCircle2, TrendingUp, Briefcase, DollarSign, MapPin, ChevronLeft, ChevronRight, AlertTriangle, Globe } from "lucide-react";
@@ -207,7 +207,7 @@ const WarRoom = () => {
             {featured && (
               <div className="flex-1 rounded-xl border border-border overflow-hidden relative bg-card">
                 {featured.image_url ? (
-                  <img src={featured.image_url} alt={featured.name} className="w-full h-full object-cover absolute inset-0" />
+                  <img src={resolveImageUrl(featured.image_url)} alt={featured.name} className="w-full h-full object-cover absolute inset-0" />
                 ) : (
                   <div className="w-full h-full absolute inset-0 bg-muted" />
                 )}
