@@ -488,24 +488,54 @@ const ProjectDetail = () => {
                 const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
                 if (periodList.length === 0) return null;
 
-                // Lookup progress from S-Curve; if missing, interpolate linearly by date
-                const scurveByLabel: Record<string, { plan: number | null; actual: number | null }> = {};
+                // Lookup progress from S-Curve using year-month key (labels differ: "M01/25" vs "Jan 2025").
+                // If exact ym missing, interpolate/extrapolate linearly between S-Curve neighbours.
+                const parseScurveYm = (label: string): number | null => {
+                  const m = label.match(/M(\d{1,2})\/(\d{2,4})/i);
+                  if (!m) return null;
+                  const mo = parseInt(m[1], 10);
+                  let yr = parseInt(m[2], 10);
+                  if (yr < 100) yr += 2000;
+                  return yr * 12 + (mo - 1);
+                };
+                const scurvePoints: { ym: number; plan: number | null; actual: number | null }[] = [];
+                const byYm: Record<number, { plan: number | null; actual: number | null }> = {};
                 scurveData.forEach(s => {
-                  const k = s.period_label;
-                  if (!scurveByLabel[k]) scurveByLabel[k] = { plan: null, actual: null };
-                  if (s.planned_progress != null) scurveByLabel[k].plan = Number(s.planned_progress);
-                  if (s.actual_progress != null) scurveByLabel[k].actual = Number(s.actual_progress);
+                  const ym = parseScurveYm(s.period_label);
+                  if (ym == null) return;
+                  if (!byYm[ym]) byYm[ym] = { plan: null, actual: null };
+                  if (s.planned_progress != null) byYm[ym].plan = Number(s.planned_progress);
+                  if (s.actual_progress != null) byYm[ym].actual = Number(s.actual_progress);
                 });
-                const startT = new Date(project.start_date).getTime();
-                const endT = new Date(project.end_date).getTime();
-                const todayT = Date.now();
-                const interpPlan = (t: number) => endT > startT ? Math.max(0, Math.min(100, Math.round(((t - startT) / (endT - startT)) * 100))) : 0;
+                Object.keys(byYm).map(k => parseInt(k, 10)).sort((a, b) => a - b).forEach(ym => scurvePoints.push({ ym, ...byYm[ym] }));
+
+                const interpAt = (ym: number, field: "plan" | "actual"): number | null => {
+                  if (scurvePoints.length === 0) return null;
+                  const pts = scurvePoints.filter(p => p[field] != null) as { ym: number; plan: number; actual: number }[];
+                  if (pts.length === 0) return null;
+                  if (ym <= pts[0].ym) return pts[0][field];
+                  if (ym >= pts[pts.length - 1].ym) return pts[pts.length - 1][field];
+                  for (let i = 0; i < pts.length - 1; i++) {
+                    const a = pts[i], b = pts[i + 1];
+                    if (ym >= a.ym && ym <= b.ym) {
+                      const t = (ym - a.ym) / (b.ym - a.ym);
+                      return a[field] + (b[field] - a[field]) * t;
+                    }
+                  }
+                  return null;
+                };
+
+                const todayYm = (() => { const d = new Date(); return d.getFullYear() * 12 + d.getMonth(); })();
+                const lastActualYm = (() => {
+                  const withAct = scurvePoints.filter(p => p.actual != null);
+                  return withAct.length ? withAct[withAct.length - 1].ym : -Infinity;
+                })();
 
                 const rows = periodList.map(p => {
-                  const sc = scurveByLabel[p.label];
-                  const planPct = sc?.plan ?? interpPlan(p.order);
-                  const isPast = p.order <= todayT;
-                  const actPct = sc?.actual != null ? sc.actual : (isPast ? project.progress : null);
+                  const d = new Date(p.order);
+                  const ym = d.getFullYear() * 12 + d.getMonth();
+                  const planPct = interpAt(ym, "plan") ?? 0;
+                  const actPct = (ym <= Math.max(todayYm, lastActualYm)) ? interpAt(ym, "actual") : null;
                   return {
                     label: p.label,
                     planPct: Number(planPct),
