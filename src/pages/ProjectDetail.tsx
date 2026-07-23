@@ -606,13 +606,13 @@ const ProjectDetail = () => {
               {(() => {
                 const today = new Date();
                 const rows = scurveData
-                  .filter(s => (s.curve_type === "planned" || s.curve_type === "actual" || s.curve_type === "monthly" || s.curve_type === "weekly"))
+                  .filter(s => (s.curve_type === "planned" || s.curve_type === "actual" || s.curve_type === "monthly" || s.curve_type === "weekly" || s.curve_type === "baseline"))
                   .reduce((acc: Record<string, { label: string; order: number; date: number; plan: number | null; actual: number | null }>, s) => {
                     const key = s.period_label;
                     const d = (s as any).period_date ? new Date((s as any).period_date).getTime() : s.period_order;
                     if (!acc[key]) acc[key] = { label: key, order: s.period_order, date: d, plan: null, actual: null };
-                    if (s.curve_type === "planned" || s.curve_type === "monthly") acc[key].plan = Number(s.planned_progress ?? acc[key].plan ?? 0);
-                    if (s.curve_type === "actual" || s.curve_type === "monthly") acc[key].actual = s.actual_progress != null ? Number(s.actual_progress) : acc[key].actual;
+                    if (s.curve_type === "planned" || s.curve_type === "monthly" || s.curve_type === "baseline") acc[key].plan = Number(s.planned_progress ?? acc[key].plan ?? 0);
+                    if (s.curve_type === "actual" || s.curve_type === "monthly" || s.curve_type === "baseline") acc[key].actual = s.actual_progress != null ? Number(s.actual_progress) : acc[key].actual;
                     return acc;
                   }, {});
                 const list = Object.values(rows)
