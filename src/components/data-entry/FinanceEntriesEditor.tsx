@@ -177,10 +177,13 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                 </div>
               )}
               <div><label className={labelCls}>Transaction Date*</label><input type="date" value={form.period_date} onChange={e => setForm({...form, period_date: e.target.value})} className={inputCls} /></div>
-              <div><label className={labelCls}>Amount (Rp Juta)*</label><input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} /></div>
+              <div><label className={labelCls}>Amount (Rp — utuh)*</label>
+                <input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 150000000" />
+                {form.amount && <p className="text-[9px] text-muted-foreground mt-0.5">= {formatIDR(parseFloat(form.amount) || 0)}</p>}
+              </div>
               <div className="sm:col-span-3"><label className={labelCls}>Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} className={inputCls} placeholder="Termin dari client / Bayar vendor XYZ / …" /></div>
             </div>
-            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Weekly & Monthly bukan input — sistem otomatis mengagregasi berdasarkan Transaction Date.</p>
+            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Input dalam Rupiah utuh (mis. 150.000.000). Ditampilkan singkat (Jt/M/T) di dashboard proyek.</p>
             <div className="flex gap-2 mt-2">
               <button onClick={handleAdd} disabled={saving || !form.amount} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50"><Save className="h-3 w-3 inline mr-1" />{saving ? "..." : "Save"}</button>
               <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 bg-muted rounded text-xs border border-border">Cancel</button>
@@ -188,18 +191,30 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 mb-3 text-[11px]">
-          <Filter className="h-3 w-3 text-muted-foreground" />
-          <select value={fDir} onChange={e => setFDir(e.target.value as any)} className={inputCls + " w-auto"}><option value="all">All Type</option><option value="in">Cash In</option><option value="out">Cash Out</option></select>
-          <select value={fKind} onChange={e => setFKind(e.target.value as any)} className={inputCls + " w-auto"}><option value="all">Plan+Actual</option><option value="rap">Planning</option><option value="actual">Actual</option></select>
-          <select value={fCat} onChange={e => setFCat(e.target.value as any)} className={inputCls + " w-auto"}>
-            <option value="all">All Category</option>
-            {FINANCE_CATEGORIES.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className={inputCls + " w-auto"} title="From" />
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className={inputCls + " w-auto"} title="To" />
-          <div className="flex items-center gap-1 flex-1 min-w-[160px]"><Search className="h-3 w-3 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search description..." className={inputCls} /></div>
+        {/* Filters — reorganized: labeled grid */}
+        <div className="bg-muted/20 border border-border/50 rounded-lg p-3 mb-3">
+          <div className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground font-semibold mb-2"><Filter className="h-3 w-3" /> Filter & Search</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div><label className={labelCls}>Type</label>
+              <select value={fDir} onChange={e => setFDir(e.target.value as any)} className={inputCls}><option value="all">All</option><option value="in">Cash In</option><option value="out">Cash Out</option></select>
+            </div>
+            <div><label className={labelCls}>Plan / Actual</label>
+              <select value={fKind} onChange={e => setFKind(e.target.value as any)} className={inputCls}><option value="all">Plan + Actual</option><option value="rap">Planning</option><option value="actual">Actual</option></select>
+            </div>
+            <div><label className={labelCls}>Category</label>
+              <select value={fCat} onChange={e => setFCat(e.target.value as any)} className={inputCls}>
+                <option value="all">All Category</option>
+                {FINANCE_CATEGORIES.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div><label className={labelCls}>Date From</label><input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className={inputCls} /></div>
+            <div><label className={labelCls}>Date To</label><input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className={inputCls} /></div>
+            <div><label className={labelCls}>Search</label>
+              <div className="flex items-center gap-1"><Search className="h-3 w-3 text-muted-foreground shrink-0" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Description..." className={inputCls} /></div>
+            </div>
+          </div>
         </div>
+
 
         {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">Belum ada transaksi yang cocok.</p>
