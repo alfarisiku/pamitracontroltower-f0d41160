@@ -51,11 +51,11 @@ const DataEntry = () => {
     { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList,   adminOnly: true },
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
-
-
+  const handleShare = async () => {
     if (navigator.share) await navigator.share({ title: "Data Entry Center", url: window.location.href });
     else { await navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }
   };
+
 
   return (
     <div className="flex min-h-screen bg-background">
