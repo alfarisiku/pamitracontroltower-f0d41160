@@ -575,32 +575,34 @@ const ProjectDetail = () => {
 
           {/* S-Curve Tab */}
           {activeTab === "scurve" && (
-            <div className="glass-card rounded-lg shadow-card p-4">
-              <h3 className="text-sm font-semibold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
-              <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor.</p>
-              <SCurveChart
-                startDate={project.start_date}
-                endDate={project.end_date}
-                progress={project.progress}
-                milestones={milestones}
-                customData={scurveData.length > 0 ? scurveData : undefined}
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
-                  <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
-                    {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
-                  </p>
-                </div>
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress</p>
-                  <p className={`text-lg font-bold font-mono-data ${project.progress - elapsedPct >= 0 ? "text-success" : "text-destructive"}`}>
-                    {project.progress - elapsedPct > 0 ? "+" : ""}{project.progress - elapsedPct}%
-                  </p>
+            <div className="space-y-4">
+              <div className="glass-card rounded-lg shadow-card p-4">
+                <h3 className="text-sm font-bold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
+                <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor.</p>
+                <SCurveChart
+                  startDate={project.start_date}
+                  endDate={project.end_date}
+                  progress={project.progress}
+                  milestones={milestones}
+                  customData={scurveData.length > 0 ? scurveData : undefined}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
+                    <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
+                      {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress</p>
+                    <p className={`text-lg font-bold font-mono-data ${project.progress - elapsedPct >= 0 ? "text-success" : "text-destructive"}`}>
+                      {project.progress - elapsedPct > 0 ? "+" : ""}{project.progress - elapsedPct}%
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Last 3 Reporting Periods Summary */}
+              {/* Last 3 Reporting Periods Summary — dedicated card */}
               {(() => {
                 const today = new Date();
                 const rows = scurveData
@@ -620,36 +622,44 @@ const ProjectDetail = () => {
                   .reverse();
                 if (list.length === 0) return null;
                 return (
-                  <div className="mt-4 overflow-x-auto">
-                    <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">Ringkasan Periode Pelaporan (Saat Ini & 3 Sebelumnya)</p>
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="bg-muted/50 border-b border-border">
-                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Planned</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {list.map(r => {
-                          const dev = (r.actual ?? 0) - (r.plan ?? 0);
-                          return (
-                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
-                              <td className="py-2 px-2 text-foreground">{r.label}</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-foreground">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
-                              <td className={`py-2 px-2 text-right font-mono-data ${dev >= 0 ? "text-success" : "text-destructive"}`}>{dev > 0 ? "+" : ""}{dev.toFixed(1)}%</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <div className="glass-card rounded-lg shadow-card p-4">
+                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Ringkasan Periode Pelaporan</h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Periode saat ini dan 3 periode sebelumnya — Planned vs Actual Progress dan deviasinya.</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted/50 border-b border-border">
+                            <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {list.map((r, i) => {
+                            const dev = (r.actual ?? 0) - (r.plan ?? 0);
+                            const isCurrent = i === list.length - 1;
+                            return (
+                              <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
+                                <td className="py-2 px-2 text-foreground font-medium">
+                                  {r.label}
+                                  {isCurrent && <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Saat ini</span>}
+                                </td>
+                                <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
+                                <td className="py-2 px-2 text-right font-mono-data text-foreground font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
+                                <td className={`py-2 px-2 text-right font-mono-data font-semibold ${dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 );
               })()}
             </div>
           )}
+
 
 
           {/* WBS Tab */}
