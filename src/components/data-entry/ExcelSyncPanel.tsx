@@ -153,11 +153,12 @@ export function ExcelSyncPanel({ project }: { project: DbProject }) {
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((weekly.data || []).map((w: any) => ({
         id: w.id, week_start_date: w.week_start_date, week_end_date: w.week_end_date,
         summary: w.summary,
-        achievements_json: JSON.stringify(w.achievements || []),
-        outstanding_json: JSON.stringify(w.outstanding_items || []),
-        targets_json: JSON.stringify(w.next_week_targets || []),
-        escalations_json: JSON.stringify(w.escalations || []),
+        achievements: (w.achievements || []).map((a: any) => `[${a.category || 'construction'}] ${a.description || ''}`).join("\n"),
+        outstanding: (w.outstanding_items || []).map((o: any) => `${o.item || ''}${o.note ? ` — ${o.note}` : ''}`).join("\n"),
+        next_week_targets: (w.next_week_targets || []).map((t: any) => `${t.target || ''}${t.owner ? ` (${t.owner})` : ''}`).join("\n"),
+        escalations: (w.escalations || []).map((es: any) => `${es.issue || ''}${es.decision_needed ? ` → ${es.decision_needed}` : ''}`).join("\n"),
       }))), "WeeklyReports");
+
 
       const fname = `${project.project_code}_${project.name.replace(/[^\w]+/g, "_")}.xlsx`;
       XLSX.writeFile(wb, fname);
