@@ -5,7 +5,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Download, Share2,
-  Layers, Camera, AlertTriangle, Package, Target,
+  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet,
 } from "lucide-react";
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
 import { ProjectCrudTab } from "@/components/data-entry/ProjectCrudTab";
@@ -18,8 +18,9 @@ import { WeeklyReportEditor } from "@/components/data-entry/WeeklyReportEditor";
 import { RiskResolvePanel } from "@/components/data-entry/RiskResolvePanel";
 import { ProcurementPanel } from "@/components/data-entry/ProcurementPanel";
 import { MilestonesEditor } from "@/components/data-entry/MilestonesEditor";
+import { ExcelSyncPanel } from "@/components/data-entry/ExcelSyncPanel";
 
-type ActiveTab = "regular" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
+type ActiveTab = "regular" | "excel" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
@@ -37,17 +38,18 @@ const DataEntry = () => {
 
   // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
   const allTabs = [
-    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,      adminOnly: false },
-    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,    adminOnly: false },
-    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,  adminOnly: false },
-    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,        adminOnly: false },
-    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,       adminOnly: false },
-    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle, adminOnly: false },
-    { key: "milestones" as const,    label: "Milestones",          icon: Target,        adminOnly: false },
-    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,      adminOnly: false },
-    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,        adminOnly: false },
-    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,  adminOnly: true },
-    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList, adminOnly: true },
+    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,        adminOnly: false },
+    { key: "excel" as const,         label: "Excel Import/Export", icon: FileSpreadsheet, adminOnly: false },
+    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false },
+    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,    adminOnly: false },
+    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false },
+    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,         adminOnly: false },
+    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle,   adminOnly: false },
+    { key: "milestones" as const,    label: "Milestones",          icon: Target,          adminOnly: false },
+    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false },
+    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,          adminOnly: false },
+    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,    adminOnly: true },
+    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList,   adminOnly: true },
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
@@ -102,6 +104,10 @@ const DataEntry = () => {
           )}
 
           {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} />}
+          {activeTab === "excel" && updateProjectId && (() => {
+            const p = projects.find(pr => pr.id === updateProjectId);
+            return p ? <ExcelSyncPanel project={p} /> : null;
+          })()}
           {activeTab === "wbs" && updateProjectId && <WBSCrudPanel projectId={updateProjectId} />}
           {activeTab === "milestones" && updateProjectId && <MilestonesEditor projectId={updateProjectId} />}
           {activeTab === "risk" && updateProjectId && <RiskResolvePanel projectId={updateProjectId} />}
