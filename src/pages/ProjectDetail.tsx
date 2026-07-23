@@ -606,7 +606,28 @@ const ProjectDetail = () => {
           )}
 
           {/* S-Curve Tab */}
-          {activeTab === "scurve" && (
+          {activeTab === "scurve" && (() => {
+            // Compute the "last actual" reporting period (Actual filled terakhir)
+            const actualRows = scurveData
+              .filter(s => s.actual_progress != null)
+              .map(s => ({
+                ...s,
+                _t: (s as any).period_date ? new Date((s as any).period_date).getTime() : s.period_order,
+              }))
+              .sort((a, b) => b._t - a._t);
+            const lastActualRow = actualRows[0];
+            const lastPeriodLabel = lastActualRow?.period_label ?? null;
+            const lastActualVal = lastActualRow ? Number(lastActualRow.actual_progress) : null;
+            const lastPlanVal = lastPeriodLabel
+              ? (() => {
+                  const p = scurveData.find(s => s.period_label === lastPeriodLabel && s.planned_progress != null);
+                  return p ? Number(p.planned_progress) : null;
+                })()
+              : null;
+            const dev = lastActualVal != null && lastPlanVal != null ? lastActualVal - lastPlanVal : null;
+            const spi = lastActualVal != null && lastPlanVal != null && lastPlanVal > 0 ? lastActualVal / lastPlanVal : null;
+
+            return (
             <div className="space-y-4">
               <div className="glass-card rounded-lg shadow-card p-4">
                 <h3 className="text-sm font-bold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
@@ -621,34 +642,37 @@ const ProjectDetail = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                   <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
                     <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
-                    <p className={`text-lg font-bold font-mono-data ${elapsedPct > 0 ? (project.progress / elapsedPct >= 0.95 ? "text-success" : project.progress / elapsedPct >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
-                      {elapsedPct > 0 ? (project.progress / elapsedPct).toFixed(2) : "N/A"}
+                    <p className={`text-lg font-bold font-mono-data ${spi != null ? (spi >= 0.95 ? "text-success" : spi >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
+                      {spi != null ? spi.toFixed(2) : "N/A"}
                     </p>
+                    {lastPeriodLabel && <p className="text-[9px] text-muted-foreground mt-0.5">Cut-off: {lastPeriodLabel}</p>}
                   </div>
                   <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress</p>
-                    <p className={`text-lg font-bold font-mono-data ${project.progress - elapsedPct >= 0 ? "text-success" : "text-destructive"}`}>
-                      {project.progress - elapsedPct > 0 ? "+" : ""}{project.progress - elapsedPct}%
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress (Actual − Plan)</p>
+                    <p className={`text-lg font-bold font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>
+                      {dev == null ? "N/A" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}
                     </p>
+                    {lastActualVal != null && lastPlanVal != null && (
+                      <p className="text-[9px] text-muted-foreground mt-0.5">Act {lastActualVal.toFixed(1)}% vs Plan {lastPlanVal.toFixed(1)}%</p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Last 3 Reporting Periods Summary — dedicated card */}
+              {/* Last 4 Reporting Periods Summary — anchored at last-actual */}
               {(() => {
-                const today = new Date();
-                const rows = scurveData
-                  .filter(s => (s.curve_type === "planned" || s.curve_type === "actual" || s.curve_type === "monthly" || s.curve_type === "weekly" || s.curve_type === "baseline"))
-                  .reduce((acc: Record<string, { label: string; order: number; date: number; plan: number | null; actual: number | null }>, s) => {
-                    const key = s.period_label;
-                    const d = (s as any).period_date ? new Date((s as any).period_date).getTime() : s.period_order;
-                    if (!acc[key]) acc[key] = { label: key, order: s.period_order, date: d, plan: null, actual: null };
-                    if (s.curve_type === "planned" || s.curve_type === "monthly" || s.curve_type === "baseline") acc[key].plan = Number(s.planned_progress ?? acc[key].plan ?? 0);
-                    if (s.curve_type === "actual" || s.curve_type === "monthly" || s.curve_type === "baseline") acc[key].actual = s.actual_progress != null ? Number(s.actual_progress) : acc[key].actual;
-                    return acc;
-                  }, {});
-                const list = Object.values(rows)
-                  .filter(r => !r.date || r.date <= today.getTime())
+                const byLabel: Record<string, { label: string; order: number; date: number; plan: number | null; actual: number | null }> = {};
+                for (const s of scurveData) {
+                  const key = s.period_label;
+                  const d = (s as any).period_date ? new Date((s as any).period_date).getTime() : s.period_order;
+                  if (!byLabel[key]) byLabel[key] = { label: key, order: s.period_order, date: d, plan: null, actual: null };
+                  if (s.planned_progress != null) byLabel[key].plan = Number(s.planned_progress);
+                  if (s.actual_progress != null) byLabel[key].actual = Number(s.actual_progress);
+                }
+                // Only rows up to & including the last-actual period
+                const cutoff = lastActualRow ? lastActualRow._t : Infinity;
+                const list = Object.values(byLabel)
+                  .filter(r => r.date <= cutoff)
                   .sort((a, b) => (b.date || b.order) - (a.date || a.order))
                   .slice(0, 4)
                   .reverse();
@@ -656,7 +680,7 @@ const ProjectDetail = () => {
                 return (
                   <div className="glass-card rounded-lg shadow-card p-4">
                     <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Ringkasan Periode Pelaporan</h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Periode saat ini dan 3 periode sebelumnya — Planned vs Actual Progress dan deviasinya.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Periode Actual terakhir ({lastPeriodLabel || "—"}) dan 3 periode sebelumnya — Planned vs Actual Progress dan deviasinya.</p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
@@ -669,7 +693,7 @@ const ProjectDetail = () => {
                         </thead>
                         <tbody>
                           {list.map((r, i) => {
-                            const dev = (r.actual ?? 0) - (r.plan ?? 0);
+                            const d = (r.actual ?? 0) - (r.plan ?? 0);
                             const isCurrent = i === list.length - 1;
                             return (
                               <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
@@ -679,7 +703,7 @@ const ProjectDetail = () => {
                                 </td>
                                 <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
                                 <td className="py-2 px-2 text-right font-mono-data text-foreground font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
-                                <td className={`py-2 px-2 text-right font-mono-data font-semibold ${dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                                <td className={`py-2 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
                               </tr>
                             );
                           })}
@@ -690,7 +714,9 @@ const ProjectDetail = () => {
                 );
               })()}
             </div>
-          )}
+            );
+          })()}
+
 
 
 

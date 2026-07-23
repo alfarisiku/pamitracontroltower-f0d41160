@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2, Wallet, Filter, Search, Edit3, X, Download } from "lucide-react";
-import { supabase, formatRupiah, logActivity, FINANCE_CATEGORIES, DbFinanceEntry, FinanceCategory, FinanceDirection } from "@/lib/supabase";
+import { supabase, formatRupiah, formatIDR, jutaToRupiah, rupiahToJuta, logActivity, FINANCE_CATEGORIES, DbFinanceEntry, FinanceCategory, FinanceDirection } from "@/lib/supabase";
 import { useFinanceEntries } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
 
@@ -78,22 +78,23 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const handleAdd = async () => {
     setSaving(true);
     try {
-      const amt = parseFloat(form.amount) || 0;
-      if (amt <= 0) throw new Error("Amount harus > 0");
+      const rp = parseFloat(form.amount) || 0;
+      if (rp <= 0) throw new Error("Amount (Rp) harus > 0");
+      const amt = rupiahToJuta(rp); // store in Juta for backwards compat
       const { monthLabel } = periodLabels(form.period_date);
       const { error } = await (supabase as any).from("finance_entries").insert({
         project_id: projectId,
         direction: form.direction,
         category: form.direction === "in" ? null : form.category,
         entry_kind: form.entry_kind,
-        frequency: "monthly", // legacy column, kept for compat; aggregation handled at read-time
+        frequency: "monthly",
         period_date: form.period_date,
         period_label: monthLabel,
         amount: amt,
         description: form.description || null,
       });
       if (error) throw error;
-      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatRupiah(amt)} on ${form.period_date}`, projectId);
+      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} on ${form.period_date}`, projectId);
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
@@ -105,7 +106,8 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   };
 
   const saveEdit = async (id: string) => {
-    const amt = parseFloat(edit.amount) || 0;
+    const rp = parseFloat(edit.amount) || 0;
+    const amt = rupiahToJuta(rp);
     const { monthLabel } = periodLabels(edit.period_date);
     const { error } = await (supabase as any).from("finance_entries").update({
       direction: edit.direction, category: edit.direction === "in" ? null : edit.category,
@@ -113,11 +115,12 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
       amount: amt, description: edit.description || null,
     }).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatRupiah(amt)}`, projectId, id);
+    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatIDR(rp)}`, projectId, id);
     qc.invalidateQueries({ queryKey: ["finance_entries"] });
     qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
     setEditingId(null); toast({ title: "✅ Updated" });
   };
+
 
   const handleDelete = async (e: DbFinanceEntry) => {
     if (!confirm(`Hapus entry ${formatRupiah(Number(e.amount))} (${e.period_label})?`)) return;
@@ -174,10 +177,13 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                 </div>
               )}
               <div><label className={labelCls}>Transaction Date*</label><input type="date" value={form.period_date} onChange={e => setForm({...form, period_date: e.target.value})} className={inputCls} /></div>
-              <div><label className={labelCls}>Amount (Rp Juta)*</label><input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} /></div>
+              <div><label className={labelCls}>Amount (Rp — utuh)*</label>
+                <input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 150000000" />
+                {form.amount && <p className="text-[9px] text-muted-foreground mt-0.5">= {formatIDR(parseFloat(form.amount) || 0)}</p>}
+              </div>
               <div className="sm:col-span-3"><label className={labelCls}>Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} className={inputCls} placeholder="Termin dari client / Bayar vendor XYZ / …" /></div>
             </div>
-            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Weekly & Monthly bukan input — sistem otomatis mengagregasi berdasarkan Transaction Date.</p>
+            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Input dalam Rupiah utuh (mis. 150.000.000). Ditampilkan singkat (Jt/M/T) di dashboard proyek.</p>
             <div className="flex gap-2 mt-2">
               <button onClick={handleAdd} disabled={saving || !form.amount} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50"><Save className="h-3 w-3 inline mr-1" />{saving ? "..." : "Save"}</button>
               <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 bg-muted rounded text-xs border border-border">Cancel</button>
@@ -185,18 +191,30 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 mb-3 text-[11px]">
-          <Filter className="h-3 w-3 text-muted-foreground" />
-          <select value={fDir} onChange={e => setFDir(e.target.value as any)} className={inputCls + " w-auto"}><option value="all">All Type</option><option value="in">Cash In</option><option value="out">Cash Out</option></select>
-          <select value={fKind} onChange={e => setFKind(e.target.value as any)} className={inputCls + " w-auto"}><option value="all">Plan+Actual</option><option value="rap">Planning</option><option value="actual">Actual</option></select>
-          <select value={fCat} onChange={e => setFCat(e.target.value as any)} className={inputCls + " w-auto"}>
-            <option value="all">All Category</option>
-            {FINANCE_CATEGORIES.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className={inputCls + " w-auto"} title="From" />
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className={inputCls + " w-auto"} title="To" />
-          <div className="flex items-center gap-1 flex-1 min-w-[160px]"><Search className="h-3 w-3 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search description..." className={inputCls} /></div>
+        {/* Filters — reorganized: labeled grid */}
+        <div className="bg-muted/20 border border-border/50 rounded-lg p-3 mb-3">
+          <div className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground font-semibold mb-2"><Filter className="h-3 w-3" /> Filter & Search</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div><label className={labelCls}>Type</label>
+              <select value={fDir} onChange={e => setFDir(e.target.value as any)} className={inputCls}><option value="all">All</option><option value="in">Cash In</option><option value="out">Cash Out</option></select>
+            </div>
+            <div><label className={labelCls}>Plan / Actual</label>
+              <select value={fKind} onChange={e => setFKind(e.target.value as any)} className={inputCls}><option value="all">Plan + Actual</option><option value="rap">Planning</option><option value="actual">Actual</option></select>
+            </div>
+            <div><label className={labelCls}>Category</label>
+              <select value={fCat} onChange={e => setFCat(e.target.value as any)} className={inputCls}>
+                <option value="all">All Category</option>
+                {FINANCE_CATEGORIES.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div><label className={labelCls}>Date From</label><input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className={inputCls} /></div>
+            <div><label className={labelCls}>Date To</label><input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className={inputCls} /></div>
+            <div><label className={labelCls}>Search</label>
+              <div className="flex items-center gap-1"><Search className="h-3 w-3 text-muted-foreground shrink-0" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Description..." className={inputCls} /></div>
+            </div>
+          </div>
         </div>
+
 
         {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">Belum ada transaksi yang cocok.</p>
@@ -229,10 +247,11 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.direction === "in" ? "bg-success/15 text-success border-success/30" : "bg-destructive/15 text-destructive border-destructive/30"}`}>{e.direction === "in" ? "IN" : "OUT"}</span></td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.entry_kind === "rap" ? "bg-warning/15 text-warning border-warning/30" : "bg-primary/15 text-primary border-primary/30"}`}>{e.entry_kind === "rap" ? "PLAN" : "ACTUAL"}</span></td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground">{e.category ? (FINANCE_CATEGORIES.find(c => c.value === e.category)?.label || e.category) : "—"}</td>
-                    <td className={`py-1.5 px-2 text-right font-mono-data font-medium ${e.direction === "in" ? "text-success" : "text-destructive"}`}>{formatRupiah(Number(e.amount))}</td>
+                    <td className={`py-1.5 px-2 text-right font-mono-data font-medium ${e.direction === "in" ? "text-success" : "text-destructive"}`}>{formatIDR(jutaToRupiah(Number(e.amount)))}</td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground truncate max-w-[240px]">{e.description || "—"}</td>
-                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); setEdit({...e}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); setEdit({...e, amount: jutaToRupiah(Number(e.amount))}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
                   </tr>
+
                 ))}
               </tbody>
             </table>

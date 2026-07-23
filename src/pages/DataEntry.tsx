@@ -4,9 +4,10 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Database, FileText, DollarSign, ClipboardList, FileBarChart, Download, Share2,
-  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet,
+  Database, FileText, DollarSign, ClipboardList, FileBarChart, Share2,
+  Layers, Camera, AlertTriangle, Package, Target,
 } from "lucide-react";
+
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
 import { ProjectCrudTab } from "@/components/data-entry/ProjectCrudTab";
 import { AddendumTab } from "@/components/data-entry/AddendumTab";
@@ -20,7 +21,7 @@ import { ProcurementPanel } from "@/components/data-entry/ProcurementPanel";
 import { MilestonesEditor } from "@/components/data-entry/MilestonesEditor";
 import { ExcelSyncPanel } from "@/components/data-entry/ExcelSyncPanel";
 
-type ActiveTab = "regular" | "excel" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
+type ActiveTab = "regular" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
@@ -39,7 +40,6 @@ const DataEntry = () => {
   // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
   const allTabs = [
     { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,        adminOnly: false },
-    { key: "excel" as const,         label: "Excel Import/Export", icon: FileSpreadsheet, adminOnly: false },
     { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false },
     { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,    adminOnly: false },
     { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false },
@@ -52,19 +52,11 @@ const DataEntry = () => {
     { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList,   adminOnly: true },
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
-
-  const downloadTemplate = () => {
-    const csv = "project_code,work_area_code,work_area_name,epcc,work_item_code,work_item_name,unit,qty_total,qty_completed,weight\nPMT-001,WA-001,Area Tangki,construction,WI-001,Tangki T-101,unit,10,5,30";
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "project_data_template.csv"; a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handleShare = async () => {
     if (navigator.share) await navigator.share({ title: "Data Entry Center", url: window.location.href });
     else { await navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }
   };
+
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -79,10 +71,10 @@ const DataEntry = () => {
               <p className="text-xs text-muted-foreground">Project Control System — Full CRUD, search, filter, export, dan integrasi ke dashboard.</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-3 py-1.5 bg-success text-success-foreground rounded-lg text-xs font-medium hover:bg-success/90"><Download className="h-3.5 w-3.5" /> Template CSV</button>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
             </div>
           </div>
+
 
           <div className="flex items-center gap-1 mb-5 border-b border-border pb-2 overflow-x-auto">
             {tabs.map(tab => (
@@ -103,11 +95,13 @@ const DataEntry = () => {
             </div>
           )}
 
-          {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} />}
-          {activeTab === "excel" && updateProjectId && (() => {
+          {activeTab !== "project-crud" && updateProjectId && (() => {
             const p = projects.find(pr => pr.id === updateProjectId);
-            return p ? <ExcelSyncPanel project={p} /> : null;
+            return p ? <div className="mb-5"><ExcelSyncPanel project={p} /></div> : null;
           })()}
+
+          {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} />}
+
           {activeTab === "wbs" && updateProjectId && <WBSCrudPanel projectId={updateProjectId} />}
           {activeTab === "milestones" && updateProjectId && <MilestonesEditor projectId={updateProjectId} />}
           {activeTab === "risk" && updateProjectId && <RiskResolvePanel projectId={updateProjectId} />}
