@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
-import { DbProject, formatRupiah } REPLACE_MEfrom "@/lib/supabase";
+import { DbProject, formatRupiah } from "@/lib/supabase";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
