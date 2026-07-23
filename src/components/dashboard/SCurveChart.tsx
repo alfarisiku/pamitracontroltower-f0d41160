@@ -81,12 +81,21 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
     chartData = generateSCurveData(startDate, endDate, progress);
   }
 
-  const now = new Date();
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const elapsed = Math.min(1, (now.getTime() - start.getTime()) / (end.getTime() - start.getTime()));
-  const currentMonthIdx = Math.round(elapsed * (chartData.length - 1));
-  const currentLabel = chartData[Math.min(currentMonthIdx, chartData.length - 1)]?.month;
+  // Cut-off = periode terakhir yang punya actual data (bukan calendar today)
+  const lastActualIdx = (() => {
+    for (let i = chartData.length - 1; i >= 0; i--) {
+      const row = chartData[i];
+      const hasActual = row.actual != null || Object.keys(row).some(k => k.startsWith("actual_") && row[k] != null);
+      if (hasActual) return i;
+    }
+    // Fallback ke elapsed calendar time jika belum ada actual sama sekali
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const elapsed = Math.min(1, (now.getTime() - start.getTime()) / (end.getTime() - start.getTime()));
+    return Math.round(elapsed * (chartData.length - 1));
+  })();
+  const currentLabel = chartData[Math.min(Math.max(lastActualIdx, 0), chartData.length - 1)]?.month;
 
   const additionalTypes = curveTypes.filter(t => t !== "baseline");
   const joColors = ["hsl(280, 60%, 55%)", "hsl(30, 85%, 55%)", "hsl(340, 70%, 55%)"];
