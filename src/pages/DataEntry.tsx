@@ -104,6 +104,10 @@ const DataEntry = () => {
           )}
 
           {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} />}
+          {activeTab === "excel" && updateProjectId && (() => {
+            const p = projects.find(pr => pr.id === updateProjectId);
+            return p ? <ExcelSyncPanel project={p} /> : null;
+          })()}
           {activeTab === "wbs" && updateProjectId && <WBSCrudPanel projectId={updateProjectId} />}
           {activeTab === "milestones" && updateProjectId && <MilestonesEditor projectId={updateProjectId} />}
           {activeTab === "risk" && updateProjectId && <RiskResolvePanel projectId={updateProjectId} />}
