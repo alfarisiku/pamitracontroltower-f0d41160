@@ -78,22 +78,23 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const handleAdd = async () => {
     setSaving(true);
     try {
-      const amt = parseFloat(form.amount) || 0;
-      if (amt <= 0) throw new Error("Amount harus > 0");
+      const rp = parseFloat(form.amount) || 0;
+      if (rp <= 0) throw new Error("Amount (Rp) harus > 0");
+      const amt = rupiahToJuta(rp); // store in Juta for backwards compat
       const { monthLabel } = periodLabels(form.period_date);
       const { error } = await (supabase as any).from("finance_entries").insert({
         project_id: projectId,
         direction: form.direction,
         category: form.direction === "in" ? null : form.category,
         entry_kind: form.entry_kind,
-        frequency: "monthly", // legacy column, kept for compat; aggregation handled at read-time
+        frequency: "monthly",
         period_date: form.period_date,
         period_label: monthLabel,
         amount: amt,
         description: form.description || null,
       });
       if (error) throw error;
-      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatRupiah(amt)} on ${form.period_date}`, projectId);
+      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} on ${form.period_date}`, projectId);
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
@@ -105,7 +106,8 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   };
 
   const saveEdit = async (id: string) => {
-    const amt = parseFloat(edit.amount) || 0;
+    const rp = parseFloat(edit.amount) || 0;
+    const amt = rupiahToJuta(rp);
     const { monthLabel } = periodLabels(edit.period_date);
     const { error } = await (supabase as any).from("finance_entries").update({
       direction: edit.direction, category: edit.direction === "in" ? null : edit.category,
@@ -113,11 +115,12 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
       amount: amt, description: edit.description || null,
     }).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatRupiah(amt)}`, projectId, id);
+    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatIDR(rp)}`, projectId, id);
     qc.invalidateQueries({ queryKey: ["finance_entries"] });
     qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
     setEditingId(null); toast({ title: "✅ Updated" });
   };
+
 
   const handleDelete = async (e: DbFinanceEntry) => {
     if (!confirm(`Hapus entry ${formatRupiah(Number(e.amount))} (${e.period_label})?`)) return;
