@@ -444,8 +444,8 @@ const ProjectDetail = () => {
                 if (bipolar.length === 0) return null;
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow & Progress — Plan vs Actual
+                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
                     </h3>
                     <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
                     <div className="h-[300px]">
