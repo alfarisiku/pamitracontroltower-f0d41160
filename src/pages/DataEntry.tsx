@@ -39,7 +39,6 @@ const DataEntry = () => {
   // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
   const allTabs = [
     { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,        adminOnly: false },
-    { key: "excel" as const,         label: "Excel Import/Export", icon: FileSpreadsheet, adminOnly: false },
     { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false },
     { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,    adminOnly: false },
     { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false },
@@ -53,15 +52,7 @@ const DataEntry = () => {
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
-  const downloadTemplate = () => {
-    const csv = "project_code,work_area_code,work_area_name,epcc,work_item_code,work_item_name,unit,qty_total,qty_completed,weight\nPMT-001,WA-001,Area Tangki,construction,WI-001,Tangki T-101,unit,10,5,30";
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "project_data_template.csv"; a.click();
-    URL.revokeObjectURL(url);
-  };
 
-  const handleShare = async () => {
     if (navigator.share) await navigator.share({ title: "Data Entry Center", url: window.location.href });
     else { await navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }
   };
