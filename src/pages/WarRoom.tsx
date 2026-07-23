@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useProjects, useAlerts } from "@/hooks/useProjects";
-import { formatRupiah } from "@/lib/supabase";
+import { formatRupiah } REPLACE_MEfrom "@/lib/supabase";
 import { toLatLng, STATUS_COLORS as SC } from "@/lib/mapUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Activity, CheckCircle2, TrendingUp, Briefcase, DollarSign, MapPin, ChevronLeft, ChevronRight, AlertTriangle, Globe } from "lucide-react";

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { DbProject } from "@/lib/supabase";
-import { formatRupiah } from "@/lib/supabase";
-import { supabase } from "@/lib/supabase";
+import { DbProject } REPLACE_MEfrom "@/lib/supabase";
+import { formatRupiah } REPLACE_MEfrom "@/lib/supabase";
+import { supabase } REPLACE_MEfrom "@/lib/supabase";
 import { X, MapPin, Calendar, User, Play, Camera, Video, Cctv, DollarSign, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 
-import { getStatusMeta } from "@/lib/supabase";
+import { getStatusMeta } REPLACE_MEfrom "@/lib/supabase";
 
 type MediaTab = "weekly" | "video" | "cctv";
 
