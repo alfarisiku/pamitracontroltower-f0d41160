@@ -73,6 +73,33 @@ const asJson = (v: any): any[] => {
   if (!v) return [];
   try { const p = JSON.parse(String(v)); return Array.isArray(p) ? p : []; } catch { return []; }
 };
+const asList = (v: any): any[] => {
+  if (Array.isArray(v)) return v;
+  if (!v) return [];
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (!s) return [];
+    if (s.startsWith("[")) return asJson(s);
+    return s.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  }
+  return [];
+};
+const weeklyAchievementsText = (v: any): string => asList(v).map((a: any) => {
+  if (typeof a === "string") return a;
+  return `[${a?.category || "construction"}] ${a?.description || ""}`.trim();
+}).filter(Boolean).join("\n");
+const weeklyOutstandingText = (v: any): string => asList(v).map((o: any) => {
+  if (typeof o === "string") return o;
+  return `${o?.item || ""}${o?.note ? ` — ${o.note}` : ""}`.trim();
+}).filter(Boolean).join("\n");
+const weeklyTargetsText = (v: any): string => asList(v).map((t: any) => {
+  if (typeof t === "string") return t;
+  return `${t?.target || ""}${t?.owner ? ` (${t.owner})` : ""}`.trim();
+}).filter(Boolean).join("\n");
+const weeklyEscalationsText = (v: any): string => asList(v).map((es: any) => {
+  if (typeof es === "string") return es;
+  return `${es?.issue || ""}${es?.decision_needed ? ` → ${es.decision_needed}` : ""}`.trim();
+}).filter(Boolean).join("\n");
 const cleanId = (v: any): string | null => {
   const s = asStr(v).trim();
   return s && s.length >= 32 ? s : null;
@@ -150,14 +177,19 @@ export function ExcelSyncPanel({ project }: { project: DbProject }) {
         status: m.status, weight: m.weight, sort_order: m.sort_order,
       }))), "Milestones");
 
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((weekly.data || []).map((w: any) => ({
+      const weeklySheet = XLSX.utils.json_to_sheet((weekly.data || []).map((w: any) => ({
         id: w.id, week_start_date: w.week_start_date, week_end_date: w.week_end_date,
         summary: w.summary,
-        achievements: (w.achievements || []).map((a: any) => `[${a.category || 'construction'}] ${a.description || ''}`).join("\n"),
-        outstanding: (w.outstanding_items || []).map((o: any) => `${o.item || ''}${o.note ? ` — ${o.note}` : ''}`).join("\n"),
-        next_week_targets: (w.next_week_targets || []).map((t: any) => `${t.target || ''}${t.owner ? ` (${t.owner})` : ''}`).join("\n"),
-        escalations: (w.escalations || []).map((es: any) => `${es.issue || ''}${es.decision_needed ? ` → ${es.decision_needed}` : ''}`).join("\n"),
-      }))), "WeeklyReports");
+        achievements: weeklyAchievementsText(w.achievements),
+        outstanding: weeklyOutstandingText(w.outstanding_items),
+        next_week_targets: weeklyTargetsText(w.next_week_targets),
+        escalations: weeklyEscalationsText(w.escalations),
+      })));
+      weeklySheet["!cols"] = [
+        { wch: 36 }, { wch: 14 }, { wch: 14 }, { wch: 42 },
+        { wch: 48 }, { wch: 48 }, { wch: 48 }, { wch: 48 },
+      ];
+      XLSX.utils.book_append_sheet(wb, weeklySheet, "WeeklyReports");
 
 
       const fname = `${project.project_code}_${project.name.replace(/[^\w]+/g, "_")}.xlsx`;
@@ -321,7 +353,15 @@ export function ExcelSyncPanel({ project }: { project: DbProject }) {
       }));
 
       // Human-readable parsers for weekly report list columns
-      const splitLines = (v: any): string[] => asStr(v).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const splitLines = (v: any): string[] => {
+        const jsonRows = asList(v);
+        if (jsonRows.length && typeof jsonRows[0] !== "string") return [];
+        return jsonRows.length ? jsonRows.map(String) : asStr(v).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      };
+      const parseJsonish = (v: any): any[] | null => {
+        const rows = asList(v);
+        return rows.length && typeof rows[0] !== "string" ? rows : null;
+      };
       const parseAchievements = (v: any) => splitLines(v).map(line => {
         const m = line.match(/^\[([^\]]+)\]\s*(.*)$/);
         return m ? { category: m[1].trim().toLowerCase(), description: m[2].trim() } : { category: "construction", description: line };
@@ -344,10 +384,10 @@ export function ExcelSyncPanel({ project }: { project: DbProject }) {
         week_end_date: asDate(r.week_end_date) || new Date().toISOString().slice(0, 10),
         summary: asStr(r.summary),
         // Accept both new human-friendly columns and legacy _json columns for backward compat
-        achievements: r.achievements != null && r.achievements !== "" ? parseAchievements(r.achievements) : asJson(r.achievements_json),
-        outstanding_items: r.outstanding != null && r.outstanding !== "" ? parseOutstanding(r.outstanding) : asJson(r.outstanding_json),
-        next_week_targets: r.next_week_targets != null && r.next_week_targets !== "" ? parseTargets(r.next_week_targets) : asJson(r.targets_json),
-        escalations: r.escalations != null && r.escalations !== "" ? parseEscalations(r.escalations) : asJson(r.escalations_json),
+        achievements: r.achievements != null && r.achievements !== "" ? (parseJsonish(r.achievements) || parseAchievements(r.achievements)) : asJson(r.achievements_json),
+        outstanding_items: r.outstanding != null && r.outstanding !== "" ? (parseJsonish(r.outstanding) || parseOutstanding(r.outstanding)) : asJson(r.outstanding_json),
+        next_week_targets: r.next_week_targets != null && r.next_week_targets !== "" ? (parseJsonish(r.next_week_targets) || parseTargets(r.next_week_targets)) : asJson(r.targets_json),
+        escalations: r.escalations != null && r.escalations !== "" ? (parseJsonish(r.escalations) || parseEscalations(r.escalations)) : asJson(r.escalations_json),
       }));
 
 
