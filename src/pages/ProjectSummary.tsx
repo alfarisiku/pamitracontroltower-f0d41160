@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
-import { DbProject, formatRupiah } from "@/lib/supabase";
+import { DbProject, formatRupiah, resolveImageUrl } from "@/lib/supabase";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
@@ -122,7 +122,7 @@ const ProjectSummary = () => {
                   {/* Card Header with Image */}
                   <div className="h-32 relative overflow-hidden">
                     {project.image_url ? (
-                      <img src={project.image_url} alt={project.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={resolveImageUrl(project.image_url)} alt={project.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-primary/10 to-accent/10" />
                     )}
