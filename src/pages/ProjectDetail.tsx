@@ -371,7 +371,7 @@ const ProjectDetail = () => {
                 const totalAct = rows.reduce((s, r) => s + r.actual, 0);
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-accent" /> Cost Breakdown per Kategori</h3>
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Cost Breakdown per Kategori</h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
