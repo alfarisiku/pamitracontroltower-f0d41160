@@ -4,9 +4,10 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Database, FileText, DollarSign, ClipboardList, FileBarChart, Download, Share2,
-  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet,
+  Database, FileText, DollarSign, ClipboardList, FileBarChart, Share2,
+  Layers, Camera, AlertTriangle, Package, Target,
 } from "lucide-react";
+
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
 import { ProjectCrudTab } from "@/components/data-entry/ProjectCrudTab";
 import { AddendumTab } from "@/components/data-entry/AddendumTab";
