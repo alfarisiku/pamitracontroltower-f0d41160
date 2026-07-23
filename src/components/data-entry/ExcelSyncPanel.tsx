@@ -43,9 +43,14 @@ const README_ROWS = [
   ["- Procurement: item pengadaan dengan tanggal RFQ..Install."],
   ["- Risks: risk register (project_alerts)."],
   ["- Milestones: milestones proyek."],
-  ["- WeeklyReports: weekly progress report; kolom JSON berisi array (achievements dll)."],
+  ["- WeeklyReports: weekly progress report."],
+  ["  * Kolom achievements: satu baris per item, format '[category] description'. Contoh: '[construction] Pengecoran pondasi selesai'."],
+  ["  * Kolom outstanding: satu baris per item, format 'item — note'. Note opsional."],
+  ["  * Kolom next_week_targets: satu baris per target, format 'target (owner)'. Owner opsional."],
+  ["  * Kolom escalations: satu baris per issue, format 'issue → decision needed'. Decision opsional."],
   [""],
   ["Format tanggal: YYYY-MM-DD. Format angka: gunakan angka (bukan teks)."],
+
 ];
 
 // ---------- helpers ----------
