@@ -21,8 +21,8 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
   const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
   const statusLabels: Record<string, string> = {
-    planned: "Planned", "rfq-sent": "RFQ Sent", approval: "Approval", "po-issued": "PO Issued",
-    fabrication: "Fabrication", delivery: "Delivery", installed: "Installed",
+    planned: "Planned", "rfq-sent": "PR Sent", approval: "Approval", "po-issued": "PO Issued",
+    fabrication: "Fabrication", delivery: "Delivery", installed: "On Site",
   };
   const statusColors: Record<string, string> = {
     planned: "bg-muted text-muted-foreground", "rfq-sent": "bg-primary/15 text-primary",
@@ -30,6 +30,23 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
     fabrication: "bg-accent/15 text-accent-foreground", delivery: "bg-success/15 text-success",
     installed: "bg-success/20 text-success",
   };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<{ item_name: string; vendor: string; amount: string }>({ item_name: "", vendor: "", amount: "" });
+
+  const startEdit = (item: any) => {
+    setEditingId(item.id);
+    setEdit({ item_name: item.item_name || "", vendor: item.vendor || "", amount: String(item.amount || 0) });
+  };
+  const saveEdit = async (item: any) => {
+    const patch: any = { item_name: edit.item_name, vendor: edit.vendor, amount: parseInt(edit.amount) || 0 };
+    await supabase.from("procurement_items").update(patch).eq("id", item.id);
+    await logActivity(supabase, "procurement", "update", `Procurement "${edit.item_name}" edited`, projectId, item.id);
+    queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
+    queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+    setEditingId(null);
+    toast({ title: "✅ Saved" });
+  };
+
 
   const handleAdd = async () => {
     setSaving(true);
