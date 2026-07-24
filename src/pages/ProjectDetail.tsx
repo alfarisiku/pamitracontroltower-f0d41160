@@ -856,10 +856,14 @@ const ProjectDetail = () => {
                   <div className={`grid gap-3 ${perCurve.filter(pc => pc.list.length > 0).length > 1 ? "lg:grid-cols-2" : "grid-cols-1"}`}>
                     {perCurve.map(({ ct, lastLabel, list }) => {
                       if (list.length === 0) return null;
+                      const pal = paletteFor(ct);
                       return (
                         <div key={ct} className="border border-border rounded-md overflow-hidden">
                           <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                            <span
+                              className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide"
+                              style={{ color: pal.hue, backgroundColor: `${pal.hue.replace('hsl(', 'hsla(').replace(')', ', 0.12)')}` }}
+                            >
                               {ct === "baseline" ? "Baseline" : ct}
                             </span>
                             <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel || "—"}</span></span>
@@ -868,8 +872,8 @@ const ProjectDetail = () => {
                             <thead>
                               <tr className="bg-muted/20 border-b border-border">
                                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
-                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
-                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase font-bold" style={{ color: pal.plan }}>Planned</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase font-bold" style={{ color: pal.actual }}>Actual</th>
                                 <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
                               </tr>
                             </thead>
@@ -878,13 +882,13 @@ const ProjectDetail = () => {
                                 const d = (r.actual ?? 0) - (r.plan ?? 0);
                                 const isCurrent = i === list.length - 1;
                                 return (
-                                  <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
+                                  <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-muted/30" : ""}`}>
                                     <td className="py-1.5 px-2 text-foreground font-medium">
                                       {r.label}
-                                      {isCurrent && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Now</span>}
+                                      {isCurrent && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded font-semibold uppercase" style={{ color: pal.hue, backgroundColor: `${pal.hue.replace('hsl(', 'hsla(').replace(')', ', 0.15)')}` }}>Now</span>}
                                     </td>
-                                    <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
-                                    <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data" style={{ color: pal.plan }}>{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: pal.actual }}>{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
                                     <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
                                   </tr>
                                 );
