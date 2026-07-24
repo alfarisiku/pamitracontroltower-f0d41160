@@ -60,6 +60,7 @@ export function WeeklyReportEditor({ projectId }: { projectId: string }) {
 
   const updateRow = async (id: string, patch: Partial<DbWeeklyReport>) => {
     await (supabase as any).from("weekly_progress_reports").update(patch).eq("id", id);
+    await logActivity(supabase, "weekly_report", "update", `Weekly report updated`, projectId, id);
     load();
   };
 
@@ -160,13 +161,70 @@ export function WeeklyReportEditor({ projectId }: { projectId: string }) {
                 <button onClick={(e) => { e.stopPropagation(); del(r.id); }} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
               </button>
               {isOpen && (
-                <div className="p-3 border-t border-border space-y-2 text-xs bg-muted/10">
-                  {r.summary && <div className="p-2 bg-primary/5 rounded border border-primary/20"><p className="text-[10px] uppercase font-semibold text-primary mb-1">Summary</p><p className="text-foreground whitespace-pre-wrap">{r.summary}</p></div>}
-                  <SectionList title="Achievements" color="success" items={r.achievements.map(a => `[${a.category}] ${a.description}`)} />
-                  <SectionList title="Outstanding" color="warning" items={r.outstanding_items.map(o => `${o.item}${o.note ? ` — ${o.note}` : ''}`)} />
-                  <SectionList title="Next Week Targets" color="primary" items={r.next_week_targets.map(t => `${t.target}${t.owner ? ` (${t.owner})` : ''}`)} />
-                  <SectionList title="Escalations" color="destructive" items={r.escalations.map(es => `${es.issue}${es.decision_needed ? ` → ${es.decision_needed}` : ''}`)} />
-                  <textarea defaultValue={r.summary} onBlur={e => e.target.value !== r.summary && updateRow(r.id, { summary: e.target.value })} className={inputCls + " min-h-[50px] mt-2"} placeholder="Edit summary..." />
+                <div className="p-3 border-t border-border space-y-3 text-xs bg-muted/10">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div><label className={labelCls}>Week Start</label><input type="date" defaultValue={r.week_start_date} onBlur={e => e.target.value !== r.week_start_date && updateRow(r.id, { week_start_date: e.target.value })} className={inputCls} /></div>
+                    <div><label className={labelCls}>Week End</label><input type="date" defaultValue={r.week_end_date} onBlur={e => e.target.value !== r.week_end_date && updateRow(r.id, { week_end_date: e.target.value })} className={inputCls} /></div>
+                  </div>
+
+                  <EditableList
+                    title="Achievements" color="success"
+                    items={r.achievements}
+                    render={(a, onChange) => (
+                      <>
+                        <select value={a.category} onChange={e => onChange({ ...a, category: e.target.value })} className={inputCls + " w-auto"}>
+                          {ACHIEVEMENT_CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+                        </select>
+                        <input value={a.description} onChange={e => onChange({ ...a, description: e.target.value })} className={inputCls} placeholder="Description" />
+                      </>
+                    )}
+                    empty={{ category: "construction", description: "" }}
+                    save={next => updateRow(r.id, { achievements: next })}
+                  />
+
+                  <EditableList
+                    title="Outstanding" color="warning"
+                    items={r.outstanding_items}
+                    render={(o, onChange) => (
+                      <>
+                        <input value={o.item} onChange={e => onChange({ ...o, item: e.target.value })} className={inputCls} placeholder="Item" />
+                        <input value={o.note || ""} onChange={e => onChange({ ...o, note: e.target.value })} className={inputCls} placeholder="Note" />
+                      </>
+                    )}
+                    empty={{ item: "" }}
+                    save={next => updateRow(r.id, { outstanding_items: next })}
+                  />
+
+                  <EditableList
+                    title="Next Week Targets" color="primary"
+                    items={r.next_week_targets}
+                    render={(t, onChange) => (
+                      <>
+                        <input value={t.target} onChange={e => onChange({ ...t, target: e.target.value })} className={inputCls} placeholder="Target" />
+                        <input value={t.owner || ""} onChange={e => onChange({ ...t, owner: e.target.value })} className={inputCls} placeholder="Owner" />
+                      </>
+                    )}
+                    empty={{ target: "" }}
+                    save={next => updateRow(r.id, { next_week_targets: next })}
+                  />
+
+                  <EditableList
+                    title="Escalations" color="destructive"
+                    items={r.escalations}
+                    render={(es, onChange) => (
+                      <>
+                        <input value={es.issue} onChange={e => onChange({ ...es, issue: e.target.value })} className={inputCls} placeholder="Issue" />
+                        <input value={es.decision_needed || ""} onChange={e => onChange({ ...es, decision_needed: e.target.value })} className={inputCls} placeholder="Decision needed" />
+                      </>
+                    )}
+                    empty={{ issue: "" }}
+                    save={next => updateRow(r.id, { escalations: next })}
+                  />
+
+                  <div>
+                    <label className={labelCls}>Summary / Meeting Notes</label>
+                    <textarea defaultValue={r.summary} onBlur={e => e.target.value !== r.summary && updateRow(r.id, { summary: e.target.value })} className={inputCls + " min-h-[60px]"} placeholder="Executive summary..." />
+                  </div>
                 </div>
               )}
             </div>
@@ -177,14 +235,30 @@ export function WeeklyReportEditor({ projectId }: { projectId: string }) {
   );
 }
 
-function SectionList({ title, color, items }: { title: string; color: string; items: string[] }) {
-  if (items.length === 0) return null;
+function EditableList<T>({ title, color, items, render, empty, save }: {
+  title: string; color: string;
+  items: T[];
+  render: (item: T, onChange: (next: T) => void) => React.ReactNode;
+  empty: T;
+  save: (next: T[]) => void;
+}) {
+  const [local, setLocal] = useState<T[]>(items);
+  useEffect(() => { setLocal(items); }, [items]);
+  const commit = (next: T[]) => { setLocal(next); save(next); };
   return (
     <div>
-      <p className={`text-[10px] uppercase font-semibold text-${color} mb-1`}>{title} ({items.length})</p>
-      <ul className="list-disc list-inside space-y-0.5 text-foreground">
-        {items.map((x, i) => <li key={i}>{x}</li>)}
-      </ul>
+      <div className="flex items-center justify-between mb-1">
+        <p className={`text-[10px] uppercase font-semibold text-${color}`}>{title} ({local.length})</p>
+        <button onClick={() => commit([...local, { ...empty }])} className="text-[10px] text-primary flex items-center gap-0.5"><Plus className="h-3 w-3" />Add</button>
+      </div>
+      {local.length === 0 && <p className="text-[10px] text-muted-foreground italic">Belum ada item.</p>}
+      {local.map((it, i) => (
+        <div key={i} className="flex gap-1 mb-1">
+          {render(it, next => { const arr = [...local]; arr[i] = next; setLocal(arr); })}
+          <button onClick={() => { const arr = [...local]; arr[i] = local[i]; commit(arr); }} className="p-1 hover:bg-primary/10 rounded" title="Save"><Save className="h-3 w-3 text-primary" /></button>
+          <button onClick={() => commit(local.filter((_, x) => x !== i))} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
+        </div>
+      ))}
     </div>
   );
 }
