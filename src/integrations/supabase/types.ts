@@ -324,13 +324,21 @@ export type Database = {
           amount: number
           approval_date: string | null
           created_at: string
+          delivery_actual_date: string | null
           delivery_date: string | null
+          delivery_plan_date: string | null
           description: string | null
           fabrication_date: string | null
           id: string
           install_date: string | null
           item_name: string
+          onsite_actual_date: string | null
+          onsite_plan_date: string | null
+          po_actual_date: string | null
           po_date: string | null
+          po_plan_date: string | null
+          pr_actual_date: string | null
+          pr_plan_date: string | null
           project_id: string
           qty: number
           rfq_date: string | null
@@ -343,13 +351,21 @@ export type Database = {
           amount?: number
           approval_date?: string | null
           created_at?: string
+          delivery_actual_date?: string | null
           delivery_date?: string | null
+          delivery_plan_date?: string | null
           description?: string | null
           fabrication_date?: string | null
           id?: string
           install_date?: string | null
           item_name: string
+          onsite_actual_date?: string | null
+          onsite_plan_date?: string | null
+          po_actual_date?: string | null
           po_date?: string | null
+          po_plan_date?: string | null
+          pr_actual_date?: string | null
+          pr_plan_date?: string | null
           project_id: string
           qty?: number
           rfq_date?: string | null
@@ -362,13 +378,21 @@ export type Database = {
           amount?: number
           approval_date?: string | null
           created_at?: string
+          delivery_actual_date?: string | null
           delivery_date?: string | null
+          delivery_plan_date?: string | null
           description?: string | null
           fabrication_date?: string | null
           id?: string
           install_date?: string | null
           item_name?: string
+          onsite_actual_date?: string | null
+          onsite_plan_date?: string | null
+          po_actual_date?: string | null
           po_date?: string | null
+          po_plan_date?: string | null
+          pr_actual_date?: string | null
+          pr_plan_date?: string | null
           project_id?: string
           qty?: number
           rfq_date?: string | null
