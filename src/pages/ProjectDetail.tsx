@@ -1217,11 +1217,12 @@ const ProjectDetail = () => {
                           </tr>
                           <tr className="bg-muted/70 border-b border-border">
                             {["PR","PO","Delivery","On Site"].map(g => (
-                              <>
-                                <th key={`${g}-p`} className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground border-l border-border font-normal">Plan</th>
-                                <th key={`${g}-a`} className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground font-normal">Actual</th>
-                              </>
+                              <Fragment key={g}>
+                                <th className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground border-l border-border font-normal">Plan</th>
+                                <th className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground font-normal">Actual</th>
+                              </Fragment>
                             ))}
+
                           </tr>
                         </thead>
                         <tbody>
