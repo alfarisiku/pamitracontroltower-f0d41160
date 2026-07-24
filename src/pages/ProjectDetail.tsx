@@ -808,10 +808,15 @@ const ProjectDetail = () => {
 
                 {/* Per-curve KPI row (SPI + Deviasi) — compact single-row layout */}
                 <div className="mt-4 space-y-2">
-                  {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => (
+                  {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => {
+                    const pal = paletteFor(ct);
+                    return (
                     <div key={ct} className="bg-muted/30 rounded-lg border border-border/50 p-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
                       <div className="flex items-center gap-2 min-w-[140px]">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide"
+                          style={{ color: pal.hue, backgroundColor: `${pal.hue.replace('hsl(', 'hsla(').replace(')', ', 0.12)')}` }}
+                        >
                           {ct === "baseline" ? "Baseline" : ct}
                         </span>
                         {lastLabel && <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel}</span></span>}
@@ -829,12 +834,15 @@ const ProjectDetail = () => {
                         </span>
                       </div>
                       {lastAct != null && lastPlan != null && (
-                        <div className="text-[10px] text-muted-foreground ml-auto font-mono-data">
-                          Act <span className="text-accent font-semibold">{lastAct.toFixed(1)}%</span> vs Plan <span className="text-primary font-semibold">{lastPlan.toFixed(1)}%</span>
+                        <div className="text-[10px] text-muted-foreground ml-auto font-mono-data flex items-center gap-2">
+                          <span>Plan <span className="font-semibold" style={{ color: pal.plan }}>{lastPlan.toFixed(1)}%</span></span>
+                          <span className="text-border">|</span>
+                          <span>Actual <span className="font-semibold" style={{ color: pal.actual }}>{lastAct.toFixed(1)}%</span></span>
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
