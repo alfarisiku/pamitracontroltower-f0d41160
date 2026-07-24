@@ -11,6 +11,8 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const [rows, setRows] = useState<{ period_label: string; period_order: number; planned_progress: string; actual_progress: string; curve_type: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [curveType, setCurveType] = useState("baseline");
+  const [newCurveType, setNewCurveType] = useState("");
+
 
   useEffect(() => {
     const filtered = scurveData.filter(d => d.curve_type === curveType);
