@@ -44,12 +44,28 @@ const procStatusLabels: Record<string, string> = {
   fabrication: "Fabrication", delivery: "Delivery", installed: "On Site",
 };
 
+// Distinct color per procurement status — each stage its own hue so the pipeline stage is instantly readable.
 const procStatusColors: Record<string, string> = {
-  planned: "bg-muted text-muted-foreground", "rfq-sent": "bg-primary/15 text-primary",
-  approval: "bg-warning/15 text-warning", "po-issued": "bg-info/15 text-info",
-  fabrication: "bg-accent/15 text-accent-foreground", delivery: "bg-success/15 text-success",
-  installed: "bg-success/20 text-success",
+  planned:     "bg-slate-100 text-slate-600 border border-slate-300",
+  "rfq-sent":  "bg-sky-100 text-sky-700 border border-sky-300",
+  approval:    "bg-amber-100 text-amber-700 border border-amber-300",
+  "po-issued": "bg-indigo-100 text-indigo-700 border border-indigo-300",
+  fabrication: "bg-purple-100 text-purple-700 border border-purple-300",
+  delivery:    "bg-orange-100 text-orange-700 border border-orange-300",
+  installed:   "bg-emerald-100 text-emerald-700 border border-emerald-300",
 };
+
+// Palette per S-Curve type — plan & actual share the same HUE; distinguish only by dash vs solid.
+// Baseline = primary blue, KSO/JO variants cycle through a distinct palette.
+const KSO_HUES = ["hsl(280, 65%, 55%)", "hsl(30, 85%, 55%)", "hsl(340, 70%, 55%)"];
+function curvePalette(ct: string, idxAmongExtras = 0): { plan: string; actual: string; hue: string } {
+  if (ct === "baseline") {
+    const hue = "hsl(215, 80%, 48%)";
+    return { plan: hue, actual: hue, hue };
+  }
+  const hue = KSO_HUES[idxAmongExtras % KSO_HUES.length];
+  return { plan: hue, actual: hue, hue };
+}
 
 function extractYoutubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -90,6 +106,8 @@ const ProjectDetail = () => {
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
   const [descExpanded, setDescExpanded] = useState(false);
+  // Gantt hover — cursor-following tooltip state (client x/y + payload)
+  const [ganttHover, setGanttHover] = useState<null | { x: number; y: number; code: string; name: string; startMs: number; endMs: number; durationDays: number; remainingDays: number; progressPct: number; qty?: string; unit?: string; level: 1 | 2 }>(null);
   const toggleTimeline = (areaId: string) => {
     setExpandedTimeline(prev => { const n = new Set(prev); n.has(areaId) ? n.delete(areaId) : n.add(areaId); return n; });
   };
@@ -486,49 +504,52 @@ const ProjectDetail = () => {
                               const planOut = rowNum(row.planOut) ?? 0;
                               const cashIn = rowNum(row.cashIn) ?? 0;
                               const cashOut = rowNum(row.cashOut) ?? 0;
+                              const extrasList2 = availableCurves.filter(c => c !== "baseline");
+                              const idx2 = activeCurve === "baseline" ? 0 : Math.max(0, extrasList2.indexOf(activeCurve));
+                              const lc = curvePalette(activeCurve, idx2);
                               return (
                                 <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
-                                  <p className="text-foreground font-bold mb-1.5">{label}</p>
+                                  <p className="text-foreground font-bold mb-1.5">{label} <span className="ml-1 text-[9px] uppercase font-semibold" style={{ color: lc.hue }}>({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></p>
                                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                                     <span className="text-muted-foreground">Planning Progress</span>
-                                    <span className="font-mono-data text-primary font-semibold text-right">{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
-                                    <span className="text-muted-foreground">Planning Cash In</span>
-                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planIn)}</span>
-                                    <span className="text-muted-foreground">Planning Cash Out</span>
-                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planOut)}</span>
-                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Progress</span>
-                                    <span className="font-mono-data text-accent font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
+                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.plan }}>{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground">Actual Progress</span>
+                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Planning Cash In</span>
+                                    <span className="font-mono-data text-success/70 text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Actual Cash In</span>
                                     <span className="font-mono-data text-success text-right">{formatRupiah(cashIn)}</span>
+                                    <span className="text-muted-foreground">Planning Cash Out</span>
+                                    <span className="font-mono-data text-accent/70 text-right">{formatRupiah(planOut)}</span>
                                     <span className="text-muted-foreground">Actual Cash Out</span>
-                                    <span className="font-mono-data text-destructive text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="font-mono-data text-accent text-right">{formatRupiah(cashOut)}</span>
                                   </div>
                                 </div>
                               );
                             }}
                           />
+
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           {(() => {
-                            // Cash bars ALWAYS use the same fiscal palette (success = In, accent = Out) so
-                            // switching curves never changes the meaning of the bars.
+                            // Cash bars ALWAYS use the same fiscal palette so switching curve never changes bar meaning.
                             const cash = {
-                              planIn: "hsl(var(--success) / 0.35)",
-                              actIn:  "hsl(var(--success))",
+                              planIn:  "hsl(var(--success) / 0.35)",
+                              actIn:   "hsl(var(--success))",
                               planOut: "hsl(var(--accent) / 0.35)",
                               actOut:  "hsl(var(--accent))",
                             };
-                            // Only the S-curve LINES switch color per active curve.
-                            const line = activeCurve === "baseline"
-                              ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
-                              : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
+                            // Curve-typed color for the progress line (plan & actual share the same HUE).
+                            const extrasList = availableCurves.filter(c => c !== "baseline");
+                            const extraIdx = activeCurve === "baseline" ? 0 : Math.max(0, extrasList.indexOf(activeCurve));
+                            const line = curvePalette(activeCurve, extraIdx);
                             return (
                               <>
                                 <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={cash.planIn} radius={[3,3,0,0]} />
                                 <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={cash.actIn} radius={[3,3,0,0]} />
                                 <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={cash.planOut} radius={[3,3,0,0]} />
                                 <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={cash.actOut} radius={[3,3,0,0]} />
-                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
                               </>
                             );
                           })()}
@@ -537,9 +558,9 @@ const ProjectDetail = () => {
                       </ResponsiveContainer>
                     </div>
                     {(() => {
-                      const lineColor = activeCurve === "baseline"
-                        ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
-                        : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
+                      const extrasList3 = availableCurves.filter(c => c !== "baseline");
+                      const idx3 = activeCurve === "baseline" ? 0 : Math.max(0, extrasList3.indexOf(activeCurve));
+                      const lineColor = curvePalette(activeCurve, idx3);
                       return (
                     <div className="max-h-[280px] overflow-auto rounded border border-border">
                       <table className="w-full text-xs">
@@ -616,34 +637,63 @@ const ProjectDetail = () => {
                   if (fe.direction === "out" && isPlan) map[key].planOut += amt;
                   if (fe.direction === "out" && isAct) map[key].actOut += amt;
                 });
-                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
-                  label: r.label,
-                  "Plan Cash In": r.planIn,
-                  "Actual Cash In": r.actIn,
-                  "Plan Cash Out": -r.planOut,
-                  "Actual Cash Out": -r.actOut,
-                }));
+                const sorted = Object.values(map).sort((a, b) => a.order - b.order);
+                let cumPlan = 0, cumAct = 0;
+                let hasAnyActual = false;
+                const bipolar = sorted.map(r => {
+                  cumPlan += (r.planIn - r.planOut);
+                  const hasAct = r.actIn !== 0 || r.actOut !== 0;
+                  if (hasAct) { hasAnyActual = true; cumAct += (r.actIn - r.actOut); }
+                  return {
+                    label: r.label,
+                    "Plan Cash In": r.planIn,
+                    "Actual Cash In": r.actIn,
+                    "Plan Cash Out": -r.planOut,
+                    "Actual Cash Out": -r.actOut,
+                    "Cum. Plan Net": cumPlan,
+                    "Cum. Actual Net": hasAnyActual && hasAct ? cumAct : null,
+                  };
+                });
+                // Breakeven marker (first period where cumulative actual net turns >= 0)
+                const breakevenLabel = (() => {
+                  let prev = -Infinity;
+                  for (const r of bipolar) {
+                    const v = r["Cum. Actual Net"];
+                    if (v == null) continue;
+                    if (prev < 0 && v >= 0) return r.label;
+                    prev = v as number;
+                  }
+                  return null;
+                })();
                 if (bipolar.length === 0) return null;
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
                     </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
-                    <div className="h-[300px]">
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis = <span className="font-semibold" style={{ color: "hsl(215, 80%, 48%)" }}>Kumulatif Plan Net</span> &amp; <span className="font-semibold" style={{ color: "hsl(30, 90%, 45%)" }}>Kumulatif Actual Net</span>. Titik potong garis ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
+                    <div className="h-[340px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                        <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
                           <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: any, name: string) => {
+                            if (v == null) return ["—", name];
+                            const raw = Number(v);
+                            const isCum = name.startsWith("Cum.");
+                            return [`${raw < 0 ? "-" : ""}${formatRupiah(Math.abs(raw))}`, name];
+                          }} />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
-                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
+                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
+                          {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--success))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--success))", fontSize: 10, position: "top" }} />}
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.35)" radius={[3,3,0,0]} />
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
                           <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
-                        </BarChart>
+                          <Line type="monotone" dataKey="Cum. Plan Net" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 2.5, fill: "hsl(215, 80%, 48%)" }} connectNulls />
+                          <Line type="monotone" dataKey="Cum. Actual Net" stroke="hsl(30, 90%, 45%)" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(30, 90%, 45%)" }} connectNulls />
+                        </ComposedChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
@@ -769,6 +819,8 @@ const ProjectDetail = () => {
 
               return { ct, lastLabel, lastAct, lastPlan, dev, spi, list };
             });
+            const extrasOnly = curveTypes.filter(c => c !== "baseline");
+            const paletteFor = (ct: string) => curvePalette(ct, ct === "baseline" ? 0 : extrasOnly.indexOf(ct));
 
             return (
             <div className="space-y-4">
@@ -785,10 +837,15 @@ const ProjectDetail = () => {
 
                 {/* Per-curve KPI row (SPI + Deviasi) — compact single-row layout */}
                 <div className="mt-4 space-y-2">
-                  {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => (
+                  {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => {
+                    const pal = paletteFor(ct);
+                    return (
                     <div key={ct} className="bg-muted/30 rounded-lg border border-border/50 p-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
                       <div className="flex items-center gap-2 min-w-[140px]">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide"
+                          style={{ color: pal.hue, backgroundColor: `${pal.hue.replace('hsl(', 'hsla(').replace(')', ', 0.12)')}` }}
+                        >
                           {ct === "baseline" ? "Baseline" : ct}
                         </span>
                         {lastLabel && <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel}</span></span>}
@@ -806,12 +863,15 @@ const ProjectDetail = () => {
                         </span>
                       </div>
                       {lastAct != null && lastPlan != null && (
-                        <div className="text-[10px] text-muted-foreground ml-auto font-mono-data">
-                          Act <span className="text-accent font-semibold">{lastAct.toFixed(1)}%</span> vs Plan <span className="text-primary font-semibold">{lastPlan.toFixed(1)}%</span>
+                        <div className="text-[10px] text-muted-foreground ml-auto font-mono-data flex items-center gap-2">
+                          <span>Plan <span className="font-semibold" style={{ color: pal.plan }}>{lastPlan.toFixed(1)}%</span></span>
+                          <span className="text-border">|</span>
+                          <span>Actual <span className="font-semibold" style={{ color: pal.actual }}>{lastAct.toFixed(1)}%</span></span>
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -825,10 +885,14 @@ const ProjectDetail = () => {
                   <div className={`grid gap-3 ${perCurve.filter(pc => pc.list.length > 0).length > 1 ? "lg:grid-cols-2" : "grid-cols-1"}`}>
                     {perCurve.map(({ ct, lastLabel, list }) => {
                       if (list.length === 0) return null;
+                      const pal = paletteFor(ct);
                       return (
                         <div key={ct} className="border border-border rounded-md overflow-hidden">
                           <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                            <span
+                              className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide"
+                              style={{ color: pal.hue, backgroundColor: `${pal.hue.replace('hsl(', 'hsla(').replace(')', ', 0.12)')}` }}
+                            >
                               {ct === "baseline" ? "Baseline" : ct}
                             </span>
                             <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel || "—"}</span></span>
@@ -837,8 +901,8 @@ const ProjectDetail = () => {
                             <thead>
                               <tr className="bg-muted/20 border-b border-border">
                                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
-                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
-                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase font-bold" style={{ color: pal.plan }}>Planned</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase font-bold" style={{ color: pal.actual }}>Actual</th>
                                 <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
                               </tr>
                             </thead>
@@ -847,13 +911,13 @@ const ProjectDetail = () => {
                                 const d = (r.actual ?? 0) - (r.plan ?? 0);
                                 const isCurrent = i === list.length - 1;
                                 return (
-                                  <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
+                                  <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-muted/30" : ""}`}>
                                     <td className="py-1.5 px-2 text-foreground font-medium">
                                       {r.label}
-                                      {isCurrent && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Now</span>}
+                                      {isCurrent && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded font-semibold uppercase" style={{ color: pal.hue, backgroundColor: `${pal.hue.replace('hsl(', 'hsla(').replace(')', ', 0.15)')}` }}>Now</span>}
                                     </td>
-                                    <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
-                                    <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data" style={{ color: pal.plan }}>{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: pal.actual }}>{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
                                     <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
                                   </tr>
                                 );
@@ -963,15 +1027,21 @@ const ProjectDetail = () => {
                             <span className="hidden sm:inline text-muted-foreground/70">· Klik baris parent untuk expand level 2 · Scroll ↔ untuk lihat start &amp; finish</span>
                           </div>
                         </div>
-                        <div className="overflow-auto max-h-[480px] border border-border rounded-md bg-muted/10">
-                          <div className="relative" style={{ minWidth: `${timelineMinPx}px` }}>
-                            {/* Month header (sticky top so scrolling vertical keeps it visible) */}
-                            <div className="sticky top-0 z-20 relative h-6 border-b border-border bg-muted/90 backdrop-blur" style={{ marginLeft: 220 }}>
-                              {months.map((m, i) => (
-                                <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
-                                  <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
-                                </div>
-                              ))}
+                        <div
+                          className="overflow-auto max-h-[480px] border border-border rounded-md bg-muted/10 relative"
+                          onMouseLeave={() => setGanttHover(null)}
+                        >
+                          <div style={{ minWidth: `${220 + timelineMinPx}px` }}>
+                            {/* Month header (sticky top) */}
+                            <div className="sticky top-0 z-20 flex h-6 border-b border-border bg-muted/90 backdrop-blur">
+                              <div className="sticky left-0 z-30 w-[220px] shrink-0 bg-muted/90 border-r border-border flex items-center px-2 text-[9px] uppercase text-muted-foreground font-semibold">Work Item</div>
+                              <div className="relative flex-1" style={{ minWidth: `${timelineMinPx}px` }}>
+                                {months.map((m, i) => (
+                                  <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
+                                    <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                             {/* Rows */}
                             <div>
@@ -979,31 +1049,28 @@ const ProjectDetail = () => {
                                 const clickable = level === 1 && hasChildren;
                                 const durationDays = Math.max(0, Math.round((endMs - startMs) / 86400000));
                                 const remainingDays = Math.max(0, Math.ceil((endMs - todayMs) / 86400000));
-
-
                                 return (
-                                <div
-                                  key={id}
-                                  onClick={clickable ? () => toggleTimeline(areaId!) : undefined}
-                                  className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-9"} ${clickable ? "cursor-pointer" : ""}`}
-                                >
-                                  <div className={`sticky left-0 z-10 absolute inset-y-0 w-[220px] flex items-center px-2 gap-1.5 bg-card border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
-                                    {level === 1 && (
-                                      hasChildren ? <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${expanded ? "" : "-rotate-90"}`} /> : <div className="w-3 shrink-0" />
-                                    )}
-                                    <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
-                                    <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
-                                  </div>
-                                  <div className="absolute inset-y-0" style={{ left: "220px", right: 0 }}>
-                                    <div className="relative h-full">
-                                      <div className={`group/bar absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20 hover:bg-primary/30" : "h-2 bg-accent/20 hover:bg-accent/30"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
-                                        <div className="pointer-events-none opacity-0 group-hover/bar:opacity-100 transition-opacity duration-75 absolute z-30 left-1/2 -translate-x-1/2 bottom-[calc(100%+4px)] bg-card border border-border rounded-md shadow-lg px-2.5 py-1.5 text-[10px] whitespace-nowrap">
-                                          <p className="font-bold text-foreground mb-0.5">{code} — {name}</p>
-                                          <p className="text-muted-foreground">Start: <span className="font-mono-data text-foreground">{fmt(startMs)}</span> · Finish: <span className="font-mono-data text-foreground">{fmt(endMs)}</span></p>
-                                          <p className="text-muted-foreground">Durasi: <span className="font-mono-data text-foreground">{durationDays}d</span> · Sisa: <span className={`font-mono-data ${remainingDays === 0 ? "text-destructive" : "text-foreground"}`}>{remainingDays}d</span></p>
-                                          <p className="text-muted-foreground">Progress: <span className="font-mono-data font-semibold text-primary">{progressPct}%</span>{qty ? <> · Qty: <span className="font-mono-data text-foreground">{qty} {unit || ""}</span></> : null}</p>
-                                        </div>
-                                      </div>
+                                  <div
+                                    key={id}
+                                    onClick={clickable ? () => toggleTimeline(areaId!) : undefined}
+                                    className={`flex border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-9"} ${clickable ? "cursor-pointer" : ""}`}
+                                  >
+                                    {/* Sticky left column (frozen on horizontal scroll) */}
+                                    <div className={`sticky left-0 z-10 w-[220px] shrink-0 flex items-center px-2 gap-1.5 bg-card border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
+                                      {level === 1 && (
+                                        hasChildren ? <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${expanded ? "" : "-rotate-90"}`} /> : <div className="w-3 shrink-0" />
+                                      )}
+                                      <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
+                                      <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
+                                    </div>
+                                    {/* Timeline area */}
+                                    <div className="relative flex-1" style={{ minWidth: `${timelineMinPx}px` }}>
+                                      <div
+                                        className={`absolute top-1/2 -translate-y-1/2 rounded-sm cursor-default ${level === 1 ? "h-3 bg-primary/25 hover:bg-primary/40" : "h-2 bg-accent/25 hover:bg-accent/40"}`}
+                                        style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                                        onMouseMove={(e) => setGanttHover({ x: e.clientX, y: e.clientY, code, name, startMs, endMs, durationDays, remainingDays, progressPct, qty: qty != null ? String(qty) : undefined, unit: unit ?? undefined, level: level as 1 | 2 })}
+                                        onMouseLeave={() => setGanttHover(null)}
+                                      />
                                       <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm pointer-events-none ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
                                       <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 pointer-events-none ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
                                         <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
@@ -1011,12 +1078,25 @@ const ProjectDetail = () => {
                                       <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1] pointer-events-none" style={{ left: `${todayPct}%` }} />
                                     </div>
                                   </div>
-
-                                </div>
                                 );
                               })}
                             </div>
                           </div>
+                          {/* Cursor-following tooltip (fixed positioning) */}
+                          {ganttHover && (
+                            <div
+                              className="pointer-events-none fixed z-50 bg-card border border-border rounded-md shadow-lg px-2.5 py-1.5 text-[10px] whitespace-nowrap"
+                              style={{
+                                left: Math.min(window.innerWidth - 260, ganttHover.x + 12),
+                                top: Math.max(8, ganttHover.y - 68),
+                              }}
+                            >
+                              <p className="font-bold text-foreground mb-0.5">{ganttHover.code} — {ganttHover.name}</p>
+                              <p className="text-muted-foreground">Start: <span className="font-mono-data text-foreground">{fmt(ganttHover.startMs)}</span> · Finish: <span className="font-mono-data text-foreground">{fmt(ganttHover.endMs)}</span></p>
+                              <p className="text-muted-foreground">Durasi: <span className="font-mono-data text-foreground">{ganttHover.durationDays}d</span> · Sisa: <span className={`font-mono-data ${ganttHover.remainingDays === 0 ? "text-destructive" : "text-foreground"}`}>{ganttHover.remainingDays}d</span></p>
+                              <p className="text-muted-foreground">Progress: <span className="font-mono-data font-semibold text-primary">{ganttHover.progressPct}%</span>{ganttHover.qty ? <> · Qty: <span className="font-mono-data text-foreground">{ganttHover.qty} {ganttHover.unit || ""}</span></> : null}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
