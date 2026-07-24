@@ -459,8 +459,8 @@ const ProjectDetail = () => {
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
                           <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--destructive))" radius={[0,0,3,3]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
