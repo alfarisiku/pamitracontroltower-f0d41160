@@ -329,7 +329,7 @@ const ProjectDetail = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Time Elapsed</span>
+                        <span className="text-muted-foreground">Time Progress</span>
                         <span className="font-mono-data font-bold text-foreground">{elapsedPct}%</span>
                       </div>
                       <Progress value={elapsedPct} className="h-2" />
