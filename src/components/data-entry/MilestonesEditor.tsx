@@ -126,16 +126,27 @@ export function MilestonesEditor({ projectId }: { projectId: string }) {
               <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-28">Actions</th>
             </tr></thead>
             <tbody>
-              {milestones.map(m => (
-                <tr key={m.id} className="border-b border-border/30">
+              {milestones.map(m => {
+                const isEditing = editingId === m.id;
+                return (
+                <tr key={m.id} className="border-b border-border/30 hover:bg-muted/20">
                   <td className="py-1.5 px-2">
-                    <input defaultValue={m.name} onBlur={e => e.target.value !== m.name && handleUpdate(m.id, { name: e.target.value }, m.name)}
-                      className="w-full bg-transparent border-0 text-xs font-medium text-foreground focus:outline-none focus:bg-card focus:px-1 focus:border focus:border-primary rounded" />
+                    {isEditing ? (
+                      <input value={edit.name} onChange={e => setEdit({...edit, name: e.target.value})}
+                        className="w-full px-1.5 py-1 text-xs font-medium border border-primary rounded bg-card focus:outline-none" />
+                    ) : (
+                      <span className="text-xs font-medium text-foreground">{m.name}</span>
+                    )}
                   </td>
                   <td className="py-1.5 px-2">
-                    <select defaultValue={m.phase} onChange={e => handleUpdate(m.id, { phase: e.target.value }, m.name)} className="bg-transparent text-xs text-muted-foreground focus:outline-none">
-                      <option>Engineering</option><option>Procurement</option><option>Construction</option><option>Commissioning</option>
-                    </select>
+                    {isEditing ? (
+                      <select value={edit.phase} onChange={e => setEdit({...edit, phase: e.target.value})}
+                        className="px-1.5 py-1 text-xs border border-primary rounded bg-card focus:outline-none">
+                        <option>Engineering</option><option>Procurement</option><option>Construction</option><option>Commissioning</option>
+                      </select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{m.phase}</span>
+                    )}
                   </td>
                   <td className="py-1.5 px-2">
                     <input type="date" defaultValue={m.target_date} onBlur={e => e.target.value !== m.target_date && handleUpdate(m.id, { target_date: e.target.value }, m.name)}
@@ -146,9 +157,12 @@ export function MilestonesEditor({ projectId }: { projectId: string }) {
                       className="bg-transparent text-xs font-mono-data text-muted-foreground focus:outline-none" />
                   </td>
                   <td className="py-1.5 px-2 text-right">
-                    <input type="number" min="0" max="100" defaultValue={m.weight}
-                      onBlur={e => Number(e.target.value) !== m.weight && handleUpdate(m.id, { weight: parseFloat(e.target.value) || 0 }, m.name)}
-                      className="w-14 text-right bg-transparent text-xs font-mono-data text-foreground focus:outline-none" />
+                    {isEditing ? (
+                      <input type="number" min="0" max="100" value={edit.weight} onChange={e => setEdit({...edit, weight: e.target.value})}
+                        className="w-16 text-right px-1.5 py-1 text-xs font-mono-data border border-primary rounded bg-card focus:outline-none" />
+                    ) : (
+                      <span className="text-xs font-mono-data text-foreground">{m.weight}%</span>
+                    )}
                   </td>
                   <td className="py-1.5 px-2 text-center">
                     <select value={m.status} onChange={e => handleUpdate(m.id, { status: e.target.value, actual_date: e.target.value === "completed" ? (m.actual_date || new Date().toISOString().slice(0, 10)) : m.actual_date }, m.name)}
@@ -160,19 +174,31 @@ export function MilestonesEditor({ projectId }: { projectId: string }) {
                     </select>
                   </td>
                   <td className="py-1.5 px-2">
-                    <div className="flex items-center gap-1">
-                      {m.status !== "completed" && (
-                        <button onClick={() => markComplete(m.id, m.name)} className="p-1 hover:bg-success/10 rounded" title="Mark completed">
-                          <CheckCircle2 className="h-3 w-3 text-success" />
-                        </button>
+                    <div className="flex items-center gap-1 justify-end">
+                      {isEditing ? (
+                        <>
+                          <button onClick={() => saveEdit(m)} className="p-1 hover:bg-success/10 rounded" title="Save"><Save className="h-3 w-3 text-success" /></button>
+                          <button onClick={() => setEditingId(null)} className="p-1 hover:bg-muted rounded" title="Cancel"><X className="h-3 w-3 text-muted-foreground" /></button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => startEdit(m)} className="p-1 hover:bg-primary/10 rounded" title="Edit name, phase, weight"><Pencil className="h-3 w-3 text-primary" /></button>
+                          {m.status !== "completed" && (
+                            <button onClick={() => markComplete(m.id, m.name)} className="p-1 hover:bg-success/10 rounded" title="Mark completed">
+                              <CheckCircle2 className="h-3 w-3 text-success" />
+                            </button>
+                          )}
+                          <button onClick={() => handleDelete(m.id, m.name)} className="p-1 hover:bg-destructive/10 rounded" title="Delete">
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </button>
+                        </>
                       )}
-                      <button onClick={() => handleDelete(m.id, m.name)} className="p-1 hover:bg-destructive/10 rounded" title="Delete">
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </button>
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
+
             </tbody>
           </table>
         </div>
