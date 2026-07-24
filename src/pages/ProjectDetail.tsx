@@ -324,11 +324,11 @@ const ProjectDetail = () => {
                     return (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Contract Value</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">Contract Value</p>
                           <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">RAP</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">RAP</p>
                           <p className="text-lg font-bold font-mono-data text-info">{formatRupiah(rapValue)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
