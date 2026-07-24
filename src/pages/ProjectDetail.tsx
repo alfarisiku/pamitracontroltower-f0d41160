@@ -790,6 +790,8 @@ const ProjectDetail = () => {
 
               return { ct, lastLabel, lastAct, lastPlan, dev, spi, list };
             });
+            const extrasOnly = curveTypes.filter(c => c !== "baseline");
+            const paletteFor = (ct: string) => curvePalette(ct, ct === "baseline" ? 0 : extrasOnly.indexOf(ct));
 
             return (
             <div className="space-y-4">
