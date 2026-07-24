@@ -1044,17 +1044,17 @@ const ProjectDetail = () => {
                     </div>
                   </div>
                   <div className="glass-card rounded-lg shadow-card overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-auto max-h-[520px]">
                       <table className="w-full text-xs">
-                        <thead><tr className="bg-muted/50 border-b border-border">
+                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
                           <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Item</th>
                           <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Vendor</th>
                           <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Amount</th>
                           <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Status</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">RFQ</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PR</th>
                           <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PO</th>
                           <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Delivery</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Install</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">On Site</th>
                         </tr></thead>
                         <tbody>
                           {procurementItems.map(item => (
@@ -1074,6 +1074,7 @@ const ProjectDetail = () => {
                       </table>
                     </div>
                   </div>
+
                 </>
               )}
             </div>
