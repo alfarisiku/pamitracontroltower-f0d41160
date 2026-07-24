@@ -332,11 +332,11 @@ const ProjectDetail = () => {
                           <p className="text-lg font-bold font-mono-data text-info">{formatRupiah(rapValue)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Actual Cash Out</p>
-                          <p className="text-lg font-bold font-mono-data text-destructive">{formatRupiah(actualCashOut)}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">Actual Cash Out</p>
+                          <p className="text-lg font-bold font-mono-data text-accent">{formatRupiah(actualCashOut)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Remaining (RAP − Actual)</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">Remaining (RAP − Actual)</p>
                           <p className={`text-lg font-bold font-mono-data ${remainingRap >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(remainingRap)}</p>
                         </div>
                       </div>
