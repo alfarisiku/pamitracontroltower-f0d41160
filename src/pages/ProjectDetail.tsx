@@ -688,76 +688,89 @@ const ProjectDetail = () => {
                   customData={scurveData.length > 0 ? scurveData : undefined}
                 />
 
-                {/* Per-curve KPI cards (SPI + Deviasi) */}
-                {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => (
-                  <div key={ct} className="mt-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                      {ct === "baseline" ? "Baseline (Overall Project)" : `${ct} — Kurva Tambahan`}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                        <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
-                        <p className={`text-lg font-bold font-mono-data ${spi != null ? (spi >= 0.95 ? "text-success" : spi >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
+                {/* Per-curve KPI row (SPI + Deviasi) — compact single-row layout */}
+                <div className="mt-4 space-y-2">
+                  {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => (
+                    <div key={ct} className="bg-muted/30 rounded-lg border border-border/50 p-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <div className="flex items-center gap-2 min-w-[140px]">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                          {ct === "baseline" ? "Baseline" : ct}
+                        </span>
+                        {lastLabel && <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel}</span></span>}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></span>
+                        <span className={`text-sm font-bold font-mono-data ${spi != null ? (spi >= 0.95 ? "text-success" : spi >= 0.8 ? "text-warning" : "text-destructive") : "text-muted-foreground"}`}>
                           {spi != null ? spi.toFixed(2) : "N/A"}
-                        </p>
-                        {lastLabel && <p className="text-[9px] text-muted-foreground mt-0.5">Cut-off: {lastLabel}</p>}
+                        </span>
                       </div>
-                      <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                        <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress (Actual − Plan)</p>
-                        <p className={`text-lg font-bold font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase text-muted-foreground">Deviasi</span>
+                        <span className={`text-sm font-bold font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>
                           {dev == null ? "N/A" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}
-                        </p>
-                        {lastAct != null && lastPlan != null && (
-                          <p className="text-[9px] text-muted-foreground mt-0.5">Act {lastAct.toFixed(1)}% vs Plan {lastPlan.toFixed(1)}%</p>
-                        )}
+                        </span>
                       </div>
+                      {lastAct != null && lastPlan != null && (
+                        <div className="text-[10px] text-muted-foreground ml-auto font-mono-data">
+                          Act <span className="text-accent font-semibold">{lastAct.toFixed(1)}%</span> vs Plan <span className="text-primary font-semibold">{lastPlan.toFixed(1)}%</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* Last 4 Reporting Periods Summary — per curve, anchored at last-actual */}
-              {perCurve.map(({ ct, lastLabel, list }) => {
-                if (list.length === 0) return null;
-                return (
-                  <div key={ct} className="glass-card rounded-lg shadow-card p-4">
-                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-primary" /> Ringkasan Periode Pelaporan
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-primary/10 text-primary uppercase">{ct === "baseline" ? "Baseline" : ct}</span>
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Periode Actual terakhir ({lastLabel || "—"}) dan 3 periode sebelumnya — Planned vs Actual Progress dan deviasinya.</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-muted/50 border-b border-border">
-                            <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {list.map((r, i) => {
-                            const d = (r.actual ?? 0) - (r.plan ?? 0);
-                            const isCurrent = i === list.length - 1;
-                            return (
-                              <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
-                                <td className="py-2 px-2 text-foreground font-medium">
-                                  {r.label}
-                                  {isCurrent && <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Saat ini</span>}
-                                </td>
-                                <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
-                                <td className="py-2 px-2 text-right font-mono-data text-foreground font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
-                                <td className={`py-2 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
+              {/* Reporting Periods Summary — all curves merged into one card, side-by-side when multiple */}
+              {perCurve.some(pc => pc.list.length > 0) && (
+                <div className="glass-card rounded-lg shadow-card p-4">
+                  <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-primary" /> Ringkasan Periode Pelaporan
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground mb-3">Periode Actual terakhir dan 3 periode sebelumnya — Planned vs Actual Progress per kurva.</p>
+                  <div className={`grid gap-3 ${perCurve.filter(pc => pc.list.length > 0).length > 1 ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+                    {perCurve.map(({ ct, lastLabel, list }) => {
+                      if (list.length === 0) return null;
+                      return (
+                        <div key={ct} className="border border-border rounded-md overflow-hidden">
+                          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                              {ct === "baseline" ? "Baseline" : ct}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel || "—"}</span></span>
+                          </div>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-muted/20 border-b border-border">
+                                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                            </thead>
+                            <tbody>
+                              {list.map((r, i) => {
+                                const d = (r.actual ?? 0) - (r.plan ?? 0);
+                                const isCurrent = i === list.length - 1;
+                                return (
+                                  <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
+                                    <td className="py-1.5 px-2 text-foreground font-medium">
+                                      {r.label}
+                                      {isCurrent && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Now</span>}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
+                                    <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              )}
             </div>
             );
           })()}
