@@ -572,7 +572,7 @@ const ProjectDetail = () => {
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Cost Breakdown per Kategori</h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <div className="overflow-x-auto">
+                      <div className="border border-border rounded-md overflow-hidden">
                         <table className="w-full text-xs">
                           <thead><tr className="bg-muted/50 border-b border-border">
                             <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Kategori</th>
@@ -608,6 +608,7 @@ const ProjectDetail = () => {
                           </tbody>
                         </table>
                       </div>
+
                       <div className="h-[340px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }} barCategoryGap={8}>
