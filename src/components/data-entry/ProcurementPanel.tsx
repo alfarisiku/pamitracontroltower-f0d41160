@@ -139,23 +139,48 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
             </tr></thead>
             <tbody>
               {items.map(item => {
+                const patch = async (field: string, value: any, human: string) => {
+                  await supabase.from("procurement_items").update({ [field]: value }).eq("id", item.id);
+                  await logActivity(supabase, "procurement", "update", `${item.item_name} ${human}`, projectId, item.id);
+                  queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
+                  queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+                };
+                const editCls = "bg-transparent border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 focus:outline-none";
                 const dateInput = (field: keyof typeof item, current: string | null) => (
                   <input type="date" defaultValue={current || ""}
                     onBlur={async e => {
                       const v = e.target.value || null;
                       if (v === (current || null)) return;
-                      await supabase.from("procurement_items").update({ [field]: v }).eq("id", item.id);
-                      await logActivity(supabase, "procurement", "update", `${item.item_name} ${String(field)} → ${v || "cleared"}`, projectId, item.id);
-                      queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
-                      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+                      await patch(String(field), v, `${String(field)} → ${v || "cleared"}`);
                     }}
-                    className="bg-transparent text-[10px] font-mono-data text-foreground border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 focus:outline-none w-[120px]" />
+                    className={`${editCls} text-[10px] font-mono-data text-foreground w-[120px]`} />
                 );
                 return (
                 <tr key={item.id} className="border-b border-border/30">
-                  <td className="py-1.5 px-2 font-medium text-foreground">{item.item_name}<div className="text-[9px] text-muted-foreground">{item.qty} {item.unit}</div></td>
-                  <td className="py-1.5 px-2 text-muted-foreground">{item.vendor}</td>
-                  <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatIDR(item.amount)}</td>
+                  <td className="py-1.5 px-2 font-medium text-foreground">
+                    <input defaultValue={item.item_name}
+                      onBlur={e => e.target.value !== item.item_name && e.target.value && patch("item_name", e.target.value, `renamed → ${e.target.value}`)}
+                      className={`${editCls} text-xs font-medium text-foreground w-full`} />
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <input type="number" defaultValue={item.qty} step="0.01"
+                        onBlur={e => Number(e.target.value) !== Number(item.qty) && patch("qty", parseFloat(e.target.value) || 0, `qty → ${e.target.value}`)}
+                        className={`${editCls} text-[9px] text-muted-foreground w-14 font-mono-data`} />
+                      <input defaultValue={item.unit}
+                        onBlur={e => e.target.value !== item.unit && patch("unit", e.target.value, `unit → ${e.target.value}`)}
+                        className={`${editCls} text-[9px] text-muted-foreground w-12`} />
+                    </div>
+                  </td>
+                  <td className="py-1.5 px-2 text-muted-foreground">
+                    <input defaultValue={item.vendor || ""}
+                      onBlur={e => e.target.value !== (item.vendor || "") && patch("vendor", e.target.value, `vendor → ${e.target.value}`)}
+                      className={`${editCls} text-xs text-muted-foreground w-full`} placeholder="—" />
+                  </td>
+                  <td className="py-1.5 px-2 text-right font-mono-data text-accent">
+                    <input type="number" defaultValue={item.amount}
+                      onBlur={e => Number(e.target.value) !== item.amount && patch("amount", parseInt(e.target.value) || 0, `amount → ${formatIDR(parseInt(e.target.value)||0)}`)}
+                      className={`${editCls} text-right font-mono-data text-accent w-[110px] text-xs`} />
+                    <div className="text-[9px] text-muted-foreground">{formatIDR(item.amount)}</div>
+                  </td>
                   <td className="py-1.5 px-2 text-center">
                     <select value={item.status} onChange={e => handleStatusUpdate(item.id, e.target.value, item.item_name)}
                       className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${statusColors[item.status] || ""} border-border bg-transparent cursor-pointer`}>
