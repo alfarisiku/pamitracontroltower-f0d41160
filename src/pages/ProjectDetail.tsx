@@ -226,12 +226,12 @@ const ProjectDetail = () => {
           <div className="flex items-center gap-1 mb-4 border-b border-border pb-2 overflow-x-auto">
             {(([
               { key: "health" as const, label: "Health", icon: Activity, publicOk: true },
-              { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp, publicOk: true },
+              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
               { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
+              { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
-              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
             ]).filter(t => !isClient || t.publicOk)).map(tab => (
@@ -453,7 +453,39 @@ const ProjectDetail = () => {
                           <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} />
                           <YAxis yAxisId="left" orientation="left" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
                           <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => name.includes("%") ? `${Number(v).toFixed(1)}%` : formatRupiah(v)} />
+                          <RTooltip
+                            contentStyle={chartTooltip}
+                            content={({ active, payload, label }: any) => {
+                              if (!active || !payload || payload.length === 0) return null;
+                              const row = payload[0]?.payload || {};
+                              const rowNum = (v: any) => (v == null ? null : Number(v));
+                              const planPct = rowNum(row.planPct);
+                              const actPct = rowNum(row.actPct);
+                              const planIn = rowNum(row.planIn) ?? 0;
+                              const planOut = rowNum(row.planOut) ?? 0;
+                              const cashIn = rowNum(row.cashIn) ?? 0;
+                              const cashOut = rowNum(row.cashOut) ?? 0;
+                              return (
+                                <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
+                                  <p className="text-foreground font-bold mb-1.5">{label}</p>
+                                  <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
+                                    <span className="text-muted-foreground">Planning Progress</span>
+                                    <span className="font-mono-data text-primary font-semibold text-right">{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground">Planning Cash In</span>
+                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planIn)}</span>
+                                    <span className="text-muted-foreground">Planning Cash Out</span>
+                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Progress</span>
+                                    <span className="font-mono-data text-accent font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground">Actual Cash In</span>
+                                    <span className="font-mono-data text-success text-right">{formatRupiah(cashIn)}</span>
+                                    <span className="text-muted-foreground">Actual Cash Out</span>
+                                    <span className="font-mono-data text-destructive text-right">{formatRupiah(cashOut)}</span>
+                                  </div>
+                                </div>
+                              );
+                            }}
+                          />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
@@ -464,34 +496,47 @@ const ProjectDetail = () => {
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="max-h-[280px] overflow-y-auto rounded border border-border">
+                    <div className="max-h-[280px] overflow-auto rounded border border-border">
                       <table className="w-full text-xs">
-                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
-                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash In</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
-                        </tr></thead>
+                        <thead className="sticky top-0 z-10">
+                          <tr className="bg-muted border-b border-border">
+                            <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
+                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress %</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-success border-l border-border">Cash In</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-destructive border-l border-border">Cash Out</th>
+                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net (Actual)</th>
+                          </tr>
+                          <tr className="bg-muted/70 border-b border-border">
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                          </tr>
+                        </thead>
                         <tbody>
                           {rows.map(r => {
                             const dev = (r.actPct ?? 0) - r.planPct;
+                            const net = r.cashIn - r.cashOut;
                             return (
                             <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.planPct.toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-primary border-l border-border/40">{r.planPct.toFixed(1)}%</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                               <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data ${(r.cashIn - r.cashOut) >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.cashIn - r.cashOut)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive font-semibold">{formatRupiah(r.cashOut)}</td>
+                              <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${net >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(net)}</td>
                             </tr>
                           );})}
                         </tbody>
                       </table>
                     </div>
+
                   </div>
                 );
               })()}
@@ -806,30 +851,35 @@ const ProjectDetail = () => {
                     }
                     const todayMs = new Date().getTime();
                     const todayPct = ((Math.min(pEnd, Math.max(pStart, todayMs)) - pStart) / total) * 100;
-                    const rowsData: Array<{ id: string; code: string; name: string; leftPct: number; widthPct: number; progressPct: number; level: 1 | 2 }> = [];
+                    const rowsData: Array<{ id: string; code: string; name: string; leftPct: number; widthPct: number; progressPct: number; level: 1 | 2; areaId?: string; hasChildren?: boolean; expanded?: boolean }> = [];
                     workAreas.forEach(area => {
                       const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                       const dates = areaItems.flatMap(i => [i.start_date, i.end_date]).filter(Boolean) as string[];
                       const times = dates.map(d => new Date(d).getTime());
                       const s = times.length ? Math.min(...times) : pStart;
                       const e = times.length ? Math.max(...times) : pEnd;
+                      const isExp = expandedAreas.has(area.id);
                       rowsData.push({
                         id: area.id, code: area.code, name: area.name, level: 1,
                         leftPct: Math.max(0, ((s - pStart) / total) * 100),
                         widthPct: Math.max(1, ((e - s) / total) * 100),
                         progressPct: area.progress || 0,
+                        areaId: area.id, hasChildren: areaItems.length > 0, expanded: isExp,
                       });
-                      areaItems.forEach(wi => {
-                        const ws = wi.start_date ? new Date(wi.start_date).getTime() : s;
-                        const we = wi.end_date ? new Date(wi.end_date).getTime() : e;
-                        rowsData.push({
-                          id: wi.id, code: wi.code, name: wi.name, level: 2,
-                          leftPct: Math.max(0, ((ws - pStart) / total) * 100),
-                          widthPct: Math.max(0.5, ((we - ws) / total) * 100),
-                          progressPct: wi.progress || 0,
+                      if (isExp) {
+                        areaItems.forEach(wi => {
+                          const ws = wi.start_date ? new Date(wi.start_date).getTime() : s;
+                          const we = wi.end_date ? new Date(wi.end_date).getTime() : e;
+                          rowsData.push({
+                            id: wi.id, code: wi.code, name: wi.name, level: 2,
+                            leftPct: Math.max(0, ((ws - pStart) / total) * 100),
+                            widthPct: Math.max(0.5, ((we - ws) / total) * 100),
+                            progressPct: wi.progress || 0,
+                          });
                         });
-                      });
+                      }
                     });
+                    const timelineMinPx = Math.max(900, months.length * 60);
                     return (
                       <div className="glass-card rounded-lg shadow-card p-4">
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -838,42 +888,56 @@ const ProjectDetail = () => {
                             <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary/25" /> Duration</div>
                             <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary" /> Progress</div>
                             <div className="flex items-center gap-1"><div className="w-0.5 h-3 bg-destructive" /> Today</div>
+                            <span className="hidden sm:inline text-muted-foreground/70">· Klik baris parent untuk expand level 2 · Geser horizontal untuk periode lain</span>
                           </div>
                         </div>
-                        <div className="relative border border-border rounded-md bg-muted/10 overflow-hidden">
-                          {/* Month header */}
-                          <div className="relative h-6 border-b border-border bg-muted/30">
-                            {months.map((m, i) => (
-                              <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
-                                <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Rows */}
-                          <div>
-                            {rowsData.map(({ id, code, name, leftPct, widthPct, progressPct, level }) => (
-                              <div key={id} className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-8"}`}>
-                                <div className={`absolute inset-y-0 left-0 w-[220px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
-                                  <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
-                                  <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
+                        <div className="overflow-x-auto border border-border rounded-md bg-muted/10">
+                          <div className="relative" style={{ minWidth: `${timelineMinPx}px` }}>
+                            {/* Month header */}
+                            <div className="relative h-6 border-b border-border bg-muted/30" style={{ marginLeft: 220 }}>
+                              {months.map((m, i) => (
+                                <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
+                                  <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
                                 </div>
-                                <div className="absolute inset-y-0 pointer-events-none" style={{ left: "220px", right: 0 }}>
-                                  <div className="relative h-full">
-                                    <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20" : "h-2 bg-accent/20"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
-                                    <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
-                                    <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
-                                      <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
+                              ))}
+                            </div>
+                            {/* Rows */}
+                            <div>
+                              {rowsData.map(({ id, code, name, leftPct, widthPct, progressPct, level, areaId, hasChildren, expanded }) => {
+                                const clickable = level === 1 && hasChildren;
+                                return (
+                                <div
+                                  key={id}
+                                  onClick={clickable ? () => toggleArea(areaId!) : undefined}
+                                  className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-8"} ${clickable ? "cursor-pointer" : ""}`}
+                                >
+                                  <div className={`absolute inset-y-0 left-0 w-[220px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
+                                    {level === 1 && (
+                                      hasChildren ? <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${expanded ? "" : "-rotate-90"}`} /> : <div className="w-3 shrink-0" />
+                                    )}
+                                    <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
+                                    <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
+                                  </div>
+                                  <div className="absolute inset-y-0 pointer-events-none" style={{ left: "220px", right: 0 }}>
+                                    <div className="relative h-full">
+                                      <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20" : "h-2 bg-accent/20"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                                      <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
+                                      <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
+                                        <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
+                                      </div>
+                                      <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1]" style={{ left: `${todayPct}%` }} />
                                     </div>
-                                    <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1]" style={{ left: `${todayPct}%` }} />
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       </div>
                     );
                   })()}
+
 
 
                   {workAreas.map(area => {

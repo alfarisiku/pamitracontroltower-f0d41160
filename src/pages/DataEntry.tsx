@@ -5,7 +5,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Share2,
-  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet, ChevronDown, ChevronRight,
+  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet, ChevronDown, ChevronRight, TrendingUp,
 } from "lucide-react";
 
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
@@ -33,26 +33,28 @@ const DataEntry = () => {
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [excelOpen, setExcelOpen] = useState(false);
 
-  // Access-level restriction removed — every visitor is treated as admin, so show all projects.
   const projects = isAdmin
     ? allProjects
     : (isTeam ? allProjects.filter(p => assignedProjectIds.includes(p.id)) : allProjects);
 
-  // Urutan disamakan dengan tab Project Detail: Health/Overview → Finance → S-Curve → WBS → Procurement → Risk → Milestones → Weekly Report → Media
+  // Order mirrors Project Detail: Health → S-Curve → Milestones → WBS → Procurement → Finance → Risks → Weekly Report → Media
+  // Quick Weekly Update stands alone at the top. Manage Projects moved out to a top-right button.
   const allTabs = [
-    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,        adminOnly: false },
-    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false },
-    { key: "scurve" as const,        label: "S-Curve",             icon: FileBarChart,    adminOnly: false },
-    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false },
-    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,         adminOnly: false },
-    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle,   adminOnly: false },
-    { key: "milestones" as const,    label: "Milestones",          icon: Target,          adminOnly: false },
-    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false },
-    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,          adminOnly: false },
-    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,    adminOnly: true },
-    { key: "project-crud" as const,  label: "Manage Projects",     icon: ClipboardList,   adminOnly: true },
+    { key: "regular" as const,       label: "Quick Weekly Update", icon: FileText,        adminOnly: false, group: "quick" as const },
+    { key: "scurve" as const,        label: "S-Curve",             icon: TrendingUp,      adminOnly: false, group: "project" as const },
+    { key: "milestones" as const,    label: "Milestones",          icon: Target,          adminOnly: false, group: "project" as const },
+    { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false, group: "project" as const },
+    { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,         adminOnly: false, group: "project" as const },
+    { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false, group: "project" as const },
+    { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle,   adminOnly: false, group: "project" as const },
+    { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false, group: "project" as const },
+    { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,          adminOnly: false, group: "project" as const },
+    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,    adminOnly: true,  group: "project" as const },
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
+  const quickTabs = tabs.filter(t => t.group === "quick");
+  const projectTabs = tabs.filter(t => t.group === "project");
+
   const handleShare = async () => {
     if (navigator.share) await navigator.share({ title: "Data Entry Center", url: window.location.href });
     else { await navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }
@@ -73,12 +75,31 @@ const DataEntry = () => {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab("project-crud")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${activeTab === "project-crud" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border hover:bg-muted"}`}
+                >
+                  <ClipboardList className="h-3.5 w-3.5" /> Manage Projects
+                </button>
+              )}
             </div>
           </div>
 
 
-          <div className="flex items-center gap-1 mb-5 border-b border-border pb-2 overflow-x-auto">
-            {tabs.map(tab => (
+          <div className="flex items-center gap-2 mb-5 border-b border-border pb-2 overflow-x-auto">
+            {quickTabs.map(tab => (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
+                <tab.icon className="h-3.5 w-3.5" />{tab.label}
+              </button>
+            ))}
+            {quickTabs.length > 0 && projectTabs.length > 0 && (
+              <div className="mx-1 flex items-center gap-1.5 pl-3 border-l border-border/60 text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Per-Project
+              </div>
+            )}
+            {projectTabs.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
                 <tab.icon className="h-3.5 w-3.5" />{tab.label}

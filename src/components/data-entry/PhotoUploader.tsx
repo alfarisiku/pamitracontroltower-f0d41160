@@ -108,19 +108,12 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
     <div className="glass-card rounded-lg shadow-card p-4">
       <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Camera className="h-4 w-4 text-primary" /> Weekly Progress Photos</h3>
 
-      <div className="bg-muted/30 rounded-lg p-3 border border-border/50 mb-3 max-w-3xl">
-        <p className="text-[10px] font-semibold text-foreground mb-2 uppercase">Upload Foto Baru</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="bg-muted/30 rounded-lg p-4 border border-border/50 mb-3 max-w-2xl">
+        <p className="text-[10px] font-semibold text-foreground mb-3 uppercase tracking-wide">Upload Foto Baru</p>
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>Photo Date*</label>
             <input type="date" value={photoDate} onChange={e => setPhotoDate(e.target.value)} className={inputCls} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className={labelCls}>Week Label {!customWeek && "(auto)"}</label>
-            <div className="flex gap-1">
-              <input value={weekLabel} onChange={e => { setCustomWeek(true); setWeekLabel(e.target.value); }} className={inputCls} />
-              {customWeek && <button onClick={() => setCustomWeek(false)} className="px-2 text-[10px] bg-muted rounded border border-border">auto</button>}
-            </div>
           </div>
           <div>
             <label className={labelCls}>Activity Category</label>
@@ -128,27 +121,35 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
               {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
-          <div className="sm:col-span-2">
-            <label className={labelCls}>Location (opt)</label>
-            <input value={location} onChange={e => setLocation(e.target.value)} className={inputCls} placeholder="e.g. Tank Area B" />
+          <div className="col-span-2">
+            <label className={labelCls}>Week Label {!customWeek && "(auto)"}</label>
+            <div className="flex gap-1">
+              <input value={weekLabel} onChange={e => { setCustomWeek(true); setWeekLabel(e.target.value); }} className={inputCls} />
+              {customWeek && <button onClick={() => setCustomWeek(false)} className="px-2 text-[10px] bg-muted rounded border border-border whitespace-nowrap">auto</button>}
+            </div>
           </div>
-          <div className="col-span-2 sm:col-span-3">
+          <div className="col-span-2">
             <label className={labelCls}>Title</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} className={inputCls} placeholder="Photo title" />
+            <input value={title} onChange={e => setTitle(e.target.value)} className={inputCls} placeholder="Judul foto (mis. Instalasi Tank 101)" />
           </div>
-          <div className="col-span-2 sm:col-span-3">
+          <div className="col-span-2">
             <label className={labelCls}>Description</label>
-            <input value={description} onChange={e => setDescription(e.target.value)} className={inputCls} placeholder="Photo description" />
+            <input value={description} onChange={e => setDescription(e.target.value)} className={inputCls} placeholder="Deskripsi singkat aktivitas" />
           </div>
-          <div className="col-span-2 sm:col-span-3">
-            <label className={labelCls}>Files (multiple allowed)</label>
+          <div className="col-span-2">
+            <label className={labelCls}>Location (opsional)</label>
+            <input value={location} onChange={e => setLocation(e.target.value)} className={inputCls} placeholder="mis. Tank Area B" />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>Files (bisa multiple)</label>
             <input id="photo-file-input" type="file" multiple accept="image/*" onChange={e => setFiles(e.target.files)} className={inputCls + " file:mr-2 file:bg-primary file:text-primary-foreground file:border-0 file:rounded file:px-2 file:py-0.5 file:text-[10px]"} />
           </div>
         </div>
-        <button onClick={handleUpload} disabled={uploading} className="mt-2 flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-medium disabled:opacity-50">
-          <Upload className="h-3 w-3" /> {uploading ? "Uploading..." : `Upload ${files?.length || 0} file(s)`}
+        <button onClick={handleUpload} disabled={uploading} className="mt-3 flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded text-xs font-medium disabled:opacity-50 hover:bg-primary/90">
+          <Upload className="h-3.5 w-3.5" /> {uploading ? "Uploading..." : `Upload ${files?.length || 0} file(s)`}
         </button>
       </div>
+
 
 
       <div className="bg-muted/20 border border-border/50 rounded-lg p-3 mb-3">
