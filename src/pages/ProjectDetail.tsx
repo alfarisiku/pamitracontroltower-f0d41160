@@ -508,12 +508,23 @@ const ProjectDetail = () => {
                             }}
                           />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
-                          <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                          <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                          {(() => {
+                            // Color palette per curve so Baseline & KSO look distinct at a glance.
+                            const palette = activeCurve === "baseline"
+                              ? { planIn: "hsl(var(--success) / 0.4)", actIn: "hsl(var(--success))", planOut: "hsl(var(--primary) / 0.35)", actOut: "hsl(var(--accent))", planLine: "hsl(var(--primary))", actLine: "hsl(var(--accent))" }
+                              : { planIn: "hsl(200, 70%, 70%)", actIn: "hsl(200, 80%, 45%)", planOut: "hsl(280, 55%, 75%)", actOut: "hsl(280, 65%, 50%)", planLine: "hsl(280, 65%, 50%)", actLine: "hsl(30, 85%, 55%)" };
+                            return (
+                              <>
+                                <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={palette.planIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={palette.actIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={palette.planOut} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={palette.actOut} radius={[3,3,0,0]} />
+                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={palette.planLine} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={palette.actLine} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                              </>
+                            );
+                          })()}
+
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
