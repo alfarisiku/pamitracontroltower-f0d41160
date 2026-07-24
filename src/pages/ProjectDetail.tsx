@@ -324,19 +324,19 @@ const ProjectDetail = () => {
                     return (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Contract Value</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">Contract Value</p>
                           <p className="text-lg font-bold font-mono-data text-primary">{formatRupiah(contractValue)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">RAP</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">RAP</p>
                           <p className="text-lg font-bold font-mono-data text-info">{formatRupiah(rapValue)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Actual Cash Out</p>
-                          <p className="text-lg font-bold font-mono-data text-destructive">{formatRupiah(actualCashOut)}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">Actual Cash Out</p>
+                          <p className="text-lg font-bold font-mono-data text-accent">{formatRupiah(actualCashOut)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                          <p className="text-[10px] text-muted-foreground uppercase mb-1">Remaining (RAP − Actual)</p>
+                          <p className="text-[10px] text-muted-foreground uppercase mb-1 tracking-wide">Remaining (RAP − Actual)</p>
                           <p className={`text-lg font-bold font-mono-data ${remainingRap >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(remainingRap)}</p>
                         </div>
                       </div>
@@ -385,17 +385,17 @@ const ProjectDetail = () => {
                           <tbody>
                             {rows.map(r => (
                               <tr key={r.key} className="border-b border-border/30 hover:bg-muted/20">
-                                <td className="py-1.5 px-2 text-foreground">{r.label}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-info">{formatRupiah(r.rap)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.actual)}</td>
+                                <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-primary">{formatRupiah(r.rap)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatRupiah(r.actual)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.variance >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.variance)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.pct > 100 ? "text-destructive" : r.pct > 85 ? "text-warning" : "text-success"}`}>{r.pct}%</td>
                               </tr>
                             ))}
                             <tr className="bg-muted/40 font-bold">
                               <td className="py-2 px-2 text-foreground">TOTAL</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-info">{formatRupiah(totalRap)}</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-destructive">{formatRupiah(totalAct)}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(totalRap)}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(totalAct)}</td>
                               <td className={`py-2 px-2 text-right font-mono-data ${totalRap - totalAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(totalRap - totalAct)}</td>
                               <td className={`py-2 px-2 text-right font-mono-data ${totalRap > 0 && (totalAct / totalRap) > 1 ? "text-destructive" : "text-foreground"}`}>{totalRap > 0 ? Math.round((totalAct/totalRap)*100) : 0}%</td>
                             </tr>
@@ -459,8 +459,8 @@ const ProjectDetail = () => {
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
                           <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--destructive))" radius={[0,0,3,3]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -564,8 +564,8 @@ const ProjectDetail = () => {
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--destructive))" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
                           <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
                           <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
                         </ComposedChart>
@@ -587,9 +587,9 @@ const ProjectDetail = () => {
                             const dev = (r.actPct ?? 0) - r.planPct;
                             return (
                             <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
-                              <td className="py-1.5 px-2 text-foreground">{r.label}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-info">{r.planPct.toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-warning">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
+                              <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.planPct.toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                               <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
