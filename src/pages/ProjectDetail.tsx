@@ -1245,11 +1245,12 @@ const ProjectDetail = () => {
                                 const actual = (item as any)[actF];
                                 const late = plan && actual && new Date(actual) > new Date(plan);
                                 return (
-                                  <>
-                                    <td key={`${item.id}-${i}-p`} className="py-2 px-2 text-center text-[9px] font-mono-data text-muted-foreground border-l border-border/40">{fmtD(plan)}</td>
-                                    <td key={`${item.id}-${i}-a`} className={`py-2 px-2 text-center text-[9px] font-mono-data font-semibold ${late ? "text-destructive" : actual ? "text-success" : "text-muted-foreground"}`}>{fmtD(actual)}</td>
-                                  </>
+                                  <Fragment key={i}>
+                                    <td className="py-2 px-2 text-center text-[9px] font-mono-data text-muted-foreground border-l border-border/40">{fmtD(plan)}</td>
+                                    <td className={`py-2 px-2 text-center text-[9px] font-mono-data font-semibold ${late ? "text-destructive" : actual ? "text-success" : "text-muted-foreground"}`}>{fmtD(actual)}</td>
+                                  </Fragment>
                                 );
+
                               })}
                             </tr>
                             );
