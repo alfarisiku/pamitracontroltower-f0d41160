@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Package, Plus, Save, Trash2, Pencil, X } from "lucide-react";
@@ -221,10 +222,10 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
               </tr>
               <tr className="bg-muted/70 border-b border-border">
                 {DATE_PAIRS.map(dp => (
-                  <>
-                    <th key={dp.key + "-p"} className="text-left py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
-                    <th key={dp.key + "-a"} className="text-left py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                  </>
+                  <Fragment key={dp.key}>
+                    <th className="text-left py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                    <th className="text-left py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                  </Fragment>
                 ))}
               </tr>
             </thead>
@@ -266,10 +267,10 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
                     </select>
                   </td>
                   {DATE_PAIRS.map(dp => (
-                    <>
-                      <td key={dp.key + "-p"} className="py-1.5 px-2 border-l border-border/40">{renderDateCell(item, dp.planField, isEditing)}</td>
-                      <td key={dp.key + "-a"} className="py-1.5 px-2">{renderDateCell(item, dp.actualField, isEditing)}</td>
-                    </>
+                    <Fragment key={dp.key}>
+                      <td className="py-1.5 px-2 border-l border-border/40">{renderDateCell(item, dp.planField, isEditing)}</td>
+                      <td className="py-1.5 px-2">{renderDateCell(item, dp.actualField, isEditing)}</td>
+                    </Fragment>
                   ))}
                   <td className="py-1.5 px-2 border-l border-border/40">
                     <div className="flex items-center justify-center gap-1">
