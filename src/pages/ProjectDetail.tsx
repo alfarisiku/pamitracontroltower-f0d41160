@@ -504,27 +504,31 @@ const ProjectDetail = () => {
                               const planOut = rowNum(row.planOut) ?? 0;
                               const cashIn = rowNum(row.cashIn) ?? 0;
                               const cashOut = rowNum(row.cashOut) ?? 0;
+                              const extrasList2 = availableCurves.filter(c => c !== "baseline");
+                              const idx2 = activeCurve === "baseline" ? 0 : Math.max(0, extrasList2.indexOf(activeCurve));
+                              const lc = curvePalette(activeCurve, idx2);
                               return (
                                 <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
-                                  <p className="text-foreground font-bold mb-1.5">{label}</p>
+                                  <p className="text-foreground font-bold mb-1.5">{label} <span className="ml-1 text-[9px] uppercase font-semibold" style={{ color: lc.hue }}>({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></p>
                                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                                     <span className="text-muted-foreground">Planning Progress</span>
-                                    <span className="font-mono-data text-primary font-semibold text-right">{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
-                                    <span className="text-muted-foreground">Planning Cash In</span>
-                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planIn)}</span>
-                                    <span className="text-muted-foreground">Planning Cash Out</span>
-                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planOut)}</span>
-                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Progress</span>
-                                    <span className="font-mono-data text-accent font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
+                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.plan }}>{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground">Actual Progress</span>
+                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Planning Cash In</span>
+                                    <span className="font-mono-data text-success/70 text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Actual Cash In</span>
                                     <span className="font-mono-data text-success text-right">{formatRupiah(cashIn)}</span>
+                                    <span className="text-muted-foreground">Planning Cash Out</span>
+                                    <span className="font-mono-data text-accent/70 text-right">{formatRupiah(planOut)}</span>
                                     <span className="text-muted-foreground">Actual Cash Out</span>
-                                    <span className="font-mono-data text-destructive text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="font-mono-data text-accent text-right">{formatRupiah(cashOut)}</span>
                                   </div>
                                 </div>
                               );
                             }}
                           />
+
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           {(() => {
                             // Cash bars ALWAYS use the same fiscal palette so switching curve never changes bar meaning.
