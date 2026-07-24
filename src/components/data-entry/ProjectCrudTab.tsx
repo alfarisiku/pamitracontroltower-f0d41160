@@ -42,7 +42,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           map_x: String(p.map_x || 0), map_y: String(p.map_y || 0),
           status: p.status || "on-track", phase: p.phase || "Engineering",
           progress: String(p.progress || 0), image_url: p.image_url || "",
-          video_url: p.video_url || "", cctv_url: p.cctv_url || "",
+          video_url: p.video_url || "", cctv_url: p.cctv_url || "", model_3d_url: (p as any).model_3d_url || "",
         });
       }
     }
