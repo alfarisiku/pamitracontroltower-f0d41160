@@ -1001,7 +1001,14 @@ const ProjectDetail = () => {
                                   </div>
                                   <div className="absolute inset-y-0" style={{ left: "220px", right: 0 }}>
                                     <div className="relative h-full">
-                                      <div title={tooltip} className={`absolute top-1/2 -translate-y-1/2 rounded-sm cursor-help ${level === 1 ? "h-3 bg-primary/20 hover:bg-primary/30" : "h-2 bg-accent/20 hover:bg-accent/30"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                                      <div className={`group/bar absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20 hover:bg-primary/30" : "h-2 bg-accent/20 hover:bg-accent/30"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
+                                        <div className="pointer-events-none opacity-0 group-hover/bar:opacity-100 transition-opacity duration-75 absolute z-30 left-1/2 -translate-x-1/2 bottom-[calc(100%+4px)] bg-card border border-border rounded-md shadow-lg px-2.5 py-1.5 text-[10px] whitespace-nowrap">
+                                          <p className="font-bold text-foreground mb-0.5">{code} — {name}</p>
+                                          <p className="text-muted-foreground">Start: <span className="font-mono-data text-foreground">{fmt(startMs)}</span> · Finish: <span className="font-mono-data text-foreground">{fmt(endMs)}</span></p>
+                                          <p className="text-muted-foreground">Durasi: <span className="font-mono-data text-foreground">{durationDays}d</span> · Sisa: <span className={`font-mono-data ${remainingDays === 0 ? "text-destructive" : "text-foreground"}`}>{remainingDays}d</span></p>
+                                          <p className="text-muted-foreground">Progress: <span className="font-mono-data font-semibold text-primary">{progressPct}%</span>{qty ? <> · Qty: <span className="font-mono-data text-foreground">{qty} {unit || ""}</span></> : null}</p>
+                                        </div>
+                                      </div>
                                       <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm pointer-events-none ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
                                       <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 pointer-events-none ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
                                         <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
@@ -1009,6 +1016,7 @@ const ProjectDetail = () => {
                                       <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1] pointer-events-none" style={{ left: `${todayPct}%` }} />
                                     </div>
                                   </div>
+
                                 </div>
                                 );
                               })}
