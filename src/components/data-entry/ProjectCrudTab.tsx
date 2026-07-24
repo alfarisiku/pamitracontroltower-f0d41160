@@ -24,7 +24,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
     budget: "", spent: "", rap: "", profit_margin_target: "10", tkdn_percentage: "0",
     start_date: "", end_date: "", description: "", category: "Production I",
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
-    image_url: "", video_url: "", cctv_url: "",
+    image_url: "", video_url: "", cctv_url: "", model_3d_url: "",
   });
 
   useEffect(() => {
