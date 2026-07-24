@@ -558,9 +558,9 @@ const ProjectDetail = () => {
                       </ResponsiveContainer>
                     </div>
                     {(() => {
-                      const lineColor = activeCurve === "baseline"
-                        ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
-                        : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
+                      const extrasList3 = availableCurves.filter(c => c !== "baseline");
+                      const idx3 = activeCurve === "baseline" ? 0 : Math.max(0, extrasList3.indexOf(activeCurve));
+                      const lineColor = curvePalette(activeCurve, idx3);
                       return (
                     <div className="max-h-[280px] overflow-auto rounded border border-border">
                       <table className="w-full text-xs">
