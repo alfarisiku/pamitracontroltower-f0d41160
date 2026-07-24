@@ -101,7 +101,6 @@ const ProjectDetail = () => {
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [expandedTimeline, setExpandedTimeline] = useState<Set<string>>(new Set());
-  const [ganttHover, setGanttHover] = useState<null | { x: number; y: number; code: string; name: string; startMs: number; endMs: number; durationDays: number; remainingDays: number; progressPct: number; qty?: number | null; unit?: string | null; level: number }>(null);
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>("health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
