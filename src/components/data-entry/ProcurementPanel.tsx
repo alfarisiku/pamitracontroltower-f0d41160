@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Package, Plus, Save, Trash2 } from "lucide-react";
+import { Package, Plus, Save, Trash2, Pencil, X } from "lucide-react";
 import { supabase, formatIDR, logActivity } from "@/lib/supabase";
 import { useProcurementItems } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
+
 
 export function ProcurementPanel({ projectId }: { projectId: string }) {
   const { data: items = [], isLoading } = useProcurementItems(projectId);
