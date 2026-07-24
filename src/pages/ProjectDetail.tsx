@@ -216,7 +216,22 @@ const ProjectDetail = () => {
             </div>
 
             <div className="p-4 sm:p-5">
-              {project.description && <p className="text-xs text-muted-foreground mb-3">{project.description}</p>}
+              {project.description && (() => {
+                const desc = project.description;
+                const isLong = desc.length > 180;
+                const shown = !isLong || descExpanded ? desc : desc.slice(0, 180).trimEnd() + "…";
+                return (
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {shown}
+                    {isLong && (
+                      <button onClick={() => setDescExpanded(v => !v)} className="ml-1.5 text-primary hover:underline font-medium text-[11px]">
+                        {descExpanded ? "Sembunyikan" : "Selengkapnya"}
+                      </button>
+                    )}
+                  </p>
+                );
+              })()}
+
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
                 <InfoItem icon={MapPin} label="Lokasi" value={project.location} />
                 <InfoItem icon={User} label="PM" value={project.manager} />
