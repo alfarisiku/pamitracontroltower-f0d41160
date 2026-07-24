@@ -98,7 +98,9 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
   const currentLabel = chartData[Math.min(Math.max(lastActualIdx, 0), chartData.length - 1)]?.month;
 
   const additionalTypes = curveTypes.filter(t => t !== "baseline");
-  const joColors = ["hsl(280, 60%, 55%)", "hsl(30, 85%, 55%)", "hsl(340, 70%, 55%)"];
+  // Same HUE for plan & actual within a curve type; only dashed vs solid distinguishes them.
+  const BASELINE_HUE = "hsl(215, 80%, 48%)";
+  const KSO_HUES = ["hsl(280, 65%, 55%)", "hsl(30, 85%, 55%)", "hsl(340, 70%, 55%)"];
 
   return (
     <div className="w-full">
@@ -107,12 +109,12 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="scPlanned" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(215, 80%, 55%)" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="hsl(215, 80%, 55%)" stopOpacity={0} />
+                <stop offset="0%" stopColor={BASELINE_HUE} stopOpacity={0.18} />
+                <stop offset="100%" stopColor={BASELINE_HUE} stopOpacity={0} />
               </linearGradient>
               <linearGradient id="scActual" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(215, 80%, 45%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(215, 80%, 45%)" stopOpacity={0} />
+                <stop offset="0%" stopColor={BASELINE_HUE} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={BASELINE_HUE} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
@@ -130,34 +132,37 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
             {currentLabel && (
               <ReferenceLine x={currentLabel} stroke="hsl(0, 72%, 50%)" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Today", position: "top", fontSize: 9, fill: "hsl(0, 72%, 50%)" }} />
             )}
-            <Area type="monotone" dataKey="planned" stroke="hsl(215, 80%, 55%)" fill="url(#scPlanned)" strokeWidth={2} strokeDasharray="6 4" name="Baseline Plan" dot={false} />
-            <Area type="monotone" dataKey="actual" stroke="hsl(215, 80%, 45%)" fill="url(#scActual)" strokeWidth={2.5} name="Baseline Actual" dot={false} connectNulls={false} />
+            <Area type="monotone" dataKey="planned" stroke={BASELINE_HUE} fill="url(#scPlanned)" strokeWidth={2} strokeDasharray="6 4" name="Baseline Plan" dot={false} />
+            <Area type="monotone" dataKey="actual" stroke={BASELINE_HUE} fill="url(#scActual)" strokeWidth={2.5} name="Baseline Actual" dot={false} connectNulls={false} />
             {additionalTypes.map((type, i) => (
-              <Area key={type} type="monotone" dataKey={`planned_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={1.5} strokeDasharray="6 4" name={`${type} Plan`} dot={false} />
+              <Area key={type} type="monotone" dataKey={`planned_${type}`} stroke={KSO_HUES[i % KSO_HUES.length]} fill="none" strokeWidth={1.5} strokeDasharray="6 4" name={`${type} Plan`} dot={false} />
             ))}
             {additionalTypes.map((type, i) => (
-              <Area key={`act_${type}`} type="monotone" dataKey={`actual_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={2.5} name={`${type} Actual`} dot={false} connectNulls={false} />
+              <Area key={`act_${type}`} type="monotone" dataKey={`actual_${type}`} stroke={KSO_HUES[i % KSO_HUES.length]} fill="none" strokeWidth={2.5} name={`${type} Actual`} dot={false} connectNulls={false} />
             ))}
           </AreaChart>
         </ResponsiveContainer>
       </div>
       <div className="flex items-center justify-center gap-4 mt-2 flex-wrap">
         <div className="flex items-center gap-1.5">
-          <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="hsl(215, 80%, 55%)" strokeWidth="2" strokeDasharray="4 3" /></svg>
-          <span className="text-[10px] text-muted-foreground">Baseline Plan (dashed)</span>
+          <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={BASELINE_HUE} strokeWidth="2" strokeDasharray="4 3" /></svg>
+          <span className="text-[10px]" style={{ color: BASELINE_HUE }}>Baseline Plan (dashed)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-[2px] rounded" style={{ background: "hsl(215, 80%, 45%)" }} />
-          <span className="text-[10px] text-muted-foreground">Baseline Actual (solid)</span>
+          <div className="w-5 h-[2px] rounded" style={{ background: BASELINE_HUE }} />
+          <span className="text-[10px] font-semibold" style={{ color: BASELINE_HUE }}>Baseline Actual (solid)</span>
         </div>
-        {additionalTypes.map((type, i) => (
-          <div key={type} className="flex items-center gap-2">
-            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={joColors[i % joColors.length]} strokeWidth="2" strokeDasharray="4 3" /></svg>
-            <span className="text-[10px] text-muted-foreground">{type} Plan (dashed)</span>
-            <div className="w-5 h-[2px] rounded" style={{ background: joColors[i % joColors.length] }} />
-            <span className="text-[10px] text-muted-foreground">{type} Actual (solid)</span>
-          </div>
-        ))}
+        {additionalTypes.map((type, i) => {
+          const hue = KSO_HUES[i % KSO_HUES.length];
+          return (
+            <div key={type} className="flex items-center gap-2">
+              <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={hue} strokeWidth="2" strokeDasharray="4 3" /></svg>
+              <span className="text-[10px]" style={{ color: hue }}>{type} Plan (dashed)</span>
+              <div className="w-5 h-[2px] rounded" style={{ background: hue }} />
+              <span className="text-[10px] font-semibold" style={{ color: hue }}>{type} Actual (solid)</span>
+            </div>
+          );
+        })}
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-0.5 rounded border-dashed border-t-2" style={{ borderColor: "hsl(0, 72%, 50%)" }} />
           <span className="text-[10px] text-muted-foreground">Today</span>
