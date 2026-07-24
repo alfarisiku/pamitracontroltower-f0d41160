@@ -510,9 +510,12 @@ const ProjectDetail = () => {
                   if (yr < 100) yr += 2000;
                   return yr * 12 + (mo - 1);
                 };
+                const availableCurves = Array.from(new Set(scurveData.map(s => s.curve_type)));
+                if (!availableCurves.includes("baseline")) availableCurves.unshift("baseline");
+                const activeCurve = availableCurves.includes(cashflowCurve) ? cashflowCurve : "baseline";
                 const scurvePoints: { ym: number; plan: number | null; actual: number | null }[] = [];
                 const byYm: Record<number, { plan: number | null; actual: number | null }> = {};
-                scurveData.forEach(s => {
+                scurveData.filter(s => s.curve_type === activeCurve).forEach(s => {
                   const ym = parseScurveYm(s.period_label);
                   if (ym == null) return;
                   if (!byYm[ym]) byYm[ym] = { plan: null, actual: null };
