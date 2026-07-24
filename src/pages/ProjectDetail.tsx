@@ -566,8 +566,23 @@ const ProjectDetail = () => {
 
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
+                      {availableCurves.length > 1 && (
+                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+                          {availableCurves.map(ct => (
+                            <button
+                              key={ct}
+                              onClick={() => setCashflowCurve(ct)}
+                              className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              {ct === "baseline" ? "Baseline" : ct}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -581,14 +596,14 @@ const ProjectDetail = () => {
                           <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
-                          <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                          <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                          <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                          <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="overflow-x-auto">
+                    <div className="max-h-[280px] overflow-y-auto rounded border border-border">
                       <table className="w-full text-xs">
-                        <thead><tr className="bg-muted/50 border-b border-border">
+                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
                           <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
                           <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
                           <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
