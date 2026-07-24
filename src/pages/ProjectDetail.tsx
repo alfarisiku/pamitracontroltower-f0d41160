@@ -40,9 +40,10 @@ const riskCategoryLabels: Record<string, string> = {
   procurement: "Procurement", contractual: "Contractual", operational: "Operational",
 };
 const procStatusLabels: Record<string, string> = {
-  planned: "Planned", "rfq-sent": "RFQ Sent", approval: "Approval", "po-issued": "PO Issued",
-  fabrication: "Fabrication", delivery: "Delivery", installed: "Installed",
+  planned: "Planned", "rfq-sent": "PR Sent", approval: "Approval", "po-issued": "PO Issued",
+  fabrication: "Fabrication", delivery: "Delivery", installed: "On Site",
 };
+
 const procStatusColors: Record<string, string> = {
   planned: "bg-muted text-muted-foreground", "rfq-sent": "bg-primary/15 text-primary",
   approval: "bg-warning/15 text-warning", "po-issued": "bg-info/15 text-info",
