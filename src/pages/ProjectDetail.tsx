@@ -293,7 +293,7 @@ const ProjectDetail = () => {
                   <p className="text-[10px] text-muted-foreground">{criticalAlerts} critical/high</p>
                 </div>
                 <div className="glass-card rounded-lg p-3 border border-border">
-                  <div className="flex items-center gap-1.5 mb-1"><Clock className="h-3.5 w-3.5 text-primary" /><span className="text-[10px] text-muted-foreground uppercase">Time Elapsed</span></div>
+                  <div className="flex items-center gap-1.5 mb-1"><Clock className="h-3.5 w-3.5 text-primary" /><span className="text-[10px] text-muted-foreground uppercase">Time Progress</span></div>
                   <p className="text-sm font-bold text-foreground">{elapsedPct}%</p>
                   <p className="text-[10px] text-muted-foreground">{totalDuration - Math.max(0, daysRemaining)}d of {totalDuration}d</p>
                 </div>
