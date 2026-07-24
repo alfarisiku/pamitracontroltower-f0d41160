@@ -564,8 +564,8 @@ const ProjectDetail = () => {
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--destructive))" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
                           <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
                           <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
                         </ComposedChart>
