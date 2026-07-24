@@ -12,7 +12,7 @@ import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend, ReferenceLine, ComposedChart, Line } from "recharts";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
-  Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
+  Camera, Video, Cctv, Box, CheckCircle2, Clock, AlertTriangle, Target, Layers,
   Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon,
   Package, DollarSign, Wallet, Receipt, Lock, FileText
 } from "lucide-react";
