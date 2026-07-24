@@ -40,20 +40,30 @@ const riskCategoryLabels: Record<string, string> = {
   procurement: "Procurement", contractual: "Contractual", operational: "Operational",
 };
 const procStatusLabels: Record<string, string> = {
-  planned: "Planned", "rfq-sent": "PR Sent", approval: "Approval", "po-issued": "PO Issued",
-  fabrication: "Fabrication", delivery: "Delivery", installed: "On Site",
+  ded: "DED", bq: "BQ", pr: "PR", rfq: "RFQ", po: "PO", delivery: "Delivery", onsite: "On Site",
+  // legacy aliases
+  planned: "DED", "rfq-sent": "PR", approval: "RFQ", "po-issued": "PO",
+  fabrication: "PO", installed: "On Site",
 };
 
-// Distinct color per procurement status — each stage its own hue so the pipeline stage is instantly readable.
+// Distinct highlighted text color per procurement pipeline stage — instantly readable.
 const procStatusColors: Record<string, string> = {
-  planned:     "bg-slate-100 text-slate-600 border border-slate-300",
-  "rfq-sent":  "bg-sky-100 text-sky-700 border border-sky-300",
-  approval:    "bg-amber-100 text-amber-700 border border-amber-300",
-  "po-issued": "bg-indigo-100 text-indigo-700 border border-indigo-300",
-  fabrication: "bg-purple-100 text-purple-700 border border-purple-300",
-  delivery:    "bg-orange-100 text-orange-700 border border-orange-300",
-  installed:   "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  ded:        "bg-slate-100 text-slate-700 border border-slate-300",
+  bq:         "bg-zinc-100 text-zinc-700 border border-zinc-300",
+  pr:         "bg-sky-100 text-sky-700 border border-sky-300",
+  rfq:        "bg-amber-100 text-amber-800 border border-amber-300",
+  po:         "bg-indigo-100 text-indigo-700 border border-indigo-300",
+  delivery:   "bg-orange-100 text-orange-700 border border-orange-300",
+  onsite:     "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  // legacy aliases
+  planned:    "bg-slate-100 text-slate-700 border border-slate-300",
+  "rfq-sent": "bg-sky-100 text-sky-700 border border-sky-300",
+  approval:   "bg-amber-100 text-amber-800 border border-amber-300",
+  "po-issued":"bg-indigo-100 text-indigo-700 border border-indigo-300",
+  fabrication:"bg-purple-100 text-purple-700 border border-purple-300",
+  installed:  "bg-emerald-100 text-emerald-700 border border-emerald-300",
 };
+
 
 // Palette per S-Curve type — plan & actual share the same HUE; distinguish only by dash vs solid.
 // Baseline = primary blue, KSO/JO variants cycle through a distinct palette.
