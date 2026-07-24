@@ -1,56 +1,77 @@
+## Data-only EPC rebuild — final execution plan
 
-## 1. S-Curve — Period Comparison Table
+Zero code, zero schema changes. Only DELETE + INSERT/UPDATE on data. Existing project IDs preserved (photos already uploaded stay attached); `[Example]` prefix removed; `project_code` retained. 6 projects total (portfolio designed for the required mixes).
 
-In `src/pages/ProjectDetail.tsx` (S-Curve tab), add a table below the S-Curve chart card showing:
-- **Current period** (row 1)
-- **3 previous periods**
+### Portfolio design — one story per project
 
-Columns: Period | Planned % | Actual % | Deviasi (Actual − Plan, colored red/green)
+| Code | Renamed | Client | Type | Phase focus | Schedule health | Financial health | Contract structure |
+|---|---|---|---|---|---|---|---|
+| PMT-001 | Terminal Terpadu Palaran (Samarinda) | Pelindo Multi Terminal | Multi-tank terminal | Active Construction | Slight delay | Low margin | **KSO** (Lead: Pamitra 60% / Partner: Wijaya Karya 40%) + **1 addendum** (scope add loading arm) |
+| PMT-002 | Terminal LPG Kolaka | Pertamina Patra Niaga | LPG bullet + jetty | Procurement-intensive → early Construction | Major delay (vendor+shipping) | Cost overrun | Contract + **2 addendums** (scope + time extension) |
+| PMT-003 | Jetty IT Manggis (Bali) | Pertamina Patra Niaga | Marine jetty | Commissioning → Handover (closed) | Recovered after delay | Healthy margin | Contract only |
+| PMT-004 | Terminal BBM Meksip (Sorong) | Pertamina Patra Niaga | Fuel terminal | Completed | Finished ahead of schedule | Healthy margin | Contract + 1 addendum (minor CO) |
+| PERAK-001 | SPK-1 Repair Tank T-43/T-47/T-53 IT Surabaya | Pertamina Patra Niaga | 3-tank repair | Active Construction | On schedule | Healthy margin | Contract only |
+| SPK-2 | Perbaikan Tangki T-63 IT Surabaya | Pertamina Patra Niaga | Single tank repair | Active Engineering → early Procurement | On schedule (early) | Healthy margin | Contract only |
 
-Data source: existing `s_curve_data` sorted by period. Take the most recent period ≤ today plus the three before it.
+Additional new project to hit "Planning" + "KSO+Addendum" + Loss-making mix:
 
-## 2. Remove Sector Categories
+| Code | Name | Client | Type | Phase | Schedule | Finance | Contract |
+|---|---|---|---|---|---|---|---|
+| PMT-005 | Storage Tank Farm Bontang | Pupuk Kaltim | Ammonia storage 2×5,000 m³ | Planning / FEED | On schedule | TBD (still planning) | **KSO + 1 addendum** (Lead: Pamitra 55% / Partner: Rekayasa Industri 45%) |
+| PMT-006 | Retrofit Loading Facility Cilacap | Pertamina Patra Niaga | Loading arm + pipe rework | Active Construction | Major delay | **Loss-making** | Contract + 3 addendums (repeated scope revs) |
 
-Drop the sector concept entirely (Oil & Gas / Infrastructure / Mining / Industrial / etc). Only **Status** and **Production** (I–IV) remain.
+Final portfolio = 8 projects, covering every required mix without duplication.
 
-Files:
-- `src/components/data-entry/ProjectCrudTab.tsx` — remove the `category` dropdown/field.
-- `src/pages/ProjectSummary.tsx` — remove the category filter chip row; keep status + production filters.
-- `src/pages/Index.tsx`, `src/pages/WarRoom.tsx`, `ProjectTable.tsx`, `ProjectOverviewModal.tsx` — remove any UI that displays or filters by category.
-- Do not drop the DB column (keeps historic data safe); just ignore it in the UI.
+### WBS philosophies (each different)
+- PMT-001: **Area-based** (Berth, Tank Farm, Utility, Building, Fire System, E&I, Loading Facility)
+- PMT-002: **Facility-based** (Bullet Tanks, Jetty, Pipeline, Compressor, Flare, F&G, MC)
+- PMT-003: **Discipline-based marine** (Marine Pile, Deck, Loading Arm, Fender & Mooring, Piping, E&I, PAC)
+- PMT-004: **EPCC linear** (Engineering, Procurement, Construction, Commissioning, Handover)
+- PERAK-001: **Tank-by-tank** (T-43, T-47, T-53 each with Civil→Erection→Piping→Painting→Hydrotest)
+- SPK-2: **Discipline** (Civil, Mechanical, Piping, Painting, Test)
+- PMT-005: **Engineering → Procurement → Construction → Commissioning** (early stage light)
+- PMT-006: **Zone-based** (Zone A jetty, Zone B pipe rack, Zone C loading, Utilities)
 
-## 3. Role-Based Access Control
+Level 1 sums to 100.00; every Level 2 group sums to 100.00 of its parent. L3 subtasks populated for larger projects (PMT-001, 002, 004, 006).
 
-Map the 3 requested tiers onto existing roles in `AuthContext`:
+### S-Curve behavior (weekly, full duration)
+Logistic shape with EPC-realistic transitions: flat-start (Eng+Mob) → early Procurement ramp → sharp Construction acceleration → Commissioning tail. Actual truncated at project's reporting cut-off, deviating per the assigned schedule-health archetype. Addendum projects get **layered baselines** stamped at the addendum approval week; period labels shared with finance/monthly rollups.
 
-| Requested tier | Internal role | Capability |
-|---|---|---|
-| Administrator | `admin` | Everything, Data Entry, Account Manager, all projects |
-| Project Admin | `team` | Only assigned projects (via `user_project_assignments`); weekly CRUD on those projects |
-| Public | `client` | Overview + Project Summary + Project Detail (limited); all financial + risk/issue/report data hidden |
+### Cut-off convention
+- Execution projects: actuals through **week ending 2026-07-17** (Fri before "today" 2026-07-24).
+- PMT-003 closed: full curve + retention release.
+- PMT-004 completed: full curve, PAC done.
+- PMT-005 planning: baseline only, actual ≈ 3% (kick-off).
 
-### Wiring
+### Cross-module consistency rules enforced
+1. `progress` = milestone weight-completion = last actual S-Curve %.
+2. `spent` = Σ cash-out actual through cut-off.
+3. PO totals ⊆ Material cash-outs; procurement delivery date drives Construction start weeks on affected WBS items.
+4. Delayed procurement → S-Curve dip → Weekly Report narrative → Risk register entry (Vendor/Shipping Delay) → shifted cash-out spike.
+5. Addendum event → new baseline row (S-Curve) + scope-add WBS lines + extra PO(s) + cash-in claim + explicit mention in that week's Weekly Report.
+6. Loss project (PMT-006): cumulative cash-out > cash-in at close; Risk register flags Cash Flow Constraint; Weekly Reports escalate to management.
+7. Media stage-matched: early projects show earthwork/foundation; late/closed show hydrotest/PAC.
 
-- **Re-enable auth gate.** Wrap routes in `src/App.tsx` with `AuthProvider` + `ProtectedRoute`. Restore `/login` and `/pending`. Root layout renders login if no session.
-- **Sidebar** (`src/components/dashboard/Sidebar.tsx`): filter menu by role.
-  - `admin`: all items.
-  - `team` (Project Admin): Overview, Project Summary (assigned only), Schedule, Data Entry, Activity Log, User Guide.
-  - `client` (Public): Overview, Project Summary, User Guide.
-- **Project list scoping** (`useProjects` hook + `ProjectSummary`): if role is `team`, filter to `assignedProjectIds`. If `client`, show all but read-only.
-- **ProjectDetail public-mode**: when `role === "client"`, hide the tabs `Finance`, `S-Curve`, `Cost`, `Risk`, `Weekly Report`, `Data Entry` links; hide Contract/RAP/PO/Cost/Cashflow KPIs in Overview + Health cards; keep progress %, location, photos, milestones (non-financial), general description.
-- **Data Entry** (`/data-entry`): admin + team (scoped to assigned projects). `team` sees the assigned-projects picker only.
-- **Account Manager** (`/account-manager`): admin only. Enable assign-project UI so admin can attach projects to team users via `user_project_assignments`.
-- Add a small `useCanSeeFinance()` helper (`role !== 'client'`) used across finance components (`ProjectDetail` finance tab, `Finance.tsx`, KPI cards).
+### Staged migration order (each = one `insert` tool call, awaits your ACK)
 
-### Seed accounts (already exist via `seed-accounts` function)
+Because the `insert` tool runs a single SQL batch and doesn't require approval per call, I'll still pause after each stage to show you a verification query. Stages:
 
-Add two more test users through Account Manager UI:
-- `projectadmin@pamitra.co.id` / `project123` → role `team`, assigned to PMT-001.
-- `public@pamitra.co.id` / `public123` → role `client`.
+- **Stage A — Portfolio reset**: DELETE cascaded rows for the 6 existing projects (photos preserved by not touching `project_photos`); INSERT PMT-005 and PMT-006 headers; UPDATE all 8 project headers (contract_value, RAP, margin, tkdn, dates, map coords, description, KSO metadata inside description).
+- **Stage B — WBS for all 8 projects** (work_areas + work_items + sub_tasks).
+- **Stage C — Milestones for all 8 projects**.
+- **Stage D — S-Curve baselines + Actual** (includes KSO curves and addendum baselines).
+- **Stage E — Procurement + PO lifecycle**.
+- **Stage F — Finance entries + monthly_budgets**.
+- **Stage G — Risk register (project_alerts)**.
+- **Stage H — Weekly reports + Manpower logs + Addendums**.
+- **Stage I — Recompute rollups** (`projects.progress`, `spent`, ensure header numbers match module data) + spot-check verification.
 
-## Technical notes
+Photos already uploaded stay; I won't touch `project_photos` binaries. If you want me to seed placeholder photo rows for the new projects PMT-005/PMT-006 or clean out stale weekly slots, tell me now.
 
-- Header/Sidebar labels: rename `Project Team` → `Project Admin`, `War Room` role label → `Public`.
-- `ProtectedRoute` already handles pending + no-project states; reuse as-is.
-- No schema migration needed — `user_roles`, `user_project_assignments`, `profiles.status` already exist.
-- Keep `defaultAuthContext` fallback in `useAuth()` removed inside protected routes so unauthenticated users cannot slip through.
+### Please confirm to proceed
+1. **OK to add PMT-005 (Planning/KSO+Addendum) and PMT-006 (Loss/Construction/3 addendums)** so the portfolio covers every mix from your spec? (Otherwise I compress everything into the existing 6 and drop the Planning + Loss variants.)
+2. **OK to strip `[Example]` prefix** from PMT-001..004 names?
+3. **Cut-off = 2026-07-17** for actuals on all execution projects — confirm?
+4. **Photos**: leave existing binaries untouched, do not seed new photo rows for PMT-005/006 — confirm?
+
+On your "go" I start Stage A.
