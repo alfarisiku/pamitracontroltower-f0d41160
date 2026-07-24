@@ -107,12 +107,12 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="scPlanned" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(215, 80%, 55%)" stopOpacity={0.3} />
+                <stop offset="0%" stopColor="hsl(215, 80%, 55%)" stopOpacity={0.2} />
                 <stop offset="100%" stopColor="hsl(215, 80%, 55%)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="scActual" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(152, 55%, 50%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(152, 55%, 50%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(215, 80%, 45%)" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="hsl(215, 80%, 45%)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
@@ -125,18 +125,18 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
                 borderRadius: "8px",
                 fontSize: "11px",
               }}
-              formatter={(value: number, name: string) => [`${value}%`, name === "planned" ? "Baseline Plan" : name === "actual" ? "Actual" : name]}
+              formatter={(value: number, name: string) => [`${value}%`, name]}
             />
             {currentLabel && (
               <ReferenceLine x={currentLabel} stroke="hsl(0, 72%, 50%)" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Today", position: "top", fontSize: 9, fill: "hsl(0, 72%, 50%)" }} />
             )}
             <Area type="monotone" dataKey="planned" stroke="hsl(215, 80%, 55%)" fill="url(#scPlanned)" strokeWidth={2} strokeDasharray="6 4" name="Baseline Plan" dot={false} />
-            <Area type="monotone" dataKey="actual" stroke="hsl(152, 55%, 50%)" fill="url(#scActual)" strokeWidth={2.5} name="Actual" dot={false} connectNulls={false} />
+            <Area type="monotone" dataKey="actual" stroke="hsl(215, 80%, 45%)" fill="url(#scActual)" strokeWidth={2.5} name="Baseline Actual" dot={false} connectNulls={false} />
             {additionalTypes.map((type, i) => (
-              <Area key={type} type="monotone" dataKey={`planned_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={1.5} strokeDasharray="6 4" name={`Plan (${type})`} dot={false} />
+              <Area key={type} type="monotone" dataKey={`planned_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={1.5} strokeDasharray="6 4" name={`${type} Plan`} dot={false} />
             ))}
             {additionalTypes.map((type, i) => (
-              <Area key={`act_${type}`} type="monotone" dataKey={`actual_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={2} name={`Actual (${type})`} dot={false} connectNulls={false} />
+              <Area key={`act_${type}`} type="monotone" dataKey={`actual_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={2.5} name={`${type} Actual`} dot={false} connectNulls={false} />
             ))}
           </AreaChart>
         </ResponsiveContainer>
@@ -147,13 +147,15 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
           <span className="text-[10px] text-muted-foreground">Baseline Plan (dashed)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-[2px] rounded" style={{ background: "hsl(152, 55%, 50%)" }} />
-          <span className="text-[10px] text-muted-foreground">Actual (solid)</span>
+          <div className="w-5 h-[2px] rounded" style={{ background: "hsl(215, 80%, 45%)" }} />
+          <span className="text-[10px] text-muted-foreground">Baseline Actual (solid)</span>
         </div>
         {additionalTypes.map((type, i) => (
-          <div key={type} className="flex items-center gap-1.5">
-            <div className="w-4 h-0.5 rounded border-dashed border-t-2" style={{ borderColor: joColors[i % joColors.length] }} />
-            <span className="text-[10px] text-muted-foreground">{type} (JO)</span>
+          <div key={type} className="flex items-center gap-2">
+            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={joColors[i % joColors.length]} strokeWidth="2" strokeDasharray="4 3" /></svg>
+            <span className="text-[10px] text-muted-foreground">{type} Plan (dashed)</span>
+            <div className="w-5 h-[2px] rounded" style={{ background: joColors[i % joColors.length] }} />
+            <span className="text-[10px] text-muted-foreground">{type} Actual (solid)</span>
           </div>
         ))}
         <div className="flex items-center gap-1.5">
@@ -161,6 +163,7 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
           <span className="text-[10px] text-muted-foreground">Today</span>
         </div>
       </div>
+
     </div>
   );
 }

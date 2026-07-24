@@ -40,9 +40,10 @@ const riskCategoryLabels: Record<string, string> = {
   procurement: "Procurement", contractual: "Contractual", operational: "Operational",
 };
 const procStatusLabels: Record<string, string> = {
-  planned: "Planned", "rfq-sent": "RFQ Sent", approval: "Approval", "po-issued": "PO Issued",
-  fabrication: "Fabrication", delivery: "Delivery", installed: "Installed",
+  planned: "Planned", "rfq-sent": "PR Sent", approval: "Approval", "po-issued": "PO Issued",
+  fabrication: "Fabrication", delivery: "Delivery", installed: "On Site",
 };
+
 const procStatusColors: Record<string, string> = {
   planned: "bg-muted text-muted-foreground", "rfq-sent": "bg-primary/15 text-primary",
   approval: "bg-warning/15 text-warning", "po-issued": "bg-info/15 text-info",
@@ -572,7 +573,7 @@ const ProjectDetail = () => {
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Cost Breakdown per Kategori</h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <div className="overflow-x-auto">
+                      <div className="border border-border rounded-md overflow-hidden">
                         <table className="w-full text-xs">
                           <thead><tr className="bg-muted/50 border-b border-border">
                             <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Kategori</th>
@@ -608,6 +609,7 @@ const ProjectDetail = () => {
                           </tbody>
                         </table>
                       </div>
+
                       <div className="h-[340px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }} barCategoryGap={8}>
@@ -804,16 +806,29 @@ const ProjectDetail = () => {
                     }
                     const todayMs = new Date().getTime();
                     const todayPct = ((Math.min(pEnd, Math.max(pStart, todayMs)) - pStart) / total) * 100;
-                    const rowsData = workAreas.map(area => {
+                    const rowsData: Array<{ id: string; code: string; name: string; leftPct: number; widthPct: number; progressPct: number; level: 1 | 2 }> = [];
+                    workAreas.forEach(area => {
                       const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                       const dates = areaItems.flatMap(i => [i.start_date, i.end_date]).filter(Boolean) as string[];
                       const times = dates.map(d => new Date(d).getTime());
                       const s = times.length ? Math.min(...times) : pStart;
                       const e = times.length ? Math.max(...times) : pEnd;
-                      const leftPct = Math.max(0, ((s - pStart) / total) * 100);
-                      const widthPct = Math.max(1, ((e - s) / total) * 100);
-                      const progressPct = area.progress || 0;
-                      return { area, leftPct, widthPct, progressPct };
+                      rowsData.push({
+                        id: area.id, code: area.code, name: area.name, level: 1,
+                        leftPct: Math.max(0, ((s - pStart) / total) * 100),
+                        widthPct: Math.max(1, ((e - s) / total) * 100),
+                        progressPct: area.progress || 0,
+                      });
+                      areaItems.forEach(wi => {
+                        const ws = wi.start_date ? new Date(wi.start_date).getTime() : s;
+                        const we = wi.end_date ? new Date(wi.end_date).getTime() : e;
+                        rowsData.push({
+                          id: wi.id, code: wi.code, name: wi.name, level: 2,
+                          leftPct: Math.max(0, ((ws - pStart) / total) * 100),
+                          widthPct: Math.max(0.5, ((we - ws) / total) * 100),
+                          progressPct: wi.progress || 0,
+                        });
+                      });
                     });
                     return (
                       <div className="glass-card rounded-lg shadow-card p-4">
@@ -836,17 +851,17 @@ const ProjectDetail = () => {
                           </div>
                           {/* Rows */}
                           <div>
-                            {rowsData.map(({ area, leftPct, widthPct, progressPct }) => (
-                              <div key={area.id} className="relative h-8 border-b border-border/30 last:border-0 hover:bg-muted/20">
-                                <div className="absolute inset-y-0 left-0 w-[180px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50">
-                                  <span className="text-[9px] font-mono-data text-primary bg-primary/10 px-1 rounded shrink-0">{area.code}</span>
-                                  <span className="text-[10px] text-foreground truncate">{area.name}</span>
+                            {rowsData.map(({ id, code, name, leftPct, widthPct, progressPct, level }) => (
+                              <div key={id} className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-8"}`}>
+                                <div className={`absolute inset-y-0 left-0 w-[220px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
+                                  <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
+                                  <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
                                 </div>
-                                <div className="absolute inset-y-0 pointer-events-none" style={{ left: "180px", right: 0 }}>
+                                <div className="absolute inset-y-0 pointer-events-none" style={{ left: "220px", right: 0 }}>
                                   <div className="relative h-full">
-                                    <div className="absolute top-1/2 -translate-y-1/2 h-3 rounded-sm bg-primary/20" style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
-                                    <div className="absolute top-1/2 -translate-y-1/2 h-3 rounded-sm bg-primary" style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
-                                    <div className="absolute top-1/2 -translate-y-1/2 h-3 flex items-center justify-end pr-1" style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
+                                    <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20" : "h-2 bg-accent/20"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                                    <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
+                                    <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
                                       <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
                                     </div>
                                     <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1]" style={{ left: `${todayPct}%` }} />
@@ -859,6 +874,7 @@ const ProjectDetail = () => {
                       </div>
                     );
                   })()}
+
 
                   {workAreas.map(area => {
                     const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
@@ -1029,17 +1045,17 @@ const ProjectDetail = () => {
                     </div>
                   </div>
                   <div className="glass-card rounded-lg shadow-card overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-auto max-h-[520px]">
                       <table className="w-full text-xs">
-                        <thead><tr className="bg-muted/50 border-b border-border">
+                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
                           <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Item</th>
                           <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Vendor</th>
                           <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Amount</th>
                           <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Status</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">RFQ</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PR</th>
                           <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PO</th>
                           <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Delivery</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Install</th>
+                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">On Site</th>
                         </tr></thead>
                         <tbody>
                           {procurementItems.map(item => (
@@ -1059,6 +1075,7 @@ const ProjectDetail = () => {
                       </table>
                     </div>
                   </div>
+
                 </>
               )}
             </div>
@@ -1080,7 +1097,8 @@ const ProjectDetail = () => {
                     </div>
                   </div>
                   <div className="glass-card rounded-lg shadow-card overflow-hidden">
-                    <div className="divide-y divide-border/30">
+                    <div className="divide-y divide-border/30 overflow-auto max-h-[520px]">
+
                       {projectRisks.map(risk => {
                         const sevColor = risk.severity === "critical" ? "text-destructive" : risk.severity === "high" ? "text-warning" : risk.severity === "medium" ? "text-info" : "text-muted-foreground";
                         const duration = risk.is_resolved && risk.resolved_at
