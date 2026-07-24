@@ -527,26 +527,25 @@ const ProjectDetail = () => {
                           />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           {(() => {
-                            // Cash bars ALWAYS use the same fiscal palette (success = In, accent = Out) so
-                            // switching curves never changes the meaning of the bars.
+                            // Cash bars ALWAYS use the same fiscal palette so switching curve never changes bar meaning.
                             const cash = {
-                              planIn: "hsl(var(--success) / 0.35)",
-                              actIn:  "hsl(var(--success))",
+                              planIn:  "hsl(var(--success) / 0.35)",
+                              actIn:   "hsl(var(--success))",
                               planOut: "hsl(var(--accent) / 0.35)",
                               actOut:  "hsl(var(--accent))",
                             };
-                            // Only the S-curve LINES switch color per active curve.
-                            const line = activeCurve === "baseline"
-                              ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
-                              : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
+                            // Curve-typed color for the progress line (plan & actual share the same HUE).
+                            const extrasList = availableCurves.filter(c => c !== "baseline");
+                            const extraIdx = activeCurve === "baseline" ? 0 : Math.max(0, extrasList.indexOf(activeCurve));
+                            const line = curvePalette(activeCurve, extraIdx);
                             return (
                               <>
                                 <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={cash.planIn} radius={[3,3,0,0]} />
                                 <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={cash.actIn} radius={[3,3,0,0]} />
                                 <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={cash.planOut} radius={[3,3,0,0]} />
                                 <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={cash.actOut} radius={[3,3,0,0]} />
-                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
                               </>
                             );
                           })()}
