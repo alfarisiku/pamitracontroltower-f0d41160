@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -12,7 +12,7 @@ import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend, ReferenceLine, ComposedChart, Line } from "recharts";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
-  Camera, Video, Cctv, CheckCircle2, Clock, AlertTriangle, Target, Layers,
+  Camera, Video, Cctv, Box, CheckCircle2, Clock, AlertTriangle, Target, Layers,
   Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon,
   Package, DollarSign, Wallet, Receipt, Lock, FileText
 } from "lucide-react";
@@ -32,7 +32,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
   "delayed": { label: "! Terlambat", className: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
-type MediaTab = "weekly" | "video" | "cctv";
+type MediaTab = "weekly" | "video" | "cctv" | "model3d";
 type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report";
 
 const riskCategoryLabels: Record<string, string> = {
@@ -509,18 +509,26 @@ const ProjectDetail = () => {
                           />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           {(() => {
-                            // Color palette per curve so Baseline & KSO look distinct at a glance.
-                            const palette = activeCurve === "baseline"
-                              ? { planIn: "hsl(var(--success) / 0.4)", actIn: "hsl(var(--success))", planOut: "hsl(var(--primary) / 0.35)", actOut: "hsl(var(--accent))", planLine: "hsl(var(--primary))", actLine: "hsl(var(--accent))" }
-                              : { planIn: "hsl(200, 70%, 70%)", actIn: "hsl(200, 80%, 45%)", planOut: "hsl(280, 55%, 75%)", actOut: "hsl(280, 65%, 50%)", planLine: "hsl(280, 65%, 50%)", actLine: "hsl(30, 85%, 55%)" };
+                            // Cash bars ALWAYS use the same fiscal palette (success = In, accent = Out) so
+                            // switching curves never changes the meaning of the bars.
+                            const cash = {
+                              planIn: "hsl(var(--success) / 0.35)",
+                              actIn:  "hsl(var(--success))",
+                              planOut: "hsl(var(--accent) / 0.35)",
+                              actOut:  "hsl(var(--accent))",
+                            };
+                            // Only the S-curve LINES switch color per active curve.
+                            const line = activeCurve === "baseline"
+                              ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
+                              : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
                             return (
                               <>
-                                <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={palette.planIn} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={palette.actIn} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={palette.planOut} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={palette.actOut} radius={[3,3,0,0]} />
-                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={palette.planLine} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={palette.actLine} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                                <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={cash.planIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={cash.actIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={cash.planOut} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={cash.actOut} radius={[3,3,0,0]} />
+                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
                               </>
                             );
                           })()}
@@ -528,15 +536,20 @@ const ProjectDetail = () => {
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
+                    {(() => {
+                      const lineColor = activeCurve === "baseline"
+                        ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
+                        : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
+                      return (
                     <div className="max-h-[280px] overflow-auto rounded border border-border">
                       <table className="w-full text-xs">
                         <thead className="sticky top-0 z-10">
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
-                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress %</th>
+                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress % <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
                             <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-success border-l border-border">Cash In</th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-destructive border-l border-border">Cash Out</th>
-                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net (Actual)</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-accent border-l border-border">Cash Out</th>
+                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net Kumulatif (Actual)</th>
                           </tr>
                           <tr className="bg-muted/70 border-b border-border">
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
@@ -549,25 +562,35 @@ const ProjectDetail = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map(r => {
-                            const dev = (r.actPct ?? 0) - r.planPct;
-                            const net = r.cashIn - r.cashOut;
-                            return (
-                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
-                              <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-primary border-l border-border/40">{r.planPct.toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive font-semibold">{formatRupiah(r.cashOut)}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${net >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(net)}</td>
-                            </tr>
-                          );})}
+                          {(() => {
+                            let cum = 0;
+                            let hasAnyActual = false;
+                            return rows.map(r => {
+                              const dev = (r.actPct ?? 0) - r.planPct;
+                              const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
+                              if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
+                              const showNet = hasAnyActual && r.actPct != null;
+                              return (
+                              <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
+                                <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct.toFixed(1)}%</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-accent/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{formatRupiah(r.cashOut)}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : cum >= 0 ? "text-success" : "text-destructive"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
+                              </tr>
+                              );
+                            });
+                          })()}
                         </tbody>
                       </table>
                     </div>
+                      );
+                    })()}
+
 
                   </div>
                 );
@@ -956,13 +979,8 @@ const ProjectDetail = () => {
                                 const clickable = level === 1 && hasChildren;
                                 const durationDays = Math.max(0, Math.round((endMs - startMs) / 86400000));
                                 const remainingDays = Math.max(0, Math.ceil((endMs - todayMs) / 86400000));
-                                const tooltip = [
-                                  `${code} — ${name}`,
-                                  `Start: ${fmt(startMs)}  ·  Finish: ${fmt(endMs)}`,
-                                  `Durasi: ${durationDays}d  ·  Sisa: ${remainingDays}d`,
-                                  `Progress: ${progressPct}%`,
-                                  qty ? `Qty: ${qty} ${unit || ""}` : "",
-                                ].filter(Boolean).join("\n");
+
+
                                 return (
                                 <div
                                   key={id}
@@ -978,7 +996,14 @@ const ProjectDetail = () => {
                                   </div>
                                   <div className="absolute inset-y-0" style={{ left: "220px", right: 0 }}>
                                     <div className="relative h-full">
-                                      <div title={tooltip} className={`absolute top-1/2 -translate-y-1/2 rounded-sm cursor-help ${level === 1 ? "h-3 bg-primary/20 hover:bg-primary/30" : "h-2 bg-accent/20 hover:bg-accent/30"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                                      <div className={`group/bar absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20 hover:bg-primary/30" : "h-2 bg-accent/20 hover:bg-accent/30"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
+                                        <div className="pointer-events-none opacity-0 group-hover/bar:opacity-100 transition-opacity duration-75 absolute z-30 left-1/2 -translate-x-1/2 bottom-[calc(100%+4px)] bg-card border border-border rounded-md shadow-lg px-2.5 py-1.5 text-[10px] whitespace-nowrap">
+                                          <p className="font-bold text-foreground mb-0.5">{code} — {name}</p>
+                                          <p className="text-muted-foreground">Start: <span className="font-mono-data text-foreground">{fmt(startMs)}</span> · Finish: <span className="font-mono-data text-foreground">{fmt(endMs)}</span></p>
+                                          <p className="text-muted-foreground">Durasi: <span className="font-mono-data text-foreground">{durationDays}d</span> · Sisa: <span className={`font-mono-data ${remainingDays === 0 ? "text-destructive" : "text-foreground"}`}>{remainingDays}d</span></p>
+                                          <p className="text-muted-foreground">Progress: <span className="font-mono-data font-semibold text-primary">{progressPct}%</span>{qty ? <> · Qty: <span className="font-mono-data text-foreground">{qty} {unit || ""}</span></> : null}</p>
+                                        </div>
+                                      </div>
                                       <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm pointer-events-none ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
                                       <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 pointer-events-none ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
                                         <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
@@ -986,6 +1011,7 @@ const ProjectDetail = () => {
                                       <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1] pointer-events-none" style={{ left: `${todayPct}%` }} />
                                     </div>
                                   </div>
+
                                 </div>
                                 );
                               })}
@@ -1174,32 +1200,59 @@ const ProjectDetail = () => {
                   <div className="glass-card rounded-lg shadow-card overflow-hidden">
                     <div className="overflow-auto max-h-[520px]">
                       <table className="w-full text-xs">
-                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
-                          <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Item</th>
-                          <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Vendor</th>
-                          <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Amount</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Status</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PR</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PO</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Delivery</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">On Site</th>
-                        </tr></thead>
+                        <thead className="sticky top-0 z-10">
+                          <tr className="bg-muted border-b border-border">
+                            <th rowSpan={2} className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Item</th>
+                            <th rowSpan={2} className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Vendor</th>
+                            <th rowSpan={2} className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Amount</th>
+                            <th rowSpan={2} className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Status</th>
+                            {["PR","PO","Delivery","On Site"].map(g => (
+                              <th key={g} colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{g}</th>
+                            ))}
+                          </tr>
+                          <tr className="bg-muted/70 border-b border-border">
+                            {["PR","PO","Delivery","On Site"].map(g => (
+                              <Fragment key={g}>
+                                <th className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground border-l border-border font-normal">Plan</th>
+                                <th className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground font-normal">Actual</th>
+                              </Fragment>
+                            ))}
+
+                          </tr>
+                        </thead>
                         <tbody>
-                          {procurementItems.map(item => (
+                          {procurementItems.map(item => {
+                            const pairs: [string, string][] = [
+                              ["pr_plan_date","rfq_date"],
+                              ["po_plan_date","po_date"],
+                              ["delivery_plan_date","delivery_date"],
+                              ["onsite_plan_date","install_date"],
+                            ];
+                            const fmtD = (v: any) => v ? new Date(v).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—";
+                            return (
                             <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-2 px-3"><p className="font-medium text-foreground">{item.item_name}</p>{item.description && <p className="text-[9px] text-muted-foreground">{item.description}</p>}</td>
                               <td className="py-2 px-3 text-muted-foreground">{item.vendor || "—"}</td>
                               <td className="py-2 px-3 text-right font-mono-data text-foreground">{formatRupiah(item.amount)}</td>
                               <td className="py-2 px-3 text-center"><span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${procStatusColors[item.status] || ""}`}>{procStatusLabels[item.status] || item.status}</span></td>
-                              {["rfq_date","po_date","delivery_date","install_date"].map(field => (
-                                <td key={field} className="py-2 px-3 text-center text-[9px] font-mono-data text-muted-foreground">
-                                  {(item as any)[field] ? new Date((item as any)[field]).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—"}
-                                </td>
-                              ))}
+                              {pairs.map(([planF, actF], i) => {
+                                const plan = (item as any)[planF];
+                                const actual = (item as any)[actF];
+                                const late = plan && actual && new Date(actual) > new Date(plan);
+                                return (
+                                  <Fragment key={i}>
+                                    <td className="py-2 px-2 text-center text-[9px] font-mono-data text-muted-foreground border-l border-border/40">{fmtD(plan)}</td>
+                                    <td className={`py-2 px-2 text-center text-[9px] font-mono-data font-semibold ${late ? "text-destructive" : actual ? "text-success" : "text-muted-foreground"}`}>{fmtD(actual)}</td>
+                                  </Fragment>
+                                );
+
+                              })}
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
+
                     </div>
                   </div>
 
@@ -1276,6 +1329,8 @@ const ProjectDetail = () => {
                   { key: "weekly" as MediaTab, label: `Weekly Update (${weeklyPhotos.length})`, icon: Camera, available: true },
                   { key: "video" as MediaTab, label: "Video", icon: Video, available: !!project.video_url },
                   { key: "cctv" as MediaTab, label: "CCTV", icon: Cctv, available: !!project.cctv_url },
+                  { key: "model3d" as MediaTab, label: "3D Model", icon: Box, available: !!(project as any).model_3d_url },
+
                 ]).filter(t => t.available).map(tab => (
                   <button key={tab.key} onClick={() => setActiveMedia(tab.key)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -1339,8 +1394,24 @@ const ProjectDetail = () => {
                   <ExternalLink className="h-5 w-5 text-muted-foreground ml-auto" />
                 </a>
               )}
+              {activeMedia === "model3d" && (project as any).model_3d_url && (
+                <div className="space-y-3">
+                  <a href={(project as any).model_3d_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-5 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                    <Box className="h-10 w-10 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">3D Model Viewer<span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/30">BIM · Autodesk</span></p>
+                      <p className="text-[10px] text-muted-foreground truncate max-w-md mt-0.5">{(project as any).model_3d_url}</p>
+                    </div>
+                    <ExternalLink className="h-5 w-5 text-muted-foreground ml-auto" />
+                  </a>
+                  <div className="rounded-lg overflow-hidden border border-border bg-muted/20" style={{ height: 520 }}>
+                    <iframe src={(project as any).model_3d_url} className="w-full h-full" title="3D Model" allow="fullscreen; xr-spatial-tracking" />
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
         </div>
       </main>
     </div>

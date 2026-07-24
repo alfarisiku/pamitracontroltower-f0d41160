@@ -190,57 +190,62 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
 
       {Object.keys(grouped).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada foto yang cocok filter.</p>}
 
-      {(Object.entries(grouped) as [string, any[]][]).map(([week, list]) => (
-        <div key={week} className="mb-3">
-          <h4 className="text-[11px] font-semibold text-foreground mb-1.5 flex items-center gap-1"><Calendar className="h-3 w-3 text-primary" /> {week} <span className="text-muted-foreground font-normal">({list.length} foto)</span></h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {list.map(p => {
-              const isEditing = editingId === p.id;
-              return (
-                <div key={p.id} className="rounded-lg overflow-hidden border border-border bg-card">
-                  <div className="relative group">
-                    <img src={p.photo_url} alt={p.title || p.caption} className="w-full h-28 object-cover" />
-                    {!isEditing && (
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
-                        <button onClick={() => { setEditingId(p.id); setEdit(p); }} className="p-1.5 bg-primary text-primary-foreground rounded-full"><Edit3 className="h-3 w-3" /></button>
-                        <button onClick={() => del(p)} className="p-1.5 bg-destructive text-destructive-foreground rounded-full"><Trash2 className="h-3 w-3" /></button>
+      {Object.keys(grouped).length > 0 && (
+        <div className="max-h-[560px] overflow-y-auto pr-1 space-y-3 rounded-md border border-border/60 bg-muted/10 p-2">
+          {(Object.entries(grouped) as [string, any[]][]).map(([week, list]) => (
+            <div key={week} className="rounded-md bg-card border border-border/60 p-2">
+              <h4 className="text-[11px] font-semibold text-foreground mb-1.5 flex items-center gap-1 sticky top-0 bg-card z-[1] py-1"><Calendar className="h-3 w-3 text-primary" /> {week} <span className="text-muted-foreground font-normal">({list.length} foto)</span></h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {list.map(p => {
+                  const isEditing = editingId === p.id;
+                  return (
+                    <div key={p.id} className="rounded-lg overflow-hidden border border-border bg-card">
+                      <div className="relative group">
+                        <img src={p.photo_url} alt={p.title || p.caption} className="w-full h-28 object-cover" />
+                        {!isEditing && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
+                            <button onClick={() => { setEditingId(p.id); setEdit(p); }} className="p-1.5 bg-primary text-primary-foreground rounded-full"><Edit3 className="h-3 w-3" /></button>
+                            <button onClick={() => del(p)} className="p-1.5 bg-destructive text-destructive-foreground rounded-full"><Trash2 className="h-3 w-3" /></button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  {isEditing ? (
-                    <div className="p-2 space-y-1">
-                      <input value={edit.title || ""} onChange={e => setEdit({...edit, title: e.target.value})} className={inputCls} placeholder="Title" />
-                      <input value={edit.description || ""} onChange={e => setEdit({...edit, description: e.target.value})} className={inputCls} placeholder="Description" />
-                      <div className="grid grid-cols-2 gap-1">
-                        <input type="date" value={edit.photo_date || ""} onChange={e => setEdit({...edit, photo_date: e.target.value})} className={inputCls} />
-                        <select value={edit.activity_category || "construction"} onChange={e => setEdit({...edit, activity_category: e.target.value})} className={inputCls}>
-                          {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                        </select>
-                      </div>
-                      <input value={edit.location || ""} onChange={e => setEdit({...edit, location: e.target.value})} className={inputCls} placeholder="Location" />
-                      <input value={edit.week_label || ""} onChange={e => setEdit({...edit, week_label: e.target.value})} className={inputCls} placeholder="Week label" />
-                      <div className="flex gap-1">
-                        <button onClick={() => saveEdit(p.id)} className="flex-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Save className="h-3 w-3 inline mr-1" />Save</button>
-                        <button onClick={() => setEditingId(null)} className="px-2 py-1 bg-muted rounded text-[10px] border border-border"><X className="h-3 w-3" /></button>
-                      </div>
+                      {isEditing ? (
+                        <div className="p-2 space-y-1">
+                          <input value={edit.title || ""} onChange={e => setEdit({...edit, title: e.target.value})} className={inputCls} placeholder="Title" />
+                          <input value={edit.description || ""} onChange={e => setEdit({...edit, description: e.target.value})} className={inputCls} placeholder="Description" />
+                          <div className="grid grid-cols-2 gap-1">
+                            <input type="date" value={edit.photo_date || ""} onChange={e => setEdit({...edit, photo_date: e.target.value})} className={inputCls} />
+                            <select value={edit.activity_category || "construction"} onChange={e => setEdit({...edit, activity_category: e.target.value})} className={inputCls}>
+                              {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                            </select>
+                          </div>
+                          <input value={edit.location || ""} onChange={e => setEdit({...edit, location: e.target.value})} className={inputCls} placeholder="Location" />
+                          <input value={edit.week_label || ""} onChange={e => setEdit({...edit, week_label: e.target.value})} className={inputCls} placeholder="Week label" />
+                          <div className="flex gap-1">
+                            <button onClick={() => saveEdit(p.id)} className="flex-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Save className="h-3 w-3 inline mr-1" />Save</button>
+                            <button onClick={() => setEditingId(null)} className="px-2 py-1 bg-muted rounded text-[10px] border border-border"><X className="h-3 w-3" /></button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-2 space-y-0.5">
+                          {p.title && <p className="text-[11px] font-semibold text-foreground truncate">{p.title}</p>}
+                          {p.description && <p className="text-[10px] text-muted-foreground line-clamp-2">{p.description}</p>}
+                          <div className="flex items-center justify-between text-[9px] text-muted-foreground pt-0.5">
+                            <span className="capitalize">{p.activity_category || 'construction'}</span>
+                            {p.photo_date && <span>{new Date(p.photo_date).toLocaleDateString('id-ID')}</span>}
+                          </div>
+                          {p.location && <p className="text-[9px] text-muted-foreground flex items-center gap-0.5"><MapPin className="h-2.5 w-2.5" />{p.location}</p>}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="p-2 space-y-0.5">
-                      {p.title && <p className="text-[11px] font-semibold text-foreground truncate">{p.title}</p>}
-                      {p.description && <p className="text-[10px] text-muted-foreground line-clamp-2">{p.description}</p>}
-                      <div className="flex items-center justify-between text-[9px] text-muted-foreground pt-0.5">
-                        <span className="capitalize">{p.activity_category || 'construction'}</span>
-                        {p.photo_date && <span>{new Date(p.photo_date).toLocaleDateString('id-ID')}</span>}
-                      </div>
-                      {p.location && <p className="text-[9px] text-muted-foreground flex items-center gap-0.5"><MapPin className="h-2.5 w-2.5" />{p.location}</p>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
     </div>
   );
 }
