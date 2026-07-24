@@ -221,7 +221,7 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
         ) : (
           <div className="overflow-auto max-h-[520px] border border-border rounded-md">
             <table className="w-full text-xs">
-              <thead><tr className="bg-muted/50 border-b border-border">
+              <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Date</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Type</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan/Act</th>

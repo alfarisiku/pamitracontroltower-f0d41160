@@ -136,7 +136,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
 
       {areas.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada Parent WBS. Klik "Add Parent WBS" untuk mulai.</p>}
 
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[640px] overflow-y-auto pr-1">
         {areas.map((a, aidx) => {
           const areaItems = items.filter(i => i.work_area_id === a.id).sort((x,y) => x.sort_order - y.sort_order);
           const isEditingA = editingArea === a.id;
