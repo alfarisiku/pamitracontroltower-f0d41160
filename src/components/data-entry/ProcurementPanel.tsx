@@ -142,18 +142,18 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
       {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : items.length === 0 ? (
         <p className="text-xs text-muted-foreground">Belum ada item procurement.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[560px] border border-border rounded-md">
           <table className="w-full text-xs">
-            <thead><tr className="bg-muted/50 border-b border-border">
+            <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
               <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Item</th>
               <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Vendor</th>
               <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Amount</th>
               <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Status</th>
-              <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">RFQ</th>
+              <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">PR</th>
               <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">PO</th>
               <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Delivery</th>
-              <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Install</th>
-              <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-20">Actions</th>
+              <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">On Site</th>
+              <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground w-20">Actions</th>
             </tr></thead>
             <tbody>
               {items.map(item => {
@@ -163,41 +163,42 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
                   queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
                   queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
                 };
-                const editCls = "bg-transparent border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 focus:outline-none";
-                const dateInput = (field: keyof typeof item, current: string | null) => (
+                const dateInput = (field: string, current: string | null) => (
                   <input type="date" defaultValue={current || ""}
                     onBlur={async e => {
                       const v = e.target.value || null;
                       if (v === (current || null)) return;
-                      await patch(String(field), v, `${String(field)} → ${v || "cleared"}`);
+                      await patch(field, v, `${field} → ${v || "cleared"}`);
                     }}
-                    className={`${editCls} text-[10px] font-mono-data text-foreground w-[120px]`} />
+                    className="bg-transparent border border-transparent hover:border-border focus:border-primary rounded px-1 py-0.5 text-[10px] font-mono-data text-foreground w-[120px] focus:outline-none" />
                 );
+                const isEditing = editingId === item.id;
                 return (
-                <tr key={item.id} className="border-b border-border/30">
+                <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20">
                   <td className="py-1.5 px-2 font-medium text-foreground">
-                    <input defaultValue={item.item_name}
-                      onBlur={e => e.target.value !== item.item_name && e.target.value && patch("item_name", e.target.value, `renamed → ${e.target.value}`)}
-                      className={`${editCls} text-xs font-medium text-foreground w-full`} />
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <input type="number" defaultValue={item.qty} step="0.01"
-                        onBlur={e => Number(e.target.value) !== Number(item.qty) && patch("qty", parseFloat(e.target.value) || 0, `qty → ${e.target.value}`)}
-                        className={`${editCls} text-[9px] text-muted-foreground w-14 font-mono-data`} />
-                      <input defaultValue={item.unit}
-                        onBlur={e => e.target.value !== item.unit && patch("unit", e.target.value, `unit → ${e.target.value}`)}
-                        className={`${editCls} text-[9px] text-muted-foreground w-12`} />
-                    </div>
+                    {isEditing ? (
+                      <input value={edit.item_name} onChange={e => setEdit({...edit, item_name: e.target.value})}
+                        className="w-full px-1.5 py-1 text-xs border border-primary rounded bg-card focus:outline-none" />
+                    ) : (
+                      <p className="text-xs font-medium text-foreground">{item.item_name}</p>
+                    )}
+                    <p className="text-[9px] text-muted-foreground mt-0.5 font-mono-data">{Number(item.qty).toLocaleString()} {item.unit}</p>
                   </td>
                   <td className="py-1.5 px-2 text-muted-foreground">
-                    <input defaultValue={item.vendor || ""}
-                      onBlur={e => e.target.value !== (item.vendor || "") && patch("vendor", e.target.value, `vendor → ${e.target.value}`)}
-                      className={`${editCls} text-xs text-muted-foreground w-full`} placeholder="—" />
+                    {isEditing ? (
+                      <input value={edit.vendor} onChange={e => setEdit({...edit, vendor: e.target.value})}
+                        className="w-full px-1.5 py-1 text-xs border border-primary rounded bg-card focus:outline-none" placeholder="Vendor" />
+                    ) : (
+                      <span className="text-xs">{item.vendor || "—"}</span>
+                    )}
                   </td>
                   <td className="py-1.5 px-2 text-right font-mono-data text-accent">
-                    <input type="number" defaultValue={item.amount}
-                      onBlur={e => Number(e.target.value) !== item.amount && patch("amount", parseInt(e.target.value) || 0, `amount → ${formatIDR(parseInt(e.target.value)||0)}`)}
-                      className={`${editCls} text-right font-mono-data text-accent w-[110px] text-xs`} />
-                    <div className="text-[9px] text-muted-foreground">{formatIDR(item.amount)}</div>
+                    {isEditing ? (
+                      <input type="number" value={edit.amount} onChange={e => setEdit({...edit, amount: e.target.value})}
+                        className="w-[120px] px-1.5 py-1 text-xs text-right border border-primary rounded bg-card focus:outline-none font-mono-data" />
+                    ) : (
+                      <span className="text-xs font-mono-data text-foreground">{formatIDR(item.amount)}</span>
+                    )}
                   </td>
                   <td className="py-1.5 px-2 text-center">
                     <select value={item.status} onChange={e => handleStatusUpdate(item.id, e.target.value, item.item_name)}
@@ -209,13 +210,28 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
                   <td className="py-1.5 px-2">{dateInput("po_date", item.po_date)}</td>
                   <td className="py-1.5 px-2">{dateInput("delivery_date", item.delivery_date)}</td>
                   <td className="py-1.5 px-2">{dateInput("install_date", item.install_date)}</td>
-                  <td className="py-1.5 px-2"><button onClick={() => handleDelete(item.id, item.item_name)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                  <td className="py-1.5 px-2">
+                    <div className="flex items-center justify-center gap-1">
+                      {isEditing ? (
+                        <>
+                          <button onClick={() => saveEdit(item)} className="p-1 hover:bg-success/10 rounded" title="Save"><Save className="h-3 w-3 text-success" /></button>
+                          <button onClick={() => setEditingId(null)} className="p-1 hover:bg-muted rounded" title="Cancel"><X className="h-3 w-3 text-muted-foreground" /></button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => startEdit(item)} className="p-1 hover:bg-primary/10 rounded" title="Edit item, vendor, amount"><Pencil className="h-3 w-3 text-primary" /></button>
+                          <button onClick={() => handleDelete(item.id, item.item_name)} className="p-1 hover:bg-destructive/10 rounded" title="Delete"><Trash2 className="h-3 w-3 text-destructive" /></button>
+                        </>
+                      )}
+                    </div>
+                  </td>
                 </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+
       )}
     </div>
   );
