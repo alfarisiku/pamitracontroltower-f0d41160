@@ -32,7 +32,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
   "delayed": { label: "! Terlambat", className: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
-type MediaTab = "weekly" | "video" | "cctv";
+type MediaTab = "weekly" | "video" | "cctv" | "model3d";
 type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report";
 
 const riskCategoryLabels: Record<string, string> = {
