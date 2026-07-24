@@ -1399,8 +1399,24 @@ const ProjectDetail = () => {
                   <ExternalLink className="h-5 w-5 text-muted-foreground ml-auto" />
                 </a>
               )}
+              {activeMedia === "model3d" && (project as any).model_3d_url && (
+                <div className="space-y-3">
+                  <a href={(project as any).model_3d_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-5 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                    <Box className="h-10 w-10 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">3D Model Viewer<span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/30">BIM · Autodesk</span></p>
+                      <p className="text-[10px] text-muted-foreground truncate max-w-md mt-0.5">{(project as any).model_3d_url}</p>
+                    </div>
+                    <ExternalLink className="h-5 w-5 text-muted-foreground ml-auto" />
+                  </a>
+                  <div className="rounded-lg overflow-hidden border border-border bg-muted/20" style={{ height: 520 }}>
+                    <iframe src={(project as any).model_3d_url} className="w-full h-full" title="3D Model" allow="fullscreen; xr-spatial-tracking" />
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
         </div>
       </main>
     </div>
