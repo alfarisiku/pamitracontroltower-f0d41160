@@ -98,6 +98,8 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         progress: parseInt(editForm.progress) || 0,
         image_url: editForm.image_url || null, video_url: editForm.video_url || null,
         cctv_url: editForm.cctv_url || null,
+        model_3d_url: editForm.model_3d_url || null,
+
       }).eq("id", editProjectId);
       if (error) throw error;
       await logActivity(supabase, "project", "update", `Project ${editForm.project_code} updated`, editProjectId, editProjectId);
