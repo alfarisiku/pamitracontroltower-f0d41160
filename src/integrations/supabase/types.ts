@@ -591,6 +591,7 @@ export type Database = {
           map_x: number
           map_y: number
           margin_locked: boolean
+          model_3d_url: string | null
           name: string
           phase: string
           profit_margin_target: number
@@ -620,6 +621,7 @@ export type Database = {
           map_x?: number
           map_y?: number
           margin_locked?: boolean
+          model_3d_url?: string | null
           name: string
           phase?: string
           profit_margin_target?: number
@@ -649,6 +651,7 @@ export type Database = {
           map_x?: number
           map_y?: number
           margin_locked?: boolean
+          model_3d_url?: string | null
           name?: string
           phase?: string
           profit_margin_target?: number
