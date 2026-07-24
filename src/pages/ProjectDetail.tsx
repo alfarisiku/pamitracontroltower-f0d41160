@@ -84,10 +84,16 @@ const ProjectDetail = () => {
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [expandedTimeline, setExpandedTimeline] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>("health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
+  const [descExpanded, setDescExpanded] = useState(false);
+  const toggleTimeline = (areaId: string) => {
+    setExpandedTimeline(prev => { const n = new Set(prev); n.has(areaId) ? n.delete(areaId) : n.add(areaId); return n; });
+  };
+
 
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
   useEffect(() => {
@@ -210,7 +216,22 @@ const ProjectDetail = () => {
             </div>
 
             <div className="p-4 sm:p-5">
-              {project.description && <p className="text-xs text-muted-foreground mb-3">{project.description}</p>}
+              {project.description && (() => {
+                const desc = project.description;
+                const isLong = desc.length > 180;
+                const shown = !isLong || descExpanded ? desc : desc.slice(0, 180).trimEnd() + "…";
+                return (
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {shown}
+                    {isLong && (
+                      <button onClick={() => setDescExpanded(v => !v)} className="ml-1.5 text-primary hover:underline font-medium text-[11px]">
+                        {descExpanded ? "Sembunyikan" : "Selengkapnya"}
+                      </button>
+                    )}
+                  </p>
+                );
+              })()}
+
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
                 <InfoItem icon={MapPin} label="Lokasi" value={project.location} />
                 <InfoItem icon={User} label="PM" value={project.manager} />
@@ -272,7 +293,7 @@ const ProjectDetail = () => {
                   <p className="text-[10px] text-muted-foreground">{criticalAlerts} critical/high</p>
                 </div>
                 <div className="glass-card rounded-lg p-3 border border-border">
-                  <div className="flex items-center gap-1.5 mb-1"><Clock className="h-3.5 w-3.5 text-primary" /><span className="text-[10px] text-muted-foreground uppercase">Time Elapsed</span></div>
+                  <div className="flex items-center gap-1.5 mb-1"><Clock className="h-3.5 w-3.5 text-primary" /><span className="text-[10px] text-muted-foreground uppercase">Time Progress</span></div>
                   <p className="text-sm font-bold text-foreground">{elapsedPct}%</p>
                   <p className="text-[10px] text-muted-foreground">{totalDuration - Math.max(0, daysRemaining)}d of {totalDuration}d</p>
                 </div>
@@ -294,7 +315,7 @@ const ProjectDetail = () => {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Physical Progress</span>
+                        <span className="text-muted-foreground">Progress Project</span>
                         <span className="font-mono-data font-bold text-primary">{project.progress}%</span>
                       </div>
                       <Progress value={project.progress} className="h-2" />
@@ -308,7 +329,7 @@ const ProjectDetail = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Time Elapsed</span>
+                        <span className="text-muted-foreground">Time Progress</span>
                         <span className="font-mono-data font-bold text-foreground">{elapsedPct}%</span>
                       </div>
                       <Progress value={elapsedPct} className="h-2" />
@@ -487,12 +508,23 @@ const ProjectDetail = () => {
                             }}
                           />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
-                          <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                          <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                          {(() => {
+                            // Color palette per curve so Baseline & KSO look distinct at a glance.
+                            const palette = activeCurve === "baseline"
+                              ? { planIn: "hsl(var(--success) / 0.4)", actIn: "hsl(var(--success))", planOut: "hsl(var(--primary) / 0.35)", actOut: "hsl(var(--accent))", planLine: "hsl(var(--primary))", actLine: "hsl(var(--accent))" }
+                              : { planIn: "hsl(200, 70%, 70%)", actIn: "hsl(200, 80%, 45%)", planOut: "hsl(280, 55%, 75%)", actOut: "hsl(280, 65%, 50%)", planLine: "hsl(280, 65%, 50%)", actLine: "hsl(30, 85%, 55%)" };
+                            return (
+                              <>
+                                <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={palette.planIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={palette.actIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={palette.planOut} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={palette.actOut} radius={[3,3,0,0]} />
+                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={palette.planLine} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={palette.actLine} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                              </>
+                            );
+                          })()}
+
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
@@ -833,12 +865,24 @@ const ProjectDetail = () => {
                 <>
                   {/* === Compact Gantt for Work Areas === */}
                   {(() => {
-                    const pStart = new Date(project.start_date).getTime();
-                    const pEnd = new Date(project.end_date).getTime();
+                    const projStart = new Date(project.start_date).getTime();
+                    const projEnd = new Date(project.end_date).getTime();
+                    // Extend timeline to cover ALL work items (so bars starting before project start / ending after project end are fully visible when scrolling).
+                    const allTimes: number[] = [projStart, projEnd];
+                    workItems.forEach(wi => {
+                      if (wi.start_date) allTimes.push(new Date(wi.start_date).getTime());
+                      if (wi.end_date) allTimes.push(new Date(wi.end_date).getTime());
+                    });
+                    const rawStart = Math.min(...allTimes);
+                    const rawEnd = Math.max(...allTimes);
+                    // Add ~1 month padding on each side so scroll shows some breathing room.
+                    const pad = 30 * 24 * 60 * 60 * 1000;
+                    const pStart = rawStart - pad;
+                    const pEnd = rawEnd + pad;
                     const total = Math.max(1, pEnd - pStart);
                     // Monthly ticks
                     const months: { label: string; leftPct: number; isYear: boolean }[] = [];
-                    const cur = new Date(project.start_date);
+                    const cur = new Date(pStart);
                     cur.setDate(1);
                     while (cur.getTime() <= pEnd) {
                       const off = ((cur.getTime() - pStart) / total) * 100;
@@ -851,20 +895,23 @@ const ProjectDetail = () => {
                     }
                     const todayMs = new Date().getTime();
                     const todayPct = ((Math.min(pEnd, Math.max(pStart, todayMs)) - pStart) / total) * 100;
-                    const rowsData: Array<{ id: string; code: string; name: string; leftPct: number; widthPct: number; progressPct: number; level: 1 | 2; areaId?: string; hasChildren?: boolean; expanded?: boolean }> = [];
+                    const fmt = (ms: number) => new Date(ms).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+                    type Row = { id: string; code: string; name: string; leftPct: number; widthPct: number; progressPct: number; level: 1 | 2; areaId?: string; hasChildren?: boolean; expanded?: boolean; startMs: number; endMs: number; unit?: string; qty?: string };
+                    const rowsData: Row[] = [];
                     workAreas.forEach(area => {
                       const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                       const dates = areaItems.flatMap(i => [i.start_date, i.end_date]).filter(Boolean) as string[];
                       const times = dates.map(d => new Date(d).getTime());
-                      const s = times.length ? Math.min(...times) : pStart;
-                      const e = times.length ? Math.max(...times) : pEnd;
-                      const isExp = expandedAreas.has(area.id);
+                      const s = times.length ? Math.min(...times) : projStart;
+                      const e = times.length ? Math.max(...times) : projEnd;
+                      const isExp = expandedTimeline.has(area.id);
                       rowsData.push({
                         id: area.id, code: area.code, name: area.name, level: 1,
-                        leftPct: Math.max(0, ((s - pStart) / total) * 100),
-                        widthPct: Math.max(1, ((e - s) / total) * 100),
+                        leftPct: ((s - pStart) / total) * 100,
+                        widthPct: Math.max(0.5, ((e - s) / total) * 100),
                         progressPct: area.progress || 0,
                         areaId: area.id, hasChildren: areaItems.length > 0, expanded: isExp,
+                        startMs: s, endMs: e,
                       });
                       if (isExp) {
                         areaItems.forEach(wi => {
@@ -872,14 +919,16 @@ const ProjectDetail = () => {
                           const we = wi.end_date ? new Date(wi.end_date).getTime() : e;
                           rowsData.push({
                             id: wi.id, code: wi.code, name: wi.name, level: 2,
-                            leftPct: Math.max(0, ((ws - pStart) / total) * 100),
+                            leftPct: ((ws - pStart) / total) * 100,
                             widthPct: Math.max(0.5, ((we - ws) / total) * 100),
                             progressPct: wi.progress || 0,
+                            startMs: ws, endMs: we,
+                            unit: wi.unit, qty: `${Number(wi.qty_completed)}/${Number(wi.qty_total)}`,
                           });
                         });
                       }
                     });
-                    const timelineMinPx = Math.max(900, months.length * 60);
+                    const timelineMinPx = Math.max(1100, months.length * 70);
                     return (
                       <div className="glass-card rounded-lg shadow-card p-4">
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -888,13 +937,13 @@ const ProjectDetail = () => {
                             <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary/25" /> Duration</div>
                             <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary" /> Progress</div>
                             <div className="flex items-center gap-1"><div className="w-0.5 h-3 bg-destructive" /> Today</div>
-                            <span className="hidden sm:inline text-muted-foreground/70">· Klik baris parent untuk expand level 2 · Geser horizontal untuk periode lain</span>
+                            <span className="hidden sm:inline text-muted-foreground/70">· Klik baris parent untuk expand level 2 · Scroll ↔ untuk lihat start &amp; finish</span>
                           </div>
                         </div>
-                        <div className="overflow-x-auto border border-border rounded-md bg-muted/10">
+                        <div className="overflow-auto max-h-[480px] border border-border rounded-md bg-muted/10">
                           <div className="relative" style={{ minWidth: `${timelineMinPx}px` }}>
-                            {/* Month header */}
-                            <div className="relative h-6 border-b border-border bg-muted/30" style={{ marginLeft: 220 }}>
+                            {/* Month header (sticky top so scrolling vertical keeps it visible) */}
+                            <div className="sticky top-0 z-20 relative h-6 border-b border-border bg-muted/90 backdrop-blur" style={{ marginLeft: 220 }}>
                               {months.map((m, i) => (
                                 <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
                                   <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
@@ -903,29 +952,38 @@ const ProjectDetail = () => {
                             </div>
                             {/* Rows */}
                             <div>
-                              {rowsData.map(({ id, code, name, leftPct, widthPct, progressPct, level, areaId, hasChildren, expanded }) => {
+                              {rowsData.map(({ id, code, name, leftPct, widthPct, progressPct, level, areaId, hasChildren, expanded, startMs, endMs, unit, qty }) => {
                                 const clickable = level === 1 && hasChildren;
+                                const durationDays = Math.max(0, Math.round((endMs - startMs) / 86400000));
+                                const remainingDays = Math.max(0, Math.ceil((endMs - todayMs) / 86400000));
+                                const tooltip = [
+                                  `${code} — ${name}`,
+                                  `Start: ${fmt(startMs)}  ·  Finish: ${fmt(endMs)}`,
+                                  `Durasi: ${durationDays}d  ·  Sisa: ${remainingDays}d`,
+                                  `Progress: ${progressPct}%`,
+                                  qty ? `Qty: ${qty} ${unit || ""}` : "",
+                                ].filter(Boolean).join("\n");
                                 return (
                                 <div
                                   key={id}
-                                  onClick={clickable ? () => toggleArea(areaId!) : undefined}
-                                  className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-8"} ${clickable ? "cursor-pointer" : ""}`}
+                                  onClick={clickable ? () => toggleTimeline(areaId!) : undefined}
+                                  className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-9"} ${clickable ? "cursor-pointer" : ""}`}
                                 >
-                                  <div className={`absolute inset-y-0 left-0 w-[220px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
+                                  <div className={`sticky left-0 z-10 absolute inset-y-0 w-[220px] flex items-center px-2 gap-1.5 bg-card border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
                                     {level === 1 && (
                                       hasChildren ? <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${expanded ? "" : "-rotate-90"}`} /> : <div className="w-3 shrink-0" />
                                     )}
                                     <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
                                     <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
                                   </div>
-                                  <div className="absolute inset-y-0 pointer-events-none" style={{ left: "220px", right: 0 }}>
+                                  <div className="absolute inset-y-0" style={{ left: "220px", right: 0 }}>
                                     <div className="relative h-full">
-                                      <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20" : "h-2 bg-accent/20"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
-                                      <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
-                                      <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
+                                      <div title={tooltip} className={`absolute top-1/2 -translate-y-1/2 rounded-sm cursor-help ${level === 1 ? "h-3 bg-primary/20 hover:bg-primary/30" : "h-2 bg-accent/20 hover:bg-accent/30"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                                      <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm pointer-events-none ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
+                                      <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 pointer-events-none ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
                                         <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
                                       </div>
-                                      <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1]" style={{ left: `${todayPct}%` }} />
+                                      <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1] pointer-events-none" style={{ left: `${todayPct}%` }} />
                                     </div>
                                   </div>
                                 </div>
@@ -936,11 +994,14 @@ const ProjectDetail = () => {
                         </div>
                       </div>
                     );
+
                   })()}
 
 
 
+                  <div className="max-h-[560px] overflow-y-auto space-y-3 pr-1">
                   {workAreas.map(area => {
+
                     const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                     const isExpanded = expandedAreas.has(area.id);
                     const totalQty = areaItems.reduce((s, i) => s + Number(i.qty_total), 0);
@@ -1031,7 +1092,9 @@ const ProjectDetail = () => {
                       </div>
                     );
                   })}
+                  </div>
                 </>
+
               )}
             </div>
           )}
