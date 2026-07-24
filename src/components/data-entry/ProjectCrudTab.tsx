@@ -213,6 +213,8 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           <div className="sm:col-span-2"><label className={labelCls}>Cover Photo URL (Header) — mendukung Google Drive share link</label><input value={ef.image_url} onChange={e => set("image_url", e.target.value)} className={inputCls} placeholder="https://drive.google.com/file/d/…/view  atau  https://…" /><p className="text-[9px] text-muted-foreground mt-0.5">Untuk Google Drive: buka file → Share → General access = <b>Anyone with the link</b>, lalu paste linknya di sini.</p></div>
           <div><label className={labelCls}>YouTube Video URL</label><input value={ef.video_url} onChange={e => set("video_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/watch?v=..." /></div>
           <div><label className={labelCls}>CCTV / YouTube Live URL</label><input value={ef.cctv_url} onChange={e => set("cctv_url", e.target.value)} className={inputCls} placeholder="https://youtube.com/live/..." /></div>
+          <div className="md:col-span-2"><label className={labelCls}>3D Model URL (Autodesk Viewer / BIM 360)</label><input value={ef.model_3d_url} onChange={e => set("model_3d_url", e.target.value)} className={inputCls} placeholder="https://viewer.autodesk.com/..." /></div>
+
         </div>
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-2">🗺️ Map & Description</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
