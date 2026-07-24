@@ -1097,7 +1097,8 @@ const ProjectDetail = () => {
                     </div>
                   </div>
                   <div className="glass-card rounded-lg shadow-card overflow-hidden">
-                    <div className="divide-y divide-border/30">
+                    <div className="divide-y divide-border/30 overflow-auto max-h-[520px]">
+
                       {projectRisks.map(risk => {
                         const sevColor = risk.severity === "critical" ? "text-destructive" : risk.severity === "high" ? "text-warning" : risk.severity === "medium" ? "text-info" : "text-muted-foreground";
                         const duration = risk.is_resolved && risk.resolved_at
