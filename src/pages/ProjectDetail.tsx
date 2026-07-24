@@ -637,34 +637,63 @@ const ProjectDetail = () => {
                   if (fe.direction === "out" && isPlan) map[key].planOut += amt;
                   if (fe.direction === "out" && isAct) map[key].actOut += amt;
                 });
-                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
-                  label: r.label,
-                  "Plan Cash In": r.planIn,
-                  "Actual Cash In": r.actIn,
-                  "Plan Cash Out": -r.planOut,
-                  "Actual Cash Out": -r.actOut,
-                }));
+                const sorted = Object.values(map).sort((a, b) => a.order - b.order);
+                let cumPlan = 0, cumAct = 0;
+                let hasAnyActual = false;
+                const bipolar = sorted.map(r => {
+                  cumPlan += (r.planIn - r.planOut);
+                  const hasAct = r.actIn !== 0 || r.actOut !== 0;
+                  if (hasAct) { hasAnyActual = true; cumAct += (r.actIn - r.actOut); }
+                  return {
+                    label: r.label,
+                    "Plan Cash In": r.planIn,
+                    "Actual Cash In": r.actIn,
+                    "Plan Cash Out": -r.planOut,
+                    "Actual Cash Out": -r.actOut,
+                    "Cum. Plan Net": cumPlan,
+                    "Cum. Actual Net": hasAnyActual && hasAct ? cumAct : null,
+                  };
+                });
+                // Breakeven marker (first period where cumulative actual net turns >= 0)
+                const breakevenLabel = (() => {
+                  let prev = -Infinity;
+                  for (const r of bipolar) {
+                    const v = r["Cum. Actual Net"];
+                    if (v == null) continue;
+                    if (prev < 0 && v >= 0) return r.label;
+                    prev = v as number;
+                  }
+                  return null;
+                })();
                 if (bipolar.length === 0) return null;
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
                     </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
-                    <div className="h-[300px]">
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis = <span className="font-semibold" style={{ color: "hsl(215, 80%, 48%)" }}>Kumulatif Plan Net</span> &amp; <span className="font-semibold" style={{ color: "hsl(30, 90%, 45%)" }}>Kumulatif Actual Net</span>. Titik potong garis ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
+                    <div className="h-[340px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                        <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
                           <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: any, name: string) => {
+                            if (v == null) return ["—", name];
+                            const raw = Number(v);
+                            const isCum = name.startsWith("Cum.");
+                            return [`${raw < 0 ? "-" : ""}${formatRupiah(Math.abs(raw))}`, name];
+                          }} />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
-                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
+                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
+                          {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--success))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--success))", fontSize: 10, position: "top" }} />}
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.35)" radius={[3,3,0,0]} />
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
                           <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
-                        </BarChart>
+                          <Line type="monotone" dataKey="Cum. Plan Net" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 2.5, fill: "hsl(215, 80%, 48%)" }} connectNulls />
+                          <Line type="monotone" dataKey="Cum. Actual Net" stroke="hsl(30, 90%, 45%)" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(30, 90%, 45%)" }} connectNulls />
+                        </ComposedChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
