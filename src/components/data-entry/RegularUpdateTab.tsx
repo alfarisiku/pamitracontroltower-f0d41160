@@ -224,17 +224,6 @@ export function RegularUpdateTab({ projectId, projects }: { projectId: string; p
         )}
       </div>
 
-      {/* TKDN Update */}
-      <div className="glass-card rounded-lg shadow-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">🇮🇩 Update TKDN</h3>
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
-            <label className={labelCls}>TKDN Percentage (%)</label>
-            <input type="number" step="0.1" min="0" max="100" value={tkdnValue} onChange={e => setTkdnValue(e.target.value)} className={inputCls} />
-          </div>
-          <button onClick={handleTkdnUpdate} disabled={saving} className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Save className="h-3.5 w-3.5 inline mr-1" /> Save</button>
-        </div>
-      </div>
 
       {/* Financial Update — Contract Value & RAP saja */}
       <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
