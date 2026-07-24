@@ -385,17 +385,17 @@ const ProjectDetail = () => {
                           <tbody>
                             {rows.map(r => (
                               <tr key={r.key} className="border-b border-border/30 hover:bg-muted/20">
-                                <td className="py-1.5 px-2 text-foreground">{r.label}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-info">{formatRupiah(r.rap)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.actual)}</td>
+                                <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-primary">{formatRupiah(r.rap)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatRupiah(r.actual)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.variance >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.variance)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.pct > 100 ? "text-destructive" : r.pct > 85 ? "text-warning" : "text-success"}`}>{r.pct}%</td>
                               </tr>
                             ))}
                             <tr className="bg-muted/40 font-bold">
                               <td className="py-2 px-2 text-foreground">TOTAL</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-info">{formatRupiah(totalRap)}</td>
-                              <td className="py-2 px-2 text-right font-mono-data text-destructive">{formatRupiah(totalAct)}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(totalRap)}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(totalAct)}</td>
                               <td className={`py-2 px-2 text-right font-mono-data ${totalRap - totalAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(totalRap - totalAct)}</td>
                               <td className={`py-2 px-2 text-right font-mono-data ${totalRap > 0 && (totalAct / totalRap) > 1 ? "text-destructive" : "text-foreground"}`}>{totalRap > 0 ? Math.round((totalAct/totalRap)*100) : 0}%</td>
                             </tr>
