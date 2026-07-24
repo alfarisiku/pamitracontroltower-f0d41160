@@ -130,10 +130,10 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
             {currentLabel && (
               <ReferenceLine x={currentLabel} stroke="hsl(0, 72%, 50%)" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Today", position: "top", fontSize: 9, fill: "hsl(0, 72%, 50%)" }} />
             )}
-            <Area type="monotone" dataKey="planned" stroke="hsl(215, 80%, 55%)" fill="url(#scPlanned)" strokeWidth={2} name="Baseline Plan" dot={false} />
+            <Area type="monotone" dataKey="planned" stroke="hsl(215, 80%, 55%)" fill="url(#scPlanned)" strokeWidth={2} strokeDasharray="6 4" name="Baseline Plan" dot={false} />
             <Area type="monotone" dataKey="actual" stroke="hsl(152, 55%, 50%)" fill="url(#scActual)" strokeWidth={2.5} name="Actual" dot={false} connectNulls={false} />
             {additionalTypes.map((type, i) => (
-              <Area key={type} type="monotone" dataKey={`planned_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={1.5} strokeDasharray="5 5" name={`Plan (${type})`} dot={false} />
+              <Area key={type} type="monotone" dataKey={`planned_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={1.5} strokeDasharray="6 4" name={`Plan (${type})`} dot={false} />
             ))}
             {additionalTypes.map((type, i) => (
               <Area key={`act_${type}`} type="monotone" dataKey={`actual_${type}`} stroke={joColors[i % joColors.length]} fill="none" strokeWidth={2} name={`Actual (${type})`} dot={false} connectNulls={false} />
@@ -143,12 +143,12 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
       </div>
       <div className="flex items-center justify-center gap-4 mt-2 flex-wrap">
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-0.5 rounded" style={{ background: "hsl(215, 80%, 55%)" }} />
-          <span className="text-[10px] text-muted-foreground">Baseline Plan</span>
+          <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="hsl(215, 80%, 55%)" strokeWidth="2" strokeDasharray="4 3" /></svg>
+          <span className="text-[10px] text-muted-foreground">Baseline Plan (dashed)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-0.5 rounded" style={{ background: "hsl(152, 55%, 50%)" }} />
-          <span className="text-[10px] text-muted-foreground">Actual</span>
+          <div className="w-5 h-[2px] rounded" style={{ background: "hsl(152, 55%, 50%)" }} />
+          <span className="text-[10px] text-muted-foreground">Actual (solid)</span>
         </div>
         {additionalTypes.map((type, i) => (
           <div key={type} className="flex items-center gap-1.5">

@@ -345,6 +345,155 @@ const ProjectDetail = () => {
                   })()}
                 </div>
               </div>
+
+              {/* === Progress vs Cashflow per Periode (moved from Finance) === */}
+              {(() => {
+                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number }> = {};
+                financeEntries.forEach(fe => {
+                  const key = fe.period_label || fe.period_date;
+                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
+                  const amt = Number(fe.amount) || 0;
+                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
+                  if (fe.entry_kind === "actual") {
+                    if (fe.direction === "in") periodMap[key].cashIn += amt;
+                    else periodMap[key].cashOut += amt;
+                  } else if (isPlan) {
+                    if (fe.direction === "in") periodMap[key].planIn += amt;
+                    else periodMap[key].planOut += amt;
+                  }
+                });
+                const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
+                if (periodList.length === 0) return null;
+
+                const parseScurveYm = (label: string): number | null => {
+                  const m = label.match(/M(\d{1,2})\/(\d{2,4})/i);
+                  if (!m) return null;
+                  const mo = parseInt(m[1], 10);
+                  let yr = parseInt(m[2], 10);
+                  if (yr < 100) yr += 2000;
+                  return yr * 12 + (mo - 1);
+                };
+                const availableCurves = Array.from(new Set(scurveData.map(s => s.curve_type)));
+                if (!availableCurves.includes("baseline")) availableCurves.unshift("baseline");
+                const activeCurve = availableCurves.includes(cashflowCurve) ? cashflowCurve : "baseline";
+                const scurvePoints: { ym: number; plan: number | null; actual: number | null }[] = [];
+                const byYm: Record<number, { plan: number | null; actual: number | null }> = {};
+                scurveData.filter(s => s.curve_type === activeCurve).forEach(s => {
+                  const ym = parseScurveYm(s.period_label);
+                  if (ym == null) return;
+                  if (!byYm[ym]) byYm[ym] = { plan: null, actual: null };
+                  if (s.planned_progress != null) byYm[ym].plan = Number(s.planned_progress);
+                  if (s.actual_progress != null) byYm[ym].actual = Number(s.actual_progress);
+                });
+                Object.keys(byYm).map(k => parseInt(k, 10)).sort((a, b) => a - b).forEach(ym => scurvePoints.push({ ym, ...byYm[ym] }));
+
+                const interpAt = (ym: number, field: "plan" | "actual"): number | null => {
+                  if (scurvePoints.length === 0) return null;
+                  const pts = scurvePoints.filter(p => p[field] != null) as { ym: number; plan: number; actual: number }[];
+                  if (pts.length === 0) return null;
+                  if (ym <= pts[0].ym) return pts[0][field];
+                  if (ym >= pts[pts.length - 1].ym) return pts[pts.length - 1][field];
+                  for (let i = 0; i < pts.length - 1; i++) {
+                    const a = pts[i], b = pts[i + 1];
+                    if (ym >= a.ym && ym <= b.ym) {
+                      const t = (ym - a.ym) / (b.ym - a.ym);
+                      return a[field] + (b[field] - a[field]) * t;
+                    }
+                  }
+                  return null;
+                };
+
+                const todayYm = (() => { const d = new Date(); return d.getFullYear() * 12 + d.getMonth(); })();
+                const lastActualYm = (() => {
+                  const withAct = scurvePoints.filter(p => p.actual != null);
+                  return withAct.length ? withAct[withAct.length - 1].ym : -Infinity;
+                })();
+
+                const rows = periodList.map(p => {
+                  const d = new Date(p.order);
+                  const ym = d.getFullYear() * 12 + d.getMonth();
+                  const planPct = interpAt(ym, "plan") ?? 0;
+                  const cutoffYm = lastActualYm === -Infinity ? todayYm : lastActualYm;
+                  const actPct = (ym <= cutoffYm) ? interpAt(ym, "actual") : null;
+                  return {
+                    label: p.label,
+                    planPct: Number(planPct),
+                    actPct: actPct == null ? null : Number(actPct),
+                    cashIn: p.cashIn,
+                    cashOut: p.cashOut,
+                    planIn: p.planIn,
+                    planOut: p.planOut,
+                  };
+                });
+
+                return (
+                  <div className="glass-card rounded-lg p-4 shadow-card">
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
+                      {availableCurves.length > 1 && (
+                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+                          {availableCurves.map(ct => (
+                            <button
+                              key={ct}
+                              onClick={() => setCashflowCurve(ct)}
+                              className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              {ct === "baseline" ? "Baseline" : ct}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti data Cashflow hingga proyek selesai.</p>
+                    <div className="h-[280px] mb-3">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} />
+                          <YAxis yAxisId="left" orientation="left" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => name.includes("%") ? `${Number(v).toFixed(1)}%` : formatRupiah(v)} />
+                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+                          <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
+                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
+                          <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                          <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="max-h-[280px] overflow-y-auto rounded border border-border">
+                      <table className="w-full text-xs">
+                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
+                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash In</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
+                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
+                        </tr></thead>
+                        <tbody>
+                          {rows.map(r => {
+                            const dev = (r.actPct ?? 0) - r.planPct;
+                            return (
+                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
+                              <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.planPct.toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
+                              <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
+                              <td className={`py-1.5 px-2 text-right font-mono-data ${(r.cashIn - r.cashOut) >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.cashIn - r.cashOut)}</td>
+                            </tr>
+                          );})}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -352,10 +501,55 @@ const ProjectDetail = () => {
           {activeTab === "finance" && (
             <div className="space-y-4">
 
+              {/* === Cashflow Bipolar Bar Chart (Cash In ↑ / Cash Out ↓) — Top === */}
+              {(() => {
+                const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
+                financeEntries.forEach(fe => {
+                  const key = fe.period_label || fe.period_date;
+                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
+                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
+                  const isAct = fe.entry_kind === "actual";
+                  const amt = Number(fe.amount) || 0;
+                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
+                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
+                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
+                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
+                });
+                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
+                  label: r.label,
+                  "Plan Cash In": r.planIn,
+                  "Actual Cash In": r.actIn,
+                  "Plan Cash Out": -r.planOut,
+                  "Actual Cash Out": -r.actOut,
+                }));
+                if (bipolar.length === 0) return null;
+                return (
+                  <div className="glass-card rounded-lg p-4 shadow-card">
+                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
+                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
+                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                );
+              })()}
 
-              {/* (Cost Breakdown is rendered first) */}
-
-              {/* === Cost Breakdown by Category === */}
+              {/* === Cost Breakdown by Category — Below === */}
               {(() => {
                 const rows = FINANCE_CATEGORIES.map(c => {
                   let rap = 0, actual = 0;
@@ -427,207 +621,6 @@ const ProjectDetail = () => {
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* === Cashflow Bipolar Bar Chart (Cash In ↑ / Cash Out ↓) === */}
-              {(() => {
-                const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
-                financeEntries.forEach(fe => {
-                  const key = fe.period_label || fe.period_date;
-                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
-                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
-                  const isAct = fe.entry_kind === "actual";
-                  const amt = Number(fe.amount) || 0;
-                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
-                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
-                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
-                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
-                });
-                const bipolar = Object.values(map).sort((a, b) => a.order - b.order).map(r => ({
-                  label: r.label,
-                  "Plan Cash In": r.planIn,
-                  "Actual Cash In": r.actIn,
-                  "Plan Cash Out": -r.planOut,
-                  "Actual Cash Out": -r.actOut,
-                }));
-                if (bipolar.length === 0) return null;
-                return (
-                  <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar ke atas = Cash In (positif) · Bar ke bawah = Cash Out (negatif).</p>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" />
-                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* === Progress vs Cashflow Summary per Periode === */}
-              {(() => {
-                // Unified period set = ALL financeEntries (same as Cashflow & Progress card)
-                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number }> = {};
-                financeEntries.forEach(fe => {
-                  const key = fe.period_label || fe.period_date;
-                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
-                  const amt = Number(fe.amount) || 0;
-                  const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
-                  if (fe.entry_kind === "actual") {
-                    if (fe.direction === "in") periodMap[key].cashIn += amt;
-                    else periodMap[key].cashOut += amt;
-                  } else if (isPlan) {
-                    if (fe.direction === "in") periodMap[key].planIn += amt;
-                    else periodMap[key].planOut += amt;
-                  }
-                });
-                const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
-                if (periodList.length === 0) return null;
-
-                // Lookup progress from S-Curve using year-month key (labels differ: "M01/25" vs "Jan 2025").
-                // If exact ym missing, interpolate/extrapolate linearly between S-Curve neighbours.
-                const parseScurveYm = (label: string): number | null => {
-                  const m = label.match(/M(\d{1,2})\/(\d{2,4})/i);
-                  if (!m) return null;
-                  const mo = parseInt(m[1], 10);
-                  let yr = parseInt(m[2], 10);
-                  if (yr < 100) yr += 2000;
-                  return yr * 12 + (mo - 1);
-                };
-                const availableCurves = Array.from(new Set(scurveData.map(s => s.curve_type)));
-                if (!availableCurves.includes("baseline")) availableCurves.unshift("baseline");
-                const activeCurve = availableCurves.includes(cashflowCurve) ? cashflowCurve : "baseline";
-                const scurvePoints: { ym: number; plan: number | null; actual: number | null }[] = [];
-                const byYm: Record<number, { plan: number | null; actual: number | null }> = {};
-                scurveData.filter(s => s.curve_type === activeCurve).forEach(s => {
-                  const ym = parseScurveYm(s.period_label);
-                  if (ym == null) return;
-                  if (!byYm[ym]) byYm[ym] = { plan: null, actual: null };
-                  if (s.planned_progress != null) byYm[ym].plan = Number(s.planned_progress);
-                  if (s.actual_progress != null) byYm[ym].actual = Number(s.actual_progress);
-                });
-                Object.keys(byYm).map(k => parseInt(k, 10)).sort((a, b) => a - b).forEach(ym => scurvePoints.push({ ym, ...byYm[ym] }));
-
-                const interpAt = (ym: number, field: "plan" | "actual"): number | null => {
-                  if (scurvePoints.length === 0) return null;
-                  const pts = scurvePoints.filter(p => p[field] != null) as { ym: number; plan: number; actual: number }[];
-                  if (pts.length === 0) return null;
-                  if (ym <= pts[0].ym) return pts[0][field];
-                  if (ym >= pts[pts.length - 1].ym) return pts[pts.length - 1][field];
-                  for (let i = 0; i < pts.length - 1; i++) {
-                    const a = pts[i], b = pts[i + 1];
-                    if (ym >= a.ym && ym <= b.ym) {
-                      const t = (ym - a.ym) / (b.ym - a.ym);
-                      return a[field] + (b[field] - a[field]) * t;
-                    }
-                  }
-                  return null;
-                };
-
-                const todayYm = (() => { const d = new Date(); return d.getFullYear() * 12 + d.getMonth(); })();
-                const lastActualYm = (() => {
-                  const withAct = scurvePoints.filter(p => p.actual != null);
-                  return withAct.length ? withAct[withAct.length - 1].ym : -Infinity;
-                })();
-
-                const rows = periodList.map(p => {
-                  const d = new Date(p.order);
-                  const ym = d.getFullYear() * 12 + d.getMonth();
-                  const planPct = interpAt(ym, "plan") ?? 0;
-                  // Cut-off = periode terakhir yang punya actual data (bukan calendar today)
-                  const cutoffYm = lastActualYm === -Infinity ? todayYm : lastActualYm;
-                  const actPct = (ym <= cutoffYm) ? interpAt(ym, "actual") : null;
-                  return {
-                    label: p.label,
-                    planPct: Number(planPct),
-                    actPct: actPct == null ? null : Number(actPct),
-                    cashIn: p.cashIn,
-                    cashOut: p.cashOut,
-                    planIn: p.planIn,
-                    planOut: p.planOut,
-                  };
-                });
-
-                return (
-                  <div className="glass-card rounded-lg p-4 shadow-card">
-                    <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
-                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
-                      {availableCurves.length > 1 && (
-                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
-                          {availableCurves.map(ct => (
-                            <button
-                              key={ct}
-                              onClick={() => setCashflowCurve(ct)}
-                              className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                            >
-                              {ct === "baseline" ? "Baseline" : ct}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
-                    <div className="h-[280px] mb-3">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} />
-                          <YAxis yAxisId="left" orientation="left" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
-                          <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => name.includes("%") ? `${Number(v).toFixed(1)}%` : formatRupiah(v)} />
-                          <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
-                          <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
-                          <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                          <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
-                        </ComposedChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="max-h-[280px] overflow-y-auto rounded border border-border">
-                      <table className="w-full text-xs">
-                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
-                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash In</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
-                        </tr></thead>
-                        <tbody>
-                          {rows.map(r => {
-                            const dev = (r.actPct ?? 0) - r.planPct;
-                            return (
-                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
-                              <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.planPct.toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data ${(r.cashIn - r.cashOut) >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.cashIn - r.cashOut)}</td>
-                            </tr>
-                          );})}
-                        </tbody>
-                      </table>
                     </div>
                   </div>
                 );
@@ -791,6 +784,82 @@ const ProjectDetail = () => {
                 </div>
               ) : (
                 <>
+                  {/* === Compact Gantt for Work Areas === */}
+                  {(() => {
+                    const pStart = new Date(project.start_date).getTime();
+                    const pEnd = new Date(project.end_date).getTime();
+                    const total = Math.max(1, pEnd - pStart);
+                    // Monthly ticks
+                    const months: { label: string; leftPct: number; isYear: boolean }[] = [];
+                    const cur = new Date(project.start_date);
+                    cur.setDate(1);
+                    while (cur.getTime() <= pEnd) {
+                      const off = ((cur.getTime() - pStart) / total) * 100;
+                      months.push({
+                        label: cur.getMonth() === 0 ? `Jan'${String(cur.getFullYear()).slice(-2)}` : cur.toLocaleDateString("id-ID", { month: "short" }).slice(0, 3),
+                        leftPct: Math.max(0, off),
+                        isYear: cur.getMonth() === 0,
+                      });
+                      cur.setMonth(cur.getMonth() + 1);
+                    }
+                    const todayMs = new Date().getTime();
+                    const todayPct = ((Math.min(pEnd, Math.max(pStart, todayMs)) - pStart) / total) * 100;
+                    const rowsData = workAreas.map(area => {
+                      const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
+                      const dates = areaItems.flatMap(i => [i.start_date, i.end_date]).filter(Boolean) as string[];
+                      const times = dates.map(d => new Date(d).getTime());
+                      const s = times.length ? Math.min(...times) : pStart;
+                      const e = times.length ? Math.max(...times) : pEnd;
+                      const leftPct = Math.max(0, ((s - pStart) / total) * 100);
+                      const widthPct = Math.max(1, ((e - s) / total) * 100);
+                      const progressPct = area.progress || 0;
+                      return { area, leftPct, widthPct, progressPct };
+                    });
+                    return (
+                      <div className="glass-card rounded-lg shadow-card p-4">
+                        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                          <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Layers className="h-4 w-4 text-primary" /> Work Areas — Timeline & Progress</h3>
+                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                            <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary/25" /> Duration</div>
+                            <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary" /> Progress</div>
+                            <div className="flex items-center gap-1"><div className="w-0.5 h-3 bg-destructive" /> Today</div>
+                          </div>
+                        </div>
+                        <div className="relative border border-border rounded-md bg-muted/10 overflow-hidden">
+                          {/* Month header */}
+                          <div className="relative h-6 border-b border-border bg-muted/30">
+                            {months.map((m, i) => (
+                              <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
+                                <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Rows */}
+                          <div>
+                            {rowsData.map(({ area, leftPct, widthPct, progressPct }) => (
+                              <div key={area.id} className="relative h-8 border-b border-border/30 last:border-0 hover:bg-muted/20">
+                                <div className="absolute inset-y-0 left-0 w-[180px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50">
+                                  <span className="text-[9px] font-mono-data text-primary bg-primary/10 px-1 rounded shrink-0">{area.code}</span>
+                                  <span className="text-[10px] text-foreground truncate">{area.name}</span>
+                                </div>
+                                <div className="absolute inset-y-0 pointer-events-none" style={{ left: "180px", right: 0 }}>
+                                  <div className="relative h-full">
+                                    <div className="absolute top-1/2 -translate-y-1/2 h-3 rounded-sm bg-primary/20" style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                                    <div className="absolute top-1/2 -translate-y-1/2 h-3 rounded-sm bg-primary" style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
+                                    <div className="absolute top-1/2 -translate-y-1/2 h-3 flex items-center justify-end pr-1" style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
+                                      <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
+                                    </div>
+                                    <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1]" style={{ left: `${todayPct}%` }} />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {workAreas.map(area => {
                     const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                     const isExpanded = expandedAreas.has(area.id);

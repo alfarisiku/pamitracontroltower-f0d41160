@@ -5,7 +5,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Share2,
-  Layers, Camera, AlertTriangle, Package, Target,
+  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet, ChevronDown, ChevronRight,
 } from "lucide-react";
 
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
@@ -31,6 +31,7 @@ const DataEntry = () => {
   const { isTeam, isAdmin, assignedProjectIds } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
+  const [excelOpen, setExcelOpen] = useState(false);
 
   // Access-level restriction removed — every visitor is treated as admin, so show all projects.
   const projects = isAdmin
@@ -97,7 +98,21 @@ const DataEntry = () => {
 
           {activeTab !== "project-crud" && updateProjectId && (() => {
             const p = projects.find(pr => pr.id === updateProjectId);
-            return p ? <div className="mb-5"><ExcelSyncPanel project={p} /></div> : null;
+            if (!p) return null;
+            return (
+              <div className="mb-5">
+                <button
+                  onClick={() => setExcelOpen(o => !o)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-muted/60 hover:bg-muted text-foreground rounded-lg text-xs font-medium border border-border transition-colors"
+                >
+                  {excelOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
+                  Excel Import / Export
+                  <span className="text-[10px] text-muted-foreground font-normal">(sync offline via workbook)</span>
+                </button>
+                {excelOpen && <div className="mt-2"><ExcelSyncPanel project={p} /></div>}
+              </div>
+            );
           })()}
 
           {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} />}
