@@ -13,6 +13,22 @@ export function MilestonesEditor({ projectId }: { projectId: string }) {
   const [form, setForm] = useState({
     name: "", phase: "Engineering", target_date: "", weight: "10", status: "pending",
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<{ name: string; phase: string; weight: string }>({ name: "", phase: "Engineering", weight: "0" });
+
+  const startEdit = (m: any) => {
+    setEditingId(m.id);
+    setEdit({ name: m.name, phase: m.phase, weight: String(m.weight ?? 0) });
+  };
+  const saveEdit = async (m: any) => {
+    await supabase.from("milestones").update({ name: edit.name, phase: edit.phase, weight: parseFloat(edit.weight) || 0 }).eq("id", m.id);
+    await logActivity(supabase, "milestone", "update", `Milestone "${edit.name}" edited`, projectId, m.id);
+    queryClient.invalidateQueries({ queryKey: ["milestones"] });
+    queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+    setEditingId(null);
+    toast({ title: "✅ Saved" });
+  };
+
 
   const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
   const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
