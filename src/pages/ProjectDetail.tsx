@@ -106,6 +106,8 @@ const ProjectDetail = () => {
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
   const [descExpanded, setDescExpanded] = useState(false);
+  // Gantt hover — cursor-following tooltip state (client x/y + payload)
+  const [ganttHover, setGanttHover] = useState<null | { x: number; y: number; code: string; name: string; startMs: number; endMs: number; durationDays: number; remainingDays: number; progressPct: number; qty?: string; unit?: string; level: 1 | 2 }>(null);
   const toggleTimeline = (areaId: string) => {
     setExpandedTimeline(prev => { const n = new Set(prev); n.has(areaId) ? n.delete(areaId) : n.add(areaId); return n; });
   };
