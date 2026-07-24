@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Target, Plus, Save, Trash2, CheckCircle2 } from "lucide-react";
+import { Target, Plus, Save, Trash2, CheckCircle2, Pencil, X } from "lucide-react";
 import { supabase, logActivity } from "@/lib/supabase";
 import { useMilestones } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
+
 
 export function MilestonesEditor({ projectId }: { projectId: string }) {
   const { data: milestones = [], isLoading } = useMilestones(projectId);
