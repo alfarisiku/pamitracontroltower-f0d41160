@@ -1334,6 +1334,8 @@ const ProjectDetail = () => {
                   { key: "weekly" as MediaTab, label: `Weekly Update (${weeklyPhotos.length})`, icon: Camera, available: true },
                   { key: "video" as MediaTab, label: "Video", icon: Video, available: !!project.video_url },
                   { key: "cctv" as MediaTab, label: "CCTV", icon: Cctv, available: !!project.cctv_url },
+                  { key: "model3d" as MediaTab, label: "3D Model", icon: Box, available: !!(project as any).model_3d_url },
+
                 ]).filter(t => t.available).map(tab => (
                   <button key={tab.key} onClick={() => setActiveMedia(tab.key)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
