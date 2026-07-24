@@ -86,6 +86,7 @@ const ProjectDetail = () => {
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>("health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
+  const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
 
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
   useEffect(() => {
