@@ -851,30 +851,35 @@ const ProjectDetail = () => {
                     }
                     const todayMs = new Date().getTime();
                     const todayPct = ((Math.min(pEnd, Math.max(pStart, todayMs)) - pStart) / total) * 100;
-                    const rowsData: Array<{ id: string; code: string; name: string; leftPct: number; widthPct: number; progressPct: number; level: 1 | 2 }> = [];
+                    const rowsData: Array<{ id: string; code: string; name: string; leftPct: number; widthPct: number; progressPct: number; level: 1 | 2; areaId?: string; hasChildren?: boolean; expanded?: boolean }> = [];
                     workAreas.forEach(area => {
                       const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                       const dates = areaItems.flatMap(i => [i.start_date, i.end_date]).filter(Boolean) as string[];
                       const times = dates.map(d => new Date(d).getTime());
                       const s = times.length ? Math.min(...times) : pStart;
                       const e = times.length ? Math.max(...times) : pEnd;
+                      const isExp = expandedAreas.has(area.id);
                       rowsData.push({
                         id: area.id, code: area.code, name: area.name, level: 1,
                         leftPct: Math.max(0, ((s - pStart) / total) * 100),
                         widthPct: Math.max(1, ((e - s) / total) * 100),
                         progressPct: area.progress || 0,
+                        areaId: area.id, hasChildren: areaItems.length > 0, expanded: isExp,
                       });
-                      areaItems.forEach(wi => {
-                        const ws = wi.start_date ? new Date(wi.start_date).getTime() : s;
-                        const we = wi.end_date ? new Date(wi.end_date).getTime() : e;
-                        rowsData.push({
-                          id: wi.id, code: wi.code, name: wi.name, level: 2,
-                          leftPct: Math.max(0, ((ws - pStart) / total) * 100),
-                          widthPct: Math.max(0.5, ((we - ws) / total) * 100),
-                          progressPct: wi.progress || 0,
+                      if (isExp) {
+                        areaItems.forEach(wi => {
+                          const ws = wi.start_date ? new Date(wi.start_date).getTime() : s;
+                          const we = wi.end_date ? new Date(wi.end_date).getTime() : e;
+                          rowsData.push({
+                            id: wi.id, code: wi.code, name: wi.name, level: 2,
+                            leftPct: Math.max(0, ((ws - pStart) / total) * 100),
+                            widthPct: Math.max(0.5, ((we - ws) / total) * 100),
+                            progressPct: wi.progress || 0,
+                          });
                         });
-                      });
+                      }
                     });
+                    const timelineMinPx = Math.max(900, months.length * 60);
                     return (
                       <div className="glass-card rounded-lg shadow-card p-4">
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -883,42 +888,56 @@ const ProjectDetail = () => {
                             <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary/25" /> Duration</div>
                             <div className="flex items-center gap-1"><div className="w-3 h-2 rounded-sm bg-primary" /> Progress</div>
                             <div className="flex items-center gap-1"><div className="w-0.5 h-3 bg-destructive" /> Today</div>
+                            <span className="hidden sm:inline text-muted-foreground/70">· Klik baris parent untuk expand level 2 · Geser horizontal untuk periode lain</span>
                           </div>
                         </div>
-                        <div className="relative border border-border rounded-md bg-muted/10 overflow-hidden">
-                          {/* Month header */}
-                          <div className="relative h-6 border-b border-border bg-muted/30">
-                            {months.map((m, i) => (
-                              <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
-                                <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Rows */}
-                          <div>
-                            {rowsData.map(({ id, code, name, leftPct, widthPct, progressPct, level }) => (
-                              <div key={id} className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-8"}`}>
-                                <div className={`absolute inset-y-0 left-0 w-[220px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
-                                  <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
-                                  <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
+                        <div className="overflow-x-auto border border-border rounded-md bg-muted/10">
+                          <div className="relative" style={{ minWidth: `${timelineMinPx}px` }}>
+                            {/* Month header */}
+                            <div className="relative h-6 border-b border-border bg-muted/30" style={{ marginLeft: 220 }}>
+                              {months.map((m, i) => (
+                                <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
+                                  <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
                                 </div>
-                                <div className="absolute inset-y-0 pointer-events-none" style={{ left: "220px", right: 0 }}>
-                                  <div className="relative h-full">
-                                    <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20" : "h-2 bg-accent/20"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
-                                    <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
-                                    <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
-                                      <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
+                              ))}
+                            </div>
+                            {/* Rows */}
+                            <div>
+                              {rowsData.map(({ id, code, name, leftPct, widthPct, progressPct, level, areaId, hasChildren, expanded }) => {
+                                const clickable = level === 1 && hasChildren;
+                                return (
+                                <div
+                                  key={id}
+                                  onClick={clickable ? () => toggleArea(areaId!) : undefined}
+                                  className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-8"} ${clickable ? "cursor-pointer" : ""}`}
+                                >
+                                  <div className={`absolute inset-y-0 left-0 w-[220px] flex items-center px-2 gap-1.5 bg-card z-10 border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
+                                    {level === 1 && (
+                                      hasChildren ? <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${expanded ? "" : "-rotate-90"}`} /> : <div className="w-3 shrink-0" />
+                                    )}
+                                    <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
+                                    <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
+                                  </div>
+                                  <div className="absolute inset-y-0 pointer-events-none" style={{ left: "220px", right: 0 }}>
+                                    <div className="relative h-full">
+                                      <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20" : "h-2 bg-accent/20"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }} />
+                                      <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
+                                      <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
+                                        <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
+                                      </div>
+                                      <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1]" style={{ left: `${todayPct}%` }} />
                                     </div>
-                                    <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1]" style={{ left: `${todayPct}%` }} />
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       </div>
                     );
                   })()}
+
 
 
                   {workAreas.map(area => {
