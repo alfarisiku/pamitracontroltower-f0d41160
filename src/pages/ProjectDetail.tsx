@@ -226,12 +226,12 @@ const ProjectDetail = () => {
           <div className="flex items-center gap-1 mb-4 border-b border-border pb-2 overflow-x-auto">
             {(([
               { key: "health" as const, label: "Health", icon: Activity, publicOk: true },
-              { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp, publicOk: true },
+              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
               { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
+              { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
-              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
             ]).filter(t => !isClient || t.publicOk)).map(tab => (
