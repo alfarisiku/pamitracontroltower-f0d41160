@@ -40,20 +40,30 @@ const riskCategoryLabels: Record<string, string> = {
   procurement: "Procurement", contractual: "Contractual", operational: "Operational",
 };
 const procStatusLabels: Record<string, string> = {
-  planned: "Planned", "rfq-sent": "PR Sent", approval: "Approval", "po-issued": "PO Issued",
-  fabrication: "Fabrication", delivery: "Delivery", installed: "On Site",
+  ded: "DED", bq: "BQ", pr: "PR", rfq: "RFQ", po: "PO", delivery: "Delivery", onsite: "On Site",
+  // legacy aliases
+  planned: "DED", "rfq-sent": "PR", approval: "RFQ", "po-issued": "PO",
+  fabrication: "PO", installed: "On Site",
 };
 
-// Distinct color per procurement status — each stage its own hue so the pipeline stage is instantly readable.
+// Distinct highlighted text color per procurement pipeline stage — instantly readable.
 const procStatusColors: Record<string, string> = {
-  planned:     "bg-slate-100 text-slate-600 border border-slate-300",
-  "rfq-sent":  "bg-sky-100 text-sky-700 border border-sky-300",
-  approval:    "bg-amber-100 text-amber-700 border border-amber-300",
-  "po-issued": "bg-indigo-100 text-indigo-700 border border-indigo-300",
-  fabrication: "bg-purple-100 text-purple-700 border border-purple-300",
-  delivery:    "bg-orange-100 text-orange-700 border border-orange-300",
-  installed:   "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  ded:        "bg-slate-100 text-slate-700 border border-slate-300",
+  bq:         "bg-zinc-100 text-zinc-700 border border-zinc-300",
+  pr:         "bg-sky-100 text-sky-700 border border-sky-300",
+  rfq:        "bg-amber-100 text-amber-800 border border-amber-300",
+  po:         "bg-indigo-100 text-indigo-700 border border-indigo-300",
+  delivery:   "bg-orange-100 text-orange-700 border border-orange-300",
+  onsite:     "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  // legacy aliases
+  planned:    "bg-slate-100 text-slate-700 border border-slate-300",
+  "rfq-sent": "bg-sky-100 text-sky-700 border border-sky-300",
+  approval:   "bg-amber-100 text-amber-800 border border-amber-300",
+  "po-issued":"bg-indigo-100 text-indigo-700 border border-indigo-300",
+  fabrication:"bg-purple-100 text-purple-700 border border-purple-300",
+  installed:  "bg-emerald-100 text-emerald-700 border border-emerald-300",
 };
+
 
 // Palette per S-Curve type — plan & actual share the same HUE; distinguish only by dash vs solid.
 // Baseline = primary blue, KSO/JO variants cycle through a distinct palette.
@@ -671,7 +681,7 @@ const ProjectDetail = () => {
                     <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
                     </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis = <span className="font-semibold" style={{ color: "hsl(215, 80%, 48%)" }}>Kumulatif Plan Net</span> &amp; <span className="font-semibold" style={{ color: "hsl(30, 90%, 45%)" }}>Kumulatif Actual Net</span>. Titik potong garis ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis <span className="font-semibold" style={{ color: "hsl(215, 80%, 48%)" }}>Kumulatif Planning (Plan Cash In − Plan Cash Out)</span> &amp; <span className="font-semibold" style={{ color: "hsl(340, 75%, 45%)" }}>Kumulatif Actual (Actual Cash In − Actual Cash Out)</span>. Titik potong garis Actual ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
                     <div className="h-[340px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
@@ -681,7 +691,6 @@ const ProjectDetail = () => {
                           <RTooltip contentStyle={chartTooltip} formatter={(v: any, name: string) => {
                             if (v == null) return ["—", name];
                             const raw = Number(v);
-                            const isCum = name.startsWith("Cum.");
                             return [`${raw < 0 ? "-" : ""}${formatRupiah(Math.abs(raw))}`, name];
                           }} />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
@@ -691,8 +700,9 @@ const ProjectDetail = () => {
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
                           <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
                           <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
-                          <Line type="monotone" dataKey="Cum. Plan Net" stroke="hsl(215, 80%, 48%)" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 2.5, fill: "hsl(215, 80%, 48%)" }} connectNulls />
-                          <Line type="monotone" dataKey="Cum. Actual Net" stroke="hsl(30, 90%, 45%)" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(30, 90%, 45%)" }} connectNulls />
+                          <Line type="monotone" dataKey="Cum. Plan Net" name="Kumulatif Planning (Net)" stroke="hsl(215, 80%, 48%)" strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 3, fill: "hsl(215, 80%, 48%)" }} connectNulls />
+                          <Line type="monotone" dataKey="Cum. Actual Net" name="Kumulatif Actual (Net)" stroke="hsl(340, 75%, 45%)" strokeWidth={3} dot={{ r: 3.5, fill: "hsl(340, 75%, 45%)" }} connectNulls />
+
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>

@@ -11,6 +11,8 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const [rows, setRows] = useState<{ period_label: string; period_order: number; planned_progress: string; actual_progress: string; curve_type: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [curveType, setCurveType] = useState("baseline");
+  const [newCurveType, setNewCurveType] = useState("");
+
 
   useEffect(() => {
     const filtered = scurveData.filter(d => d.curve_type === curveType);
@@ -22,6 +24,18 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
         actual_progress: d.actual_progress != null ? String(d.actual_progress) : "",
         curve_type: d.curve_type,
       })));
+    } else if (curveType !== "baseline") {
+      // Seed new curve from baseline period labels so charts snap to same X-axis.
+      const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
+      setRows(baseline.map((d, i) => ({
+        period_label: d.period_label,
+        period_order: i,
+        planned_progress: String(d.planned_progress),
+        actual_progress: "",
+        curve_type: curveType,
+      })));
+    } else {
+      setRows([]);
     }
   }, [scurveData, curveType]);
 
@@ -31,6 +45,22 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const addRow = () => setRows(prev => [...prev, { period_label: `Month ${prev.length + 1}`, period_order: prev.length, planned_progress: "0", actual_progress: "", curve_type: curveType }]);
   const removeRow = (idx: number) => setRows(prev => prev.filter((_, i) => i !== idx));
   const updateRow = (idx: number, key: string, val: string) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, [key]: val } : r));
+
+  const handleAddCurve = () => {
+    if (!newCurveType.trim()) return;
+    const name = newCurveType.trim();
+    const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
+    setRows(baseline.map((d, i) => ({
+      period_label: d.period_label,
+      period_order: i,
+      planned_progress: String(d.planned_progress),
+      actual_progress: "",
+      curve_type: name,
+    })));
+    setCurveType(name);
+    setNewCurveType("");
+  };
+
 
   const handleSave = async () => {
     setSaving(true);
@@ -55,8 +85,8 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     } finally { setSaving(false); }
   };
 
-  const [newCurveType, setNewCurveType] = useState("");
   const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
+
 
   return (
     <div className="space-y-4">
@@ -72,7 +102,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
           ))}
           <div className="flex items-center gap-1">
             <input value={newCurveType} onChange={e => setNewCurveType(e.target.value)} className={inputCls + " w-24"} placeholder="KSO name" />
-            <button onClick={() => { if (newCurveType.trim()) { setCurveType(newCurveType.trim()); setRows([]); setNewCurveType(""); } }} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium">+ Add Curve</button>
+            <button onClick={handleAddCurve} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium">+ Add Curve</button>
           </div>
         </div>
         {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : (
