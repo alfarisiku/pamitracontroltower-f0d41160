@@ -1068,7 +1068,7 @@ const ProjectDetail = () => {
                                       <div
                                         className={`absolute top-1/2 -translate-y-1/2 rounded-sm cursor-default ${level === 1 ? "h-3 bg-primary/25 hover:bg-primary/40" : "h-2 bg-accent/25 hover:bg-accent/40"}`}
                                         style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                                        onMouseMove={(e) => setGanttHover({ x: e.clientX, y: e.clientY, code, name, startMs, endMs, durationDays, remainingDays, progressPct, qty, unit, level })}
+                                        onMouseMove={(e) => setGanttHover({ x: e.clientX, y: e.clientY, code, name, startMs, endMs, durationDays, remainingDays, progressPct, qty: qty != null ? String(qty) : undefined, unit: unit ?? undefined, level: level as 1 | 2 })}
                                         onMouseLeave={() => setGanttHover(null)}
                                       />
                                       <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm pointer-events-none ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
