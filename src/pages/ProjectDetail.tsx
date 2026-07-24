@@ -86,6 +86,7 @@ const ProjectDetail = () => {
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>("health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
+  const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
 
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
   useEffect(() => {
@@ -369,6 +370,10 @@ const ProjectDetail = () => {
                 if (rows.length === 0) return null;
                 const totalRap = rows.reduce((s, r) => s + r.rap, 0);
                 const totalAct = rows.reduce((s, r) => s + r.actual, 0);
+                const EXCLUDED = new Set(["bank_guarantee", "overhead"]);
+                const coreRows = rows.filter(r => !EXCLUDED.has(r.key));
+                const coreRap = coreRows.reduce((s, r) => s + r.rap, 0);
+                const coreAct = coreRows.reduce((s, r) => s + r.actual, 0);
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Cost Breakdown per Kategori</h3>
@@ -384,16 +389,23 @@ const ProjectDetail = () => {
                           </tr></thead>
                           <tbody>
                             {rows.map(r => (
-                              <tr key={r.key} className="border-b border-border/30 hover:bg-muted/20">
-                                <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                              <tr key={r.key} className={`border-b border-border/30 hover:bg-muted/20 ${EXCLUDED.has(r.key) ? "text-muted-foreground italic" : ""}`}>
+                                <td className="py-1.5 px-2 font-medium">{r.label}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-primary">{formatRupiah(r.rap)}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatRupiah(r.actual)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.variance >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.variance)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.pct > 100 ? "text-destructive" : r.pct > 85 ? "text-warning" : "text-success"}`}>{r.pct}%</td>
                               </tr>
                             ))}
-                            <tr className="bg-muted/40 font-bold">
-                              <td className="py-2 px-2 text-foreground">TOTAL</td>
+                            <tr className="bg-primary/5 font-bold border-t-2 border-primary/30">
+                              <td className="py-2 px-2 text-foreground text-[11px]">SUBTOTAL <span className="font-normal text-[9px] text-muted-foreground">(excl. Bank Guarantee & Overhead)</span></td>
+                              <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(coreRap)}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(coreAct)}</td>
+                              <td className={`py-2 px-2 text-right font-mono-data ${coreRap - coreAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(coreRap - coreAct)}</td>
+                              <td className={`py-2 px-2 text-right font-mono-data ${coreRap > 0 && (coreAct / coreRap) > 1 ? "text-destructive" : "text-foreground"}`}>{coreRap > 0 ? Math.round((coreAct/coreRap)*100) : 0}%</td>
+                            </tr>
+                            <tr className="bg-muted/60 font-bold">
+                              <td className="py-2 px-2 text-foreground text-[11px]">TOTAL <span className="font-normal text-[9px] text-muted-foreground">(incl. Bank Guarantee & Overhead)</span></td>
                               <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(totalRap)}</td>
                               <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(totalAct)}</td>
                               <td className={`py-2 px-2 text-right font-mono-data ${totalRap - totalAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(totalRap - totalAct)}</td>
@@ -498,9 +510,12 @@ const ProjectDetail = () => {
                   if (yr < 100) yr += 2000;
                   return yr * 12 + (mo - 1);
                 };
+                const availableCurves = Array.from(new Set(scurveData.map(s => s.curve_type)));
+                if (!availableCurves.includes("baseline")) availableCurves.unshift("baseline");
+                const activeCurve = availableCurves.includes(cashflowCurve) ? cashflowCurve : "baseline";
                 const scurvePoints: { ym: number; plan: number | null; actual: number | null }[] = [];
                 const byYm: Record<number, { plan: number | null; actual: number | null }> = {};
-                scurveData.forEach(s => {
+                scurveData.filter(s => s.curve_type === activeCurve).forEach(s => {
                   const ym = parseScurveYm(s.period_label);
                   if (ym == null) return;
                   if (!byYm[ym]) byYm[ym] = { plan: null, actual: null };
@@ -551,8 +566,23 @@ const ProjectDetail = () => {
 
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
+                      {availableCurves.length > 1 && (
+                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+                          {availableCurves.map(ct => (
+                            <button
+                              key={ct}
+                              onClick={() => setCashflowCurve(ct)}
+                              className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              {ct === "baseline" ? "Baseline" : ct}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti card Cashflow & Progress hingga proyek selesai.</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -566,14 +596,14 @@ const ProjectDetail = () => {
                           <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill="hsl(var(--accent))" radius={[3,3,0,0]} />
-                          <Line yAxisId="right" type="monotone" dataKey="planPct" name="Plan %" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                          <Line yAxisId="right" type="monotone" dataKey="actPct" name="Actual %" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                          <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                          <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="overflow-x-auto">
+                    <div className="max-h-[280px] overflow-y-auto rounded border border-border">
                       <table className="w-full text-xs">
-                        <thead><tr className="bg-muted/50 border-b border-border">
+                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
                           <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
                           <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
                           <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
@@ -658,76 +688,89 @@ const ProjectDetail = () => {
                   customData={scurveData.length > 0 ? scurveData : undefined}
                 />
 
-                {/* Per-curve KPI cards (SPI + Deviasi) */}
-                {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => (
-                  <div key={ct} className="mt-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                      {ct === "baseline" ? "Baseline (Overall Project)" : `${ct} — Kurva Tambahan`}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                        <p className="text-[10px] text-muted-foreground uppercase mb-1 flex items-center justify-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></p>
-                        <p className={`text-lg font-bold font-mono-data ${spi != null ? (spi >= 0.95 ? "text-success" : spi >= 0.8 ? "text-warning" : "text-destructive") : "text-foreground"}`}>
+                {/* Per-curve KPI row (SPI + Deviasi) — compact single-row layout */}
+                <div className="mt-4 space-y-2">
+                  {perCurve.map(({ ct, lastLabel, lastAct, lastPlan, dev, spi }) => (
+                    <div key={ct} className="bg-muted/30 rounded-lg border border-border/50 p-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <div className="flex items-center gap-2 min-w-[140px]">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                          {ct === "baseline" ? "Baseline" : ct}
+                        </span>
+                        {lastLabel && <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel}</span></span>}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase text-muted-foreground flex items-center gap-1">SPI<FormulaTooltip {...FORMULAS.spi} /></span>
+                        <span className={`text-sm font-bold font-mono-data ${spi != null ? (spi >= 0.95 ? "text-success" : spi >= 0.8 ? "text-warning" : "text-destructive") : "text-muted-foreground"}`}>
                           {spi != null ? spi.toFixed(2) : "N/A"}
-                        </p>
-                        {lastLabel && <p className="text-[9px] text-muted-foreground mt-0.5">Cut-off: {lastLabel}</p>}
+                        </span>
                       </div>
-                      <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-center">
-                        <p className="text-[10px] text-muted-foreground uppercase mb-1">Deviasi Progress (Actual − Plan)</p>
-                        <p className={`text-lg font-bold font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase text-muted-foreground">Deviasi</span>
+                        <span className={`text-sm font-bold font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>
                           {dev == null ? "N/A" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}
-                        </p>
-                        {lastAct != null && lastPlan != null && (
-                          <p className="text-[9px] text-muted-foreground mt-0.5">Act {lastAct.toFixed(1)}% vs Plan {lastPlan.toFixed(1)}%</p>
-                        )}
+                        </span>
                       </div>
+                      {lastAct != null && lastPlan != null && (
+                        <div className="text-[10px] text-muted-foreground ml-auto font-mono-data">
+                          Act <span className="text-accent font-semibold">{lastAct.toFixed(1)}%</span> vs Plan <span className="text-primary font-semibold">{lastPlan.toFixed(1)}%</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* Last 4 Reporting Periods Summary — per curve, anchored at last-actual */}
-              {perCurve.map(({ ct, lastLabel, list }) => {
-                if (list.length === 0) return null;
-                return (
-                  <div key={ct} className="glass-card rounded-lg shadow-card p-4">
-                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-primary" /> Ringkasan Periode Pelaporan
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-primary/10 text-primary uppercase">{ct === "baseline" ? "Baseline" : ct}</span>
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Periode Actual terakhir ({lastLabel || "—"}) dan 3 periode sebelumnya — Planned vs Actual Progress dan deviasinya.</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-muted/50 border-b border-border">
-                            <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {list.map((r, i) => {
-                            const d = (r.actual ?? 0) - (r.plan ?? 0);
-                            const isCurrent = i === list.length - 1;
-                            return (
-                              <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
-                                <td className="py-2 px-2 text-foreground font-medium">
-                                  {r.label}
-                                  {isCurrent && <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Saat ini</span>}
-                                </td>
-                                <td className="py-2 px-2 text-right font-mono-data text-info">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
-                                <td className="py-2 px-2 text-right font-mono-data text-foreground font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
-                                <td className={`py-2 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
+              {/* Reporting Periods Summary — all curves merged into one card, side-by-side when multiple */}
+              {perCurve.some(pc => pc.list.length > 0) && (
+                <div className="glass-card rounded-lg shadow-card p-4">
+                  <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-primary" /> Ringkasan Periode Pelaporan
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground mb-3">Periode Actual terakhir dan 3 periode sebelumnya — Planned vs Actual Progress per kurva.</p>
+                  <div className={`grid gap-3 ${perCurve.filter(pc => pc.list.length > 0).length > 1 ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+                    {perCurve.map(({ ct, lastLabel, list }) => {
+                      if (list.length === 0) return null;
+                      return (
+                        <div key={ct} className="border border-border rounded-md overflow-hidden">
+                          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${ct === "baseline" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
+                              {ct === "baseline" ? "Baseline" : ct}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground">Cut-off: <span className="font-semibold text-foreground">{lastLabel || "—"}</span></span>
+                          </div>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-muted/20 border-b border-border">
+                                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Periode</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Planned</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Actual</th>
+                                <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground font-bold">Deviasi</th>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                            </thead>
+                            <tbody>
+                              {list.map((r, i) => {
+                                const d = (r.actual ?? 0) - (r.plan ?? 0);
+                                const isCurrent = i === list.length - 1;
+                                return (
+                                  <tr key={r.label} className={`border-b border-border/30 hover:bg-muted/20 ${isCurrent ? "bg-primary/5" : ""}`}>
+                                    <td className="py-1.5 px-2 text-foreground font-medium">
+                                      {r.label}
+                                      {isCurrent && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-primary/15 text-primary font-semibold uppercase">Now</span>}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
+                                    <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              )}
             </div>
             );
           })()}
