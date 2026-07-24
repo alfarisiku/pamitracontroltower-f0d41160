@@ -102,7 +102,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
           ))}
           <div className="flex items-center gap-1">
             <input value={newCurveType} onChange={e => setNewCurveType(e.target.value)} className={inputCls + " w-24"} placeholder="KSO name" />
-            <button onClick={() => { if (newCurveType.trim()) { setCurveType(newCurveType.trim()); setRows([]); setNewCurveType(""); } }} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium">+ Add Curve</button>
+            <button onClick={handleAddCurve} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium">+ Add Curve</button>
           </div>
         </div>
         {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : (
