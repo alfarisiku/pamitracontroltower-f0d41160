@@ -370,6 +370,10 @@ const ProjectDetail = () => {
                 if (rows.length === 0) return null;
                 const totalRap = rows.reduce((s, r) => s + r.rap, 0);
                 const totalAct = rows.reduce((s, r) => s + r.actual, 0);
+                const EXCLUDED = new Set(["bank_guarantee", "overhead"]);
+                const coreRows = rows.filter(r => !EXCLUDED.has(r.key));
+                const coreRap = coreRows.reduce((s, r) => s + r.rap, 0);
+                const coreAct = coreRows.reduce((s, r) => s + r.actual, 0);
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Cost Breakdown per Kategori</h3>
@@ -385,16 +389,23 @@ const ProjectDetail = () => {
                           </tr></thead>
                           <tbody>
                             {rows.map(r => (
-                              <tr key={r.key} className="border-b border-border/30 hover:bg-muted/20">
-                                <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                              <tr key={r.key} className={`border-b border-border/30 hover:bg-muted/20 ${EXCLUDED.has(r.key) ? "text-muted-foreground italic" : ""}`}>
+                                <td className="py-1.5 px-2 font-medium">{r.label}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-primary">{formatRupiah(r.rap)}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-accent">{formatRupiah(r.actual)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.variance >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.variance)}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.pct > 100 ? "text-destructive" : r.pct > 85 ? "text-warning" : "text-success"}`}>{r.pct}%</td>
                               </tr>
                             ))}
-                            <tr className="bg-muted/40 font-bold">
-                              <td className="py-2 px-2 text-foreground">TOTAL</td>
+                            <tr className="bg-primary/5 font-bold border-t-2 border-primary/30">
+                              <td className="py-2 px-2 text-foreground text-[11px]">SUBTOTAL <span className="font-normal text-[9px] text-muted-foreground">(excl. Bank Guarantee & Overhead)</span></td>
+                              <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(coreRap)}</td>
+                              <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(coreAct)}</td>
+                              <td className={`py-2 px-2 text-right font-mono-data ${coreRap - coreAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(coreRap - coreAct)}</td>
+                              <td className={`py-2 px-2 text-right font-mono-data ${coreRap > 0 && (coreAct / coreRap) > 1 ? "text-destructive" : "text-foreground"}`}>{coreRap > 0 ? Math.round((coreAct/coreRap)*100) : 0}%</td>
+                            </tr>
+                            <tr className="bg-muted/60 font-bold">
+                              <td className="py-2 px-2 text-foreground text-[11px]">TOTAL <span className="font-normal text-[9px] text-muted-foreground">(incl. Bank Guarantee & Overhead)</span></td>
                               <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(totalRap)}</td>
                               <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(totalAct)}</td>
                               <td className={`py-2 px-2 text-right font-mono-data ${totalRap - totalAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(totalRap - totalAct)}</td>
