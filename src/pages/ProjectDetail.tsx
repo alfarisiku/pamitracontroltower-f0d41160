@@ -1205,32 +1205,57 @@ const ProjectDetail = () => {
                   <div className="glass-card rounded-lg shadow-card overflow-hidden">
                     <div className="overflow-auto max-h-[520px]">
                       <table className="w-full text-xs">
-                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
-                          <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Item</th>
-                          <th className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground">Vendor</th>
-                          <th className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground">Amount</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Status</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PR</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">PO</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">Delivery</th>
-                          <th className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground">On Site</th>
-                        </tr></thead>
+                        <thead className="sticky top-0 z-10">
+                          <tr className="bg-muted border-b border-border">
+                            <th rowSpan={2} className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Item</th>
+                            <th rowSpan={2} className="text-left py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Vendor</th>
+                            <th rowSpan={2} className="text-right py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Amount</th>
+                            <th rowSpan={2} className="text-center py-2 px-3 text-[9px] uppercase text-muted-foreground align-bottom">Status</th>
+                            {["PR","PO","Delivery","On Site"].map(g => (
+                              <th key={g} colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{g}</th>
+                            ))}
+                          </tr>
+                          <tr className="bg-muted/70 border-b border-border">
+                            {["PR","PO","Delivery","On Site"].map(g => (
+                              <>
+                                <th key={`${g}-p`} className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground border-l border-border font-normal">Plan</th>
+                                <th key={`${g}-a`} className="text-center py-1 px-2 text-[8px] uppercase text-muted-foreground font-normal">Actual</th>
+                              </>
+                            ))}
+                          </tr>
+                        </thead>
                         <tbody>
-                          {procurementItems.map(item => (
+                          {procurementItems.map(item => {
+                            const pairs: [string, string][] = [
+                              ["pr_plan_date","rfq_date"],
+                              ["po_plan_date","po_date"],
+                              ["delivery_plan_date","delivery_date"],
+                              ["onsite_plan_date","install_date"],
+                            ];
+                            const fmtD = (v: any) => v ? new Date(v).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—";
+                            return (
                             <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-2 px-3"><p className="font-medium text-foreground">{item.item_name}</p>{item.description && <p className="text-[9px] text-muted-foreground">{item.description}</p>}</td>
                               <td className="py-2 px-3 text-muted-foreground">{item.vendor || "—"}</td>
                               <td className="py-2 px-3 text-right font-mono-data text-foreground">{formatRupiah(item.amount)}</td>
                               <td className="py-2 px-3 text-center"><span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${procStatusColors[item.status] || ""}`}>{procStatusLabels[item.status] || item.status}</span></td>
-                              {["rfq_date","po_date","delivery_date","install_date"].map(field => (
-                                <td key={field} className="py-2 px-3 text-center text-[9px] font-mono-data text-muted-foreground">
-                                  {(item as any)[field] ? new Date((item as any)[field]).toLocaleDateString("id-ID", {day:"numeric",month:"short"}) : "—"}
-                                </td>
-                              ))}
+                              {pairs.map(([planF, actF], i) => {
+                                const plan = (item as any)[planF];
+                                const actual = (item as any)[actF];
+                                const late = plan && actual && new Date(actual) > new Date(plan);
+                                return (
+                                  <>
+                                    <td key={`${item.id}-${i}-p`} className="py-2 px-2 text-center text-[9px] font-mono-data text-muted-foreground border-l border-border/40">{fmtD(plan)}</td>
+                                    <td key={`${item.id}-${i}-a`} className={`py-2 px-2 text-center text-[9px] font-mono-data font-semibold ${late ? "text-destructive" : actual ? "text-success" : "text-muted-foreground"}`}>{fmtD(actual)}</td>
+                                  </>
+                                );
+                              })}
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
+
                     </div>
                   </div>
 
