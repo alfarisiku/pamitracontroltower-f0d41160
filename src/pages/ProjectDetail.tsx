@@ -84,10 +84,16 @@ const ProjectDetail = () => {
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [expandedTimeline, setExpandedTimeline] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>("health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
+  const [descExpanded, setDescExpanded] = useState(false);
+  const toggleTimeline = (areaId: string) => {
+    setExpandedTimeline(prev => { const n = new Set(prev); n.has(areaId) ? n.delete(areaId) : n.add(areaId); return n; });
+  };
+
 
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
   useEffect(() => {
