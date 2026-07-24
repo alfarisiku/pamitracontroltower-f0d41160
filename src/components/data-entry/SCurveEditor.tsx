@@ -22,6 +22,18 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
         actual_progress: d.actual_progress != null ? String(d.actual_progress) : "",
         curve_type: d.curve_type,
       })));
+    } else if (curveType !== "baseline") {
+      // Seed new curve from baseline period labels so charts snap to same X-axis.
+      const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
+      setRows(baseline.map((d, i) => ({
+        period_label: d.period_label,
+        period_order: i,
+        planned_progress: String(d.planned_progress),
+        actual_progress: "",
+        curve_type: curveType,
+      })));
+    } else {
+      setRows([]);
     }
   }, [scurveData, curveType]);
 
@@ -31,6 +43,22 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const addRow = () => setRows(prev => [...prev, { period_label: `Month ${prev.length + 1}`, period_order: prev.length, planned_progress: "0", actual_progress: "", curve_type: curveType }]);
   const removeRow = (idx: number) => setRows(prev => prev.filter((_, i) => i !== idx));
   const updateRow = (idx: number, key: string, val: string) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, [key]: val } : r));
+
+  const handleAddCurve = () => {
+    if (!newCurveType.trim()) return;
+    const name = newCurveType.trim();
+    const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
+    setRows(baseline.map((d, i) => ({
+      period_label: d.period_label,
+      period_order: i,
+      planned_progress: String(d.planned_progress),
+      actual_progress: "",
+      curve_type: name,
+    })));
+    setCurveType(name);
+    setNewCurveType("");
+  };
+
 
   const handleSave = async () => {
     setSaving(true);
