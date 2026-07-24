@@ -44,12 +44,28 @@ const procStatusLabels: Record<string, string> = {
   fabrication: "Fabrication", delivery: "Delivery", installed: "On Site",
 };
 
+// Distinct color per procurement status — each stage its own hue so the pipeline stage is instantly readable.
 const procStatusColors: Record<string, string> = {
-  planned: "bg-muted text-muted-foreground", "rfq-sent": "bg-primary/15 text-primary",
-  approval: "bg-warning/15 text-warning", "po-issued": "bg-info/15 text-info",
-  fabrication: "bg-accent/15 text-accent-foreground", delivery: "bg-success/15 text-success",
-  installed: "bg-success/20 text-success",
+  planned:     "bg-slate-100 text-slate-600 border border-slate-300",
+  "rfq-sent":  "bg-sky-100 text-sky-700 border border-sky-300",
+  approval:    "bg-amber-100 text-amber-700 border border-amber-300",
+  "po-issued": "bg-indigo-100 text-indigo-700 border border-indigo-300",
+  fabrication: "bg-purple-100 text-purple-700 border border-purple-300",
+  delivery:    "bg-orange-100 text-orange-700 border border-orange-300",
+  installed:   "bg-emerald-100 text-emerald-700 border border-emerald-300",
 };
+
+// Palette per S-Curve type — plan & actual share the same HUE; distinguish only by dash vs solid.
+// Baseline = primary blue, KSO/JO variants cycle through a distinct palette.
+const KSO_HUES = ["hsl(280, 65%, 55%)", "hsl(30, 85%, 55%)", "hsl(340, 70%, 55%)"];
+function curvePalette(ct: string, idxAmongExtras = 0): { plan: string; actual: string; hue: string } {
+  if (ct === "baseline") {
+    const hue = "hsl(215, 80%, 48%)";
+    return { plan: hue, actual: hue, hue };
+  }
+  const hue = KSO_HUES[idxAmongExtras % KSO_HUES.length];
+  return { plan: hue, actual: hue, hue };
+}
 
 function extractYoutubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
