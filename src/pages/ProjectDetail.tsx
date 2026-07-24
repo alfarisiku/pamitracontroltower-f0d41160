@@ -998,15 +998,21 @@ const ProjectDetail = () => {
                             <span className="hidden sm:inline text-muted-foreground/70">· Klik baris parent untuk expand level 2 · Scroll ↔ untuk lihat start &amp; finish</span>
                           </div>
                         </div>
-                        <div className="overflow-auto max-h-[480px] border border-border rounded-md bg-muted/10">
-                          <div className="relative" style={{ minWidth: `${timelineMinPx}px` }}>
-                            {/* Month header (sticky top so scrolling vertical keeps it visible) */}
-                            <div className="sticky top-0 z-20 relative h-6 border-b border-border bg-muted/90 backdrop-blur" style={{ marginLeft: 220 }}>
-                              {months.map((m, i) => (
-                                <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
-                                  <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
-                                </div>
-                              ))}
+                        <div
+                          className="overflow-auto max-h-[480px] border border-border rounded-md bg-muted/10 relative"
+                          onMouseLeave={() => setGanttHover(null)}
+                        >
+                          <div style={{ minWidth: `${220 + timelineMinPx}px` }}>
+                            {/* Month header (sticky top) */}
+                            <div className="sticky top-0 z-20 flex h-6 border-b border-border bg-muted/90 backdrop-blur">
+                              <div className="sticky left-0 z-30 w-[220px] shrink-0 bg-muted/90 border-r border-border flex items-center px-2 text-[9px] uppercase text-muted-foreground font-semibold">Work Item</div>
+                              <div className="relative flex-1" style={{ minWidth: `${timelineMinPx}px` }}>
+                                {months.map((m, i) => (
+                                  <div key={i} className={`absolute top-0 h-full flex items-center pl-1 border-l ${m.isYear ? "border-border" : "border-border/40"}`} style={{ left: `${m.leftPct}%` }}>
+                                    <span className={`font-mono-data ${m.isYear ? "text-[9px] font-bold text-foreground" : "text-[8px] text-muted-foreground"}`}>{m.label}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                             {/* Rows */}
                             <div>
@@ -1014,31 +1020,28 @@ const ProjectDetail = () => {
                                 const clickable = level === 1 && hasChildren;
                                 const durationDays = Math.max(0, Math.round((endMs - startMs) / 86400000));
                                 const remainingDays = Math.max(0, Math.ceil((endMs - todayMs) / 86400000));
-
-
                                 return (
-                                <div
-                                  key={id}
-                                  onClick={clickable ? () => toggleTimeline(areaId!) : undefined}
-                                  className={`relative border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-9"} ${clickable ? "cursor-pointer" : ""}`}
-                                >
-                                  <div className={`sticky left-0 z-10 absolute inset-y-0 w-[220px] flex items-center px-2 gap-1.5 bg-card border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
-                                    {level === 1 && (
-                                      hasChildren ? <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${expanded ? "" : "-rotate-90"}`} /> : <div className="w-3 shrink-0" />
-                                    )}
-                                    <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
-                                    <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
-                                  </div>
-                                  <div className="absolute inset-y-0" style={{ left: "220px", right: 0 }}>
-                                    <div className="relative h-full">
-                                      <div className={`group/bar absolute top-1/2 -translate-y-1/2 rounded-sm ${level === 1 ? "h-3 bg-primary/20 hover:bg-primary/30" : "h-2 bg-accent/20 hover:bg-accent/30"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
-                                        <div className="pointer-events-none opacity-0 group-hover/bar:opacity-100 transition-opacity duration-75 absolute z-30 left-1/2 -translate-x-1/2 bottom-[calc(100%+4px)] bg-card border border-border rounded-md shadow-lg px-2.5 py-1.5 text-[10px] whitespace-nowrap">
-                                          <p className="font-bold text-foreground mb-0.5">{code} — {name}</p>
-                                          <p className="text-muted-foreground">Start: <span className="font-mono-data text-foreground">{fmt(startMs)}</span> · Finish: <span className="font-mono-data text-foreground">{fmt(endMs)}</span></p>
-                                          <p className="text-muted-foreground">Durasi: <span className="font-mono-data text-foreground">{durationDays}d</span> · Sisa: <span className={`font-mono-data ${remainingDays === 0 ? "text-destructive" : "text-foreground"}`}>{remainingDays}d</span></p>
-                                          <p className="text-muted-foreground">Progress: <span className="font-mono-data font-semibold text-primary">{progressPct}%</span>{qty ? <> · Qty: <span className="font-mono-data text-foreground">{qty} {unit || ""}</span></> : null}</p>
-                                        </div>
-                                      </div>
+                                  <div
+                                    key={id}
+                                    onClick={clickable ? () => toggleTimeline(areaId!) : undefined}
+                                    className={`flex border-b border-border/30 last:border-0 hover:bg-muted/20 ${level === 2 ? "h-7 bg-muted/5" : "h-9"} ${clickable ? "cursor-pointer" : ""}`}
+                                  >
+                                    {/* Sticky left column (frozen on horizontal scroll) */}
+                                    <div className={`sticky left-0 z-10 w-[220px] shrink-0 flex items-center px-2 gap-1.5 bg-card border-r border-border/50 ${level === 2 ? "pl-6" : ""}`}>
+                                      {level === 1 && (
+                                        hasChildren ? <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${expanded ? "" : "-rotate-90"}`} /> : <div className="w-3 shrink-0" />
+                                      )}
+                                      <span className={`text-[9px] font-mono-data px-1 rounded shrink-0 ${level === 1 ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"}`}>{code}</span>
+                                      <span className={`text-[10px] truncate ${level === 1 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>{name}</span>
+                                    </div>
+                                    {/* Timeline area */}
+                                    <div className="relative flex-1" style={{ minWidth: `${timelineMinPx}px` }}>
+                                      <div
+                                        className={`absolute top-1/2 -translate-y-1/2 rounded-sm cursor-default ${level === 1 ? "h-3 bg-primary/25 hover:bg-primary/40" : "h-2 bg-accent/25 hover:bg-accent/40"}`}
+                                        style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                                        onMouseMove={(e) => setGanttHover({ x: e.clientX, y: e.clientY, code, name, startMs, endMs, durationDays, remainingDays, progressPct, qty, unit, level })}
+                                        onMouseLeave={() => setGanttHover(null)}
+                                      />
                                       <div className={`absolute top-1/2 -translate-y-1/2 rounded-sm pointer-events-none ${level === 1 ? "h-3 bg-primary" : "h-2 bg-accent"}`} style={{ left: `${leftPct}%`, width: `${(widthPct * progressPct) / 100}%` }} />
                                       <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-end pr-1 pointer-events-none ${level === 1 ? "h-3" : "h-2"}`} style={{ left: `${leftPct}%`, width: `${widthPct}%` }}>
                                         <span className="text-[8px] font-mono-data font-bold text-foreground bg-card/80 px-0.5 rounded">{progressPct}%</span>
@@ -1046,12 +1049,25 @@ const ProjectDetail = () => {
                                       <div className="absolute top-0 bottom-0 w-0.5 bg-destructive z-[1] pointer-events-none" style={{ left: `${todayPct}%` }} />
                                     </div>
                                   </div>
-
-                                </div>
                                 );
                               })}
                             </div>
                           </div>
+                          {/* Cursor-following tooltip (fixed positioning) */}
+                          {ganttHover && (
+                            <div
+                              className="pointer-events-none fixed z-50 bg-card border border-border rounded-md shadow-lg px-2.5 py-1.5 text-[10px] whitespace-nowrap"
+                              style={{
+                                left: Math.min(window.innerWidth - 260, ganttHover.x + 12),
+                                top: Math.max(8, ganttHover.y - 68),
+                              }}
+                            >
+                              <p className="font-bold text-foreground mb-0.5">{ganttHover.code} — {ganttHover.name}</p>
+                              <p className="text-muted-foreground">Start: <span className="font-mono-data text-foreground">{fmt(ganttHover.startMs)}</span> · Finish: <span className="font-mono-data text-foreground">{fmt(ganttHover.endMs)}</span></p>
+                              <p className="text-muted-foreground">Durasi: <span className="font-mono-data text-foreground">{ganttHover.durationDays}d</span> · Sisa: <span className={`font-mono-data ${ganttHover.remainingDays === 0 ? "text-destructive" : "text-foreground"}`}>{ganttHover.remainingDays}d</span></p>
+                              <p className="text-muted-foreground">Progress: <span className="font-mono-data font-semibold text-primary">{ganttHover.progressPct}%</span>{ganttHover.qty ? <> · Qty: <span className="font-mono-data text-foreground">{ganttHover.qty} {ganttHover.unit || ""}</span></> : null}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
