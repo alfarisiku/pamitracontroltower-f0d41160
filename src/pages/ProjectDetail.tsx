@@ -453,7 +453,39 @@ const ProjectDetail = () => {
                           <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} />
                           <YAxis yAxisId="left" orientation="left" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
                           <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: number, name: string) => name.includes("%") ? `${Number(v).toFixed(1)}%` : formatRupiah(v)} />
+                          <RTooltip
+                            contentStyle={chartTooltip}
+                            content={({ active, payload, label }: any) => {
+                              if (!active || !payload || payload.length === 0) return null;
+                              const row = payload[0]?.payload || {};
+                              const rowNum = (v: any) => (v == null ? null : Number(v));
+                              const planPct = rowNum(row.planPct);
+                              const actPct = rowNum(row.actPct);
+                              const planIn = rowNum(row.planIn) ?? 0;
+                              const planOut = rowNum(row.planOut) ?? 0;
+                              const cashIn = rowNum(row.cashIn) ?? 0;
+                              const cashOut = rowNum(row.cashOut) ?? 0;
+                              return (
+                                <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
+                                  <p className="text-foreground font-bold mb-1.5">{label}</p>
+                                  <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
+                                    <span className="text-muted-foreground">Planning Progress</span>
+                                    <span className="font-mono-data text-primary font-semibold text-right">{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground">Planning Cash In</span>
+                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planIn)}</span>
+                                    <span className="text-muted-foreground">Planning Cash Out</span>
+                                    <span className="font-mono-data text-primary/80 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Progress</span>
+                                    <span className="font-mono-data text-accent font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
+                                    <span className="text-muted-foreground">Actual Cash In</span>
+                                    <span className="font-mono-data text-success text-right">{formatRupiah(cashIn)}</span>
+                                    <span className="text-muted-foreground">Actual Cash Out</span>
+                                    <span className="font-mono-data text-destructive text-right">{formatRupiah(cashOut)}</span>
+                                  </div>
+                                </div>
+                              );
+                            }}
+                          />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill="hsl(var(--success) / 0.4)" radius={[3,3,0,0]} />
                           <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
@@ -464,34 +496,47 @@ const ProjectDetail = () => {
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="max-h-[280px] overflow-y-auto rounded border border-border">
+                    <div className="max-h-[280px] overflow-auto rounded border border-border">
                       <table className="w-full text-xs">
-                        <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
-                          <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Plan %</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual %</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash In</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                          <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Net</th>
-                        </tr></thead>
+                        <thead className="sticky top-0 z-10">
+                          <tr className="bg-muted border-b border-border">
+                            <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
+                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress %</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-success border-l border-border">Cash In</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-destructive border-l border-border">Cash Out</th>
+                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net (Actual)</th>
+                          </tr>
+                          <tr className="bg-muted/70 border-b border-border">
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                          </tr>
+                        </thead>
                         <tbody>
                           {rows.map(r => {
                             const dev = (r.actPct ?? 0) - r.planPct;
+                            const net = r.cashIn - r.cashOut;
                             return (
                             <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-primary">{r.planPct.toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-primary border-l border-border/40">{r.planPct.toFixed(1)}%</td>
                               <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                               <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-success">{formatRupiah(r.cashIn)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive">{formatRupiah(r.cashOut)}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data ${(r.cashIn - r.cashOut) >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(r.cashIn - r.cashOut)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive font-semibold">{formatRupiah(r.cashOut)}</td>
+                              <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${net >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(net)}</td>
                             </tr>
                           );})}
                         </tbody>
                       </table>
                     </div>
+
                   </div>
                 );
               })()}
