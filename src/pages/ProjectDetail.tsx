@@ -315,7 +315,7 @@ const ProjectDetail = () => {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Physical Progress</span>
+                        <span className="text-muted-foreground">Progress Project</span>
                         <span className="font-mono-data font-bold text-primary">{project.progress}%</span>
                       </div>
                       <Progress value={project.progress} className="h-2" />
