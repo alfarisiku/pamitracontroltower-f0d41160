@@ -509,18 +509,26 @@ const ProjectDetail = () => {
                           />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           {(() => {
-                            // Color palette per curve so Baseline & KSO look distinct at a glance.
-                            const palette = activeCurve === "baseline"
-                              ? { planIn: "hsl(var(--success) / 0.4)", actIn: "hsl(var(--success))", planOut: "hsl(var(--primary) / 0.35)", actOut: "hsl(var(--accent))", planLine: "hsl(var(--primary))", actLine: "hsl(var(--accent))" }
-                              : { planIn: "hsl(200, 70%, 70%)", actIn: "hsl(200, 80%, 45%)", planOut: "hsl(280, 55%, 75%)", actOut: "hsl(280, 65%, 50%)", planLine: "hsl(280, 65%, 50%)", actLine: "hsl(30, 85%, 55%)" };
+                            // Cash bars ALWAYS use the same fiscal palette (success = In, accent = Out) so
+                            // switching curves never changes the meaning of the bars.
+                            const cash = {
+                              planIn: "hsl(var(--success) / 0.35)",
+                              actIn:  "hsl(var(--success))",
+                              planOut: "hsl(var(--accent) / 0.35)",
+                              actOut:  "hsl(var(--accent))",
+                            };
+                            // Only the S-curve LINES switch color per active curve.
+                            const line = activeCurve === "baseline"
+                              ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
+                              : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
                             return (
                               <>
-                                <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={palette.planIn} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={palette.actIn} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={palette.planOut} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={palette.actOut} radius={[3,3,0,0]} />
-                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={palette.planLine} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
-                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={palette.actLine} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                                <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={cash.planIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={cash.actIn} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={cash.planOut} radius={[3,3,0,0]} />
+                                <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={cash.actOut} radius={[3,3,0,0]} />
+                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} connectNulls />
+                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
                               </>
                             );
                           })()}
@@ -528,15 +536,20 @@ const ProjectDetail = () => {
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
+                    {(() => {
+                      const lineColor = activeCurve === "baseline"
+                        ? { plan: "hsl(var(--primary))", actual: "hsl(var(--info))" }
+                        : { plan: "hsl(280, 65%, 55%)",  actual: "hsl(30, 85%, 55%)" };
+                      return (
                     <div className="max-h-[280px] overflow-auto rounded border border-border">
                       <table className="w-full text-xs">
                         <thead className="sticky top-0 z-10">
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
-                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress %</th>
+                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress % <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
                             <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-success border-l border-border">Cash In</th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-destructive border-l border-border">Cash Out</th>
-                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net (Actual)</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-accent border-l border-border">Cash Out</th>
+                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net Kumulatif (Actual)</th>
                           </tr>
                           <tr className="bg-muted/70 border-b border-border">
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
@@ -549,25 +562,35 @@ const ProjectDetail = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {rows.map(r => {
-                            const dev = (r.actPct ?? 0) - r.planPct;
-                            const net = r.cashIn - r.cashOut;
-                            return (
-                            <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
-                              <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-primary border-l border-border/40">{r.planPct.toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
-                              <td className="py-1.5 px-2 text-right font-mono-data text-destructive font-semibold">{formatRupiah(r.cashOut)}</td>
-                              <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${net >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(net)}</td>
-                            </tr>
-                          );})}
+                          {(() => {
+                            let cum = 0;
+                            let hasAnyActual = false;
+                            return rows.map(r => {
+                              const dev = (r.actPct ?? 0) - r.planPct;
+                              const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
+                              if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
+                              const showNet = hasAnyActual && r.actPct != null;
+                              return (
+                              <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
+                                <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct.toFixed(1)}%</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-accent/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{formatRupiah(r.cashOut)}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : cum >= 0 ? "text-success" : "text-destructive"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
+                              </tr>
+                              );
+                            });
+                          })()}
                         </tbody>
                       </table>
                     </div>
+                      );
+                    })()}
+
 
                   </div>
                 );
