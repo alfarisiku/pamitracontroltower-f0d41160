@@ -979,13 +979,8 @@ const ProjectDetail = () => {
                                 const clickable = level === 1 && hasChildren;
                                 const durationDays = Math.max(0, Math.round((endMs - startMs) / 86400000));
                                 const remainingDays = Math.max(0, Math.ceil((endMs - todayMs) / 86400000));
-                                const tooltip = [
-                                  `${code} — ${name}`,
-                                  `Start: ${fmt(startMs)}  ·  Finish: ${fmt(endMs)}`,
-                                  `Durasi: ${durationDays}d  ·  Sisa: ${remainingDays}d`,
-                                  `Progress: ${progressPct}%`,
-                                  qty ? `Qty: ${qty} ${unit || ""}` : "",
-                                ].filter(Boolean).join("\n");
+
+
                                 return (
                                 <div
                                   key={id}
