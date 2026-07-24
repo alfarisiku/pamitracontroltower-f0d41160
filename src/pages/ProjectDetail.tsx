@@ -999,7 +999,9 @@ const ProjectDetail = () => {
 
 
 
+                  <div className="max-h-[560px] overflow-y-auto space-y-3 pr-1">
                   {workAreas.map(area => {
+
                     const areaItems = workItems.filter(wi => wi.work_area_id === area.id);
                     const isExpanded = expandedAreas.has(area.id);
                     const totalQty = areaItems.reduce((s, i) => s + Number(i.qty_total), 0);
