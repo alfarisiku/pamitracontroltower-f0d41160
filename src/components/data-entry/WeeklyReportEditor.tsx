@@ -1,26 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase, logActivity, ACHIEVEMENT_CATEGORIES, DbWeeklyReport } from "@/lib/supabase";
 import { FileText, Plus, Trash2, Save, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { PeriodSelect } from "@/components/ui/period-select";
+import { useProjectPeriods } from "@/hooks/useProjectPeriods";
 
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
-
-type Achievement = { category: string; description: string };
-type Outstanding = { item: string; note?: string };
-type Target = { target: string; owner?: string };
-type Escalation = { issue: string; decision_needed?: string };
-
-function mondayOf(dateStr: string): string {
-  const d = new Date(dateStr); const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff)).toISOString().slice(0,10);
-}
-function sundayOf(mondayStr: string): string {
-  const d = new Date(mondayStr); d.setDate(d.getDate() + 6);
-  return d.toISOString().slice(0,10);
-}
 
 export function WeeklyReportEditor({ projectId }: { projectId: string }) {
   const qc = useQueryClient();

@@ -1,324 +1,292 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Save, Layers, AlertTriangle, DollarSign, Plus, Trash2, Camera } from "lucide-react";
-import { supabase, formatRupiah, logActivity, DbProject } from "@/lib/supabase";
-import { useWorkAreas, useWorkItems } from "@/hooks/useProjects";
+import { Save, Layers, TrendingUp, Target, Package, DollarSign, AlertTriangle, FileText, Camera, ArrowRight, CheckCircle2 } from "lucide-react";
+import { supabase, logActivity, DbProject } from "@/lib/supabase";
+import { useWorkAreas, useWorkItems, useMilestones } from "@/hooks/useProjects";
+import { useProjectPeriods, type ProjectPeriod } from "@/hooks/useProjectPeriods";
+import { PeriodSelect } from "@/components/ui/period-select";
 import { toast } from "@/hooks/use-toast";
 import { RiskResolvePanel } from "./RiskResolvePanel";
-import { ProcurementPanel } from "./ProcurementPanel";
-import { PhotoGallery } from "./PhotoGallery";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
-export function RegularUpdateTab({ projectId, projects }: { projectId: string; projects: DbProject[] }) {
-  const queryClient = useQueryClient();
-  const [saving, setSaving] = useState(false);
+type NavKey = "finance" | "weekly-report" | "photos" | "scurve" | "procurement" | "milestones" | "wbs";
 
-  const [formProgress, setFormProgress] = useState("");
-  const [formStatus, setFormStatus] = useState("execution");
-  const [formPhase, setFormPhase] = useState("Production I");
+export function RegularUpdateTab({ projectId, projects, onNavigate }: {
+  projectId: string;
+  projects: DbProject[];
+  onNavigate?: (tab: NavKey) => void;
+}) {
+  const qc = useQueryClient();
+  const project = projects.find(p => p.id === projectId);
+  const { periods, nextUnfilled } = useProjectPeriods(projectId);
 
-  const { data: workAreas = [] } = useWorkAreas(projectId || undefined);
-  const waIds = workAreas.map(wa => wa.id);
-  const { data: workItems = [] } = useWorkItems(waIds);
-  const [updateItemId, setUpdateItemId] = useState("");
-  const [updateQtyCompleted, setUpdateQtyCompleted] = useState("");
-  const [updateQtyTotal, setUpdateQtyTotal] = useState("");
+  const [periodOrder, setPeriodOrder] = useState<string>("");
+  const selectedPeriod: ProjectPeriod | undefined = useMemo(
+    () => periods.find(p => String(p.period_order) === periodOrder),
+    [periods, periodOrder]
+  );
 
-  const [riskTitle, setRiskTitle] = useState("");
-  const [riskSeverity, setRiskSeverity] = useState("medium");
-  const [riskProbability, setRiskProbability] = useState("medium");
-  const [riskImpact, setRiskImpact] = useState("medium");
-  const [riskOwner, setRiskOwner] = useState("");
-  const [riskMitigation, setRiskMitigation] = useState("");
-  const [riskDescription] = useState("");
-  const [riskCategory, setRiskCategory] = useState("operational");
-
-  const [tkdnValue, setTkdnValue] = useState("");
-  const [photoWeekLabel, setPhotoWeekLabel] = useState("");
-  const [photoCaption, setPhotoCaption] = useState("");
-
-  // Financial fields
-  const [contractValue, setContractValue] = useState("");
-  const [rapValue, setRapValue] = useState("");
-
-  const getWeekOptions = () => {
-    const options: string[] = [];
-    const now = new Date();
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i * 7);
-      const weekNum = Math.ceil(d.getDate() / 7);
-      const label = `Week ${weekNum} - ${d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}`;
-      if (!options.includes(label)) options.push(label);
-    }
-    return options;
-  };
-
+  // Auto-suggest first unfilled period when project or periods change
   useEffect(() => {
-    const opts = getWeekOptions();
-    if (opts.length > 0 && !photoWeekLabel) setPhotoWeekLabel(opts[0]);
-  }, []);
+    if (!periodOrder && nextUnfilled) setPeriodOrder(String(nextUnfilled.period_order));
+  }, [nextUnfilled?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => { setPeriodOrder(""); }, [projectId]);
+
+  // === STEP 1: Weekly Progress % ===
+  const [actualPct, setActualPct] = useState("");
   useEffect(() => {
-    if (projectId) {
-      const p = projects.find(proj => proj.id === projectId);
-      if (p) {
-        setTkdnValue(String(p.tkdn_percentage || 0));
-        setContractValue(String(p.contract_value || p.budget || 0));
-        setRapValue(String(p.rap || 0));
-      }
-    }
-  }, [projectId, projects]);
+    setActualPct(selectedPeriod?.actual_progress != null ? String(selectedPeriod.actual_progress) : "");
+  }, [selectedPeriod?.id]);
 
-  const handleFinanceUpdate = async () => {
-    if (!projectId) return;
-    setSaving(true);
+  const [savingProgress, setSavingProgress] = useState(false);
+  const handleSaveProgress = async () => {
+    if (!selectedPeriod || !projectId) return;
+    const val = parseFloat(actualPct);
+    if (isNaN(val) || val < 0 || val > 100) { toast({ title: "Progress harus 0–100", variant: "destructive" }); return; }
+    setSavingProgress(true);
     try {
-      const updates: Record<string, any> = {
-        contract_value: parseFloat(contractValue) || 0,
-        rap: parseFloat(rapValue) || 0,
-        budget: parseFloat(contractValue) || 0, // keep legacy field aligned
-      };
-      const { error } = await supabase.from("projects").update(updates).eq("id", projectId);
-      if (error) throw error;
-      await logActivity(supabase, "project", "update_finance", `Finance updated → Contract: ${contractValue}, RAP: ${rapValue}`, projectId, projectId);
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Data keuangan proyek diupdate" });
+      const { error: sErr } = await supabase.from("s_curve_data")
+        .update({ actual_progress: val })
+        .eq("id", selectedPeriod.id);
+      if (sErr) throw sErr;
+      const { error: pErr } = await supabase.from("projects")
+        .update({ progress: Math.round(val) })
+        .eq("id", projectId);
+      if (pErr) throw pErr;
+      await logActivity(supabase, "s_curve", "update",
+        `Weekly progress ${selectedPeriod.period_label}: ${val}% (plan ${selectedPeriod.planned_progress}%)`,
+        projectId, selectedPeriod.id);
+      qc.invalidateQueries({ queryKey: ["s_curve_data"] });
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "✅ Progress tersimpan", description: `${selectedPeriod.period_label} → ${val}%` });
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
-    } finally { setSaving(false); }
+    } finally { setSavingProgress(false); }
   };
 
-  const handleProjectUpdate = async () => {
-    if (!projectId) return;
-    setSaving(true);
-    try {
-      const updates: Record<string, any> = {};
-      if (formProgress) updates.progress = parseInt(formProgress);
-      if (formStatus) updates.status = formStatus;
-      if (formPhase) updates.phase = formPhase;
-      const { error } = await supabase.from("projects").update(updates).eq("id", projectId);
-      if (error) throw error;
-      const p = projects.find(pr => pr.id === projectId);
-      await logActivity(supabase, "project", "update_progress", `Progress updated: ${formProgress || p?.progress}% | Status: ${formStatus} | Phase: ${formPhase}`, projectId, projectId);
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Data proyek berhasil diupdate" });
-    } catch (e: any) {
-      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
-    } finally { setSaving(false); }
+  // === STEP 2: Milestones quick-update (status + actual date only) ===
+  const { data: milestones = [] } = useMilestones(projectId);
+  const updateMilestone = async (id: string, patch: Record<string, any>, name: string) => {
+    const { error } = await supabase.from("milestones").update(patch).eq("id", id);
+    if (error) { toast({ title: "❌ Error", description: error.message, variant: "destructive" }); return; }
+    await logActivity(supabase, "milestone", "update", `${name}: ${JSON.stringify(patch)}`, projectId, id);
+    qc.invalidateQueries({ queryKey: ["milestones"] });
+    qc.invalidateQueries({ queryKey: ["activity_logs"] });
+    toast({ title: "✅ Milestone updated" });
   };
 
-  const handleWorkItemUpdate = async () => {
-    if (!updateItemId) return;
-    setSaving(true);
-    try {
-      const item = workItems.find(wi => wi.id === updateItemId);
-      if (!item) throw new Error("Item not found");
-      const updates: Record<string, any> = {};
-      if (updateQtyTotal) updates.qty_total = parseFloat(updateQtyTotal);
-      const total = updateQtyTotal ? parseFloat(updateQtyTotal) : Number(item.qty_total);
-      const qty = updateQtyCompleted ? parseFloat(updateQtyCompleted) : Number(item.qty_completed);
-      if (updateQtyCompleted) updates.qty_completed = qty;
-      const progress = total > 0 ? Math.round((qty / total) * 100) : 0;
-      updates.progress = Math.min(100, progress);
-      updates.status = progress >= 100 ? "completed" : progress > 0 ? "in-progress" : "not-started";
-      const { error } = await supabase.from("work_items").update(updates).eq("id", updateItemId);
-      if (error) throw error;
-      await logActivity(supabase, "work_item", "update", `Work item "${item.name}" updated: ${qty}/${total}`, projectId, updateItemId);
-      queryClient.invalidateQueries({ queryKey: ["work_items"] });
-      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Progress pekerjaan diupdate" });
-      setUpdateQtyCompleted(""); setUpdateQtyTotal("");
-    } catch (e: any) {
-      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
-    } finally { setSaving(false); }
+  // === STEP 3: Work items (existing lightweight) ===
+  const { data: workAreas = [] } = useWorkAreas(projectId);
+  const { data: workItems = [] } = useWorkItems(workAreas.map(w => w.id));
+  const [wiId, setWiId] = useState("");
+  const [wiQty, setWiQty] = useState("");
+  const currentWi = workItems.find(w => w.id === wiId);
+  useEffect(() => { setWiQty(""); }, [wiId]);
+
+  const saveWorkItem = async () => {
+    if (!currentWi) return;
+    const total = Number(currentWi.qty_total);
+    const qty = wiQty === "" ? Number(currentWi.qty_completed) : parseFloat(wiQty);
+    const progress = total > 0 ? Math.min(100, Math.round((qty / total) * 100)) : 0;
+    const { error } = await supabase.from("work_items").update({
+      qty_completed: qty, progress,
+      status: progress >= 100 ? "completed" : progress > 0 ? "in-progress" : "not-started",
+    }).eq("id", currentWi.id);
+    if (error) { toast({ title: "❌ Error", description: error.message, variant: "destructive" }); return; }
+    await logActivity(supabase, "work_item", "update", `${currentWi.name}: ${qty}/${total}`, projectId, currentWi.id);
+    qc.invalidateQueries({ queryKey: ["work_items"] });
+    toast({ title: "✅ Work item updated" });
+    setWiQty("");
   };
 
-  const handleTkdnUpdate = async () => {
-    if (!projectId) return;
-    setSaving(true);
-    try {
-      const { error } = await supabase.from("projects").update({ tkdn_percentage: parseFloat(tkdnValue) || 0 }).eq("id", projectId);
-      if (error) throw error;
-      await logActivity(supabase, "project", "update", `TKDN updated to ${tkdnValue}%`, projectId, projectId);
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "TKDN berhasil diupdate" });
-    } catch (e: any) {
-      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
-    } finally { setSaving(false); }
-  };
+  // ---------- render ----------
+  if (!project) return null;
 
-  const handleAddRisk = async () => {
-    if (!projectId || !riskTitle) return;
-    setSaving(true);
-    try {
-      const { error } = await supabase.from("project_alerts").insert([{
-        project_id: projectId, title: riskTitle, severity: riskSeverity as any,
-        probability: riskProbability, impact: riskImpact, risk_owner: riskOwner,
-        mitigation_plan: riskMitigation, description: riskDescription, category: riskCategory,
-      }]);
-      if (error) throw error;
-      await logActivity(supabase, "risk", "create", `New risk: ${riskTitle} (${riskSeverity}, ${riskCategory})`, projectId);
-      queryClient.invalidateQueries({ queryKey: ["alerts"] });
-      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Risk item ditambahkan" });
-      setRiskTitle(""); setRiskOwner(""); setRiskMitigation("");
-    } catch (e: any) {
-      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
-    } finally { setSaving(false); }
-  };
+  const NavBtn = ({ tab, icon: Icon, label, hint }: { tab: NavKey; icon: any; label: string; hint: string }) => (
+    <button
+      onClick={() => onNavigate?.(tab)}
+      className="flex items-center gap-2 p-3 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-left w-full group"
+    >
+      <div className="p-2 rounded-md bg-primary/10 text-primary"><Icon className="h-4 w-4" /></div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-foreground truncate">{label}</p>
+        <p className="text-[10px] text-muted-foreground truncate">{hint}</p>
+      </div>
+      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary" />
+    </button>
+  );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-      {/* Weekly Progress */}
-      <div className="glass-card rounded-lg shadow-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Save className="h-4 w-4 text-primary" /> Weekly Progress Update</h3>
-        <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-2">
-            <div><label className={labelCls}>Progress %</label><input type="number" min="0" max="100" value={formProgress} onChange={e => setFormProgress(e.target.value)} className={inputCls} placeholder="72" /></div>
-            <div><label className={labelCls}>Status</label><select value={formStatus} onChange={e => setFormStatus(e.target.value)} className={inputCls}><option value="planning">Planning</option><option value="execution">Execution</option><option value="on-hold">On Hold</option><option value="completed">Completed</option><option value="closed">Closed</option></select></div>
-            <div><label className={labelCls}>Phase</label><select value={formPhase} onChange={e => setFormPhase(e.target.value)} className={inputCls}><option>Production I</option><option>Production II</option><option>Production III</option><option>Production IV</option></select></div>
-          </div>
-          <button onClick={handleProjectUpdate} disabled={saving} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Update Progress"}</button>
-        </div>
-      </div>
-
-      {/* Work Item Progress */}
-      <div className="glass-card rounded-lg shadow-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Layers className="h-4 w-4 text-primary" /> Work Item Progress</h3>
-        {workItems.length === 0 ? <p className="text-xs text-muted-foreground">Proyek ini belum memiliki work items.</p> : (
-          <div className="space-y-3">
-            <div><label className={labelCls}>Work Item</label><select value={updateItemId} onChange={e => setUpdateItemId(e.target.value)} className={inputCls}><option value="">— Pilih Item —</option>{workItems.map(wi => <option key={wi.id} value={wi.id}>{wi.code} — {wi.name} ({Number(wi.qty_completed)}/{Number(wi.qty_total)} {wi.unit})</option>)}</select></div>
-            {updateItemId && (() => {
-              const item = workItems.find(wi => wi.id === updateItemId);
-              if (!item) return null;
-              return (
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                  <div className="flex justify-between text-xs mb-2"><span className="text-muted-foreground">Current: <span className="text-foreground font-bold">{Number(item.qty_completed).toLocaleString()}/{Number(item.qty_total).toLocaleString()} {item.unit}</span></span>
-                  <button onClick={async () => {
-                    if (!confirm(`Hapus work item "${item.name}"?`)) return;
-                    await supabase.from("work_items").delete().eq("id", item.id);
-                    await logActivity(supabase, "work_item", "delete", `Deleted work item: ${item.name}`, projectId, item.id);
-                    queryClient.invalidateQueries({ queryKey: ["work_items"] });
-                    queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-                    setUpdateItemId("");
-                    toast({ title: "✅ Dihapus", description: "Work item berhasil dihapus" });
-                  }} className="text-[10px] px-2 py-1 bg-destructive/10 text-destructive rounded hover:bg-destructive/20"><Trash2 className="h-3 w-3 inline mr-1" />Delete</button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><label className={labelCls}>Total Qty</label><input type="number" min="0" value={updateQtyTotal} onChange={e => setUpdateQtyTotal(e.target.value)} className={inputCls} placeholder={String(Number(item.qty_total))} /></div>
-                    <div><label className={labelCls}>Completed Qty</label><input type="number" min="0" value={updateQtyCompleted} onChange={e => setUpdateQtyCompleted(e.target.value)} className={inputCls} placeholder={String(Number(item.qty_completed))} /></div>
-                  </div>
-                  <button onClick={handleWorkItemUpdate} disabled={saving} className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Update"}</button>
-                </div>
-              );
-            })()}
-            <p className="text-[10px] text-muted-foreground italic">Untuk menambah / mengubah struktur WBS lengkap, gunakan tab <span className="font-semibold">WBS (Full CRUD)</span>.</p>
-
+    <div className="space-y-4 mb-5">
+      {/* === PERIOD PICKER === */}
+      <div className="glass-card rounded-lg shadow-card p-4 border-primary/30 border">
+        <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-primary" /> Step 1 · Pilih Periode Weekly
+        </h3>
+        <p className="text-[10px] text-muted-foreground mb-3">
+          Periode diambil dari <b>S-Curve baseline</b> proyek ini. Semua update di bawah akan disimpan untuk periode yang dipilih.
+          {nextUnfilled && !selectedPeriod && <> Saran otomatis: <b>{nextUnfilled.period_label}</b> (periode terakhir belum terisi).</>}
+        </p>
+        <PeriodSelect
+          projectId={projectId}
+          value={periodOrder}
+          onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")}
+        />
+        {selectedPeriod && (
+          <div className="mt-2 text-[11px] text-muted-foreground flex flex-wrap gap-4">
+            <span>Planned: <b className="text-foreground">{selectedPeriod.planned_progress}%</b></span>
+            <span>Actual saat ini: <b className="text-foreground">{selectedPeriod.actual_progress ?? "—"}%</b></span>
+            <span>Cut-off: <b className="text-foreground">{new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")}</b></span>
           </div>
         )}
       </div>
 
-
-      {/* Financial Update — Contract Value & RAP saja */}
-      <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
-        <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2"><DollarSign className="h-4 w-4 text-accent" /> Update Data Keuangan Proyek</h3>
-        <p className="text-[10px] text-muted-foreground mb-1">
-          ⚠️ <strong>Semua nilai diisi dalam satuan JUTA RUPIAH (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5.000</code> = Rp 5,00 M (Miliar) • <code>1.500.000</code> = Rp 1,50 T (Triliun). Desimal pakai koma standar Indonesia.
-        </p>
-        <p className="text-[10px] text-muted-foreground mb-3 italic">Actual Spent otomatis dihitung dari tab <strong>Finance (Cash Flow)</strong>. Perubahan langsung tersinkron ke Manage Projects, dashboard & Cost Performance.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className={labelCls}>Contract Value (Juta Rp)</label>
-            <input type="number" min="0" value={contractValue} onChange={e => setContractValue(e.target.value)} className={inputCls} placeholder="mis. 5000 (=Rp 5,00 M)" />
-            {contractValue && <p className="text-[9px] text-primary mt-0.5">= {formatRupiah(parseFloat(contractValue)||0)}</p>}
-          </div>
-          <div>
-            <label className={labelCls}>RAP / Rencana Anggaran (Juta Rp)</label>
-            <input type="number" min="0" value={rapValue} onChange={e => setRapValue(e.target.value)} className={inputCls} placeholder="mis. 4200" />
-            {rapValue && <p className="text-[9px] text-primary mt-0.5">= {formatRupiah(parseFloat(rapValue)||0)}</p>}
-          </div>
+      {!selectedPeriod ? (
+        <div className="glass-card rounded-lg shadow-card p-6 text-center">
+          <p className="text-xs text-muted-foreground">Pilih periode di atas untuk mulai update mingguan.</p>
         </div>
-        <button onClick={handleFinanceUpdate} disabled={saving} className="mt-3 flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:bg-accent/90 disabled:opacity-50"><Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Update Financial Data"}</button>
-      </div>
-
-      {/* Risk Entry */}
-      <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-warning" /> Add Risk / Issue</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div><label className={labelCls}>Risk Title</label><input value={riskTitle} onChange={e => setRiskTitle(e.target.value)} className={inputCls} placeholder="Keterlambatan material" /></div>
-          <div><label className={labelCls}>Category</label>
-            <select value={riskCategory} onChange={e => setRiskCategory(e.target.value)} className={inputCls}>
-              <option value="technical">Technical</option>
-              <option value="schedule">Schedule</option>
-              <option value="cost">Cost</option>
-              <option value="procurement">Procurement</option>
-              <option value="contractual">Contractual</option>
-              <option value="operational">Operational</option>
-              <option value="financial">Financial</option>
-              <option value="hse">HSE</option>
-              <option value="external">External</option>
-            </select>
+      ) : (
+        <>
+          {/* === STEP 2: Weekly Progress % === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Save className="h-4 w-4 text-primary" /> Step 2 · Weekly Progress %
+            </h3>
+            <div className="flex items-end gap-3 flex-wrap">
+              <div className="flex-1 min-w-[160px]">
+                <label className={labelCls}>Actual Progress {selectedPeriod.period_label} (%)</label>
+                <input
+                  type="number" min="0" max="100" step="0.01"
+                  value={actualPct} onChange={e => setActualPct(e.target.value)}
+                  className={inputCls}
+                  placeholder={`Plan: ${selectedPeriod.planned_progress}%`}
+                />
+              </div>
+              <button
+                onClick={handleSaveProgress}
+                disabled={savingProgress || actualPct === ""}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
+              >
+                <Save className="h-3.5 w-3.5" /> {savingProgress ? "Saving..." : "Save Progress"}
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2 italic">
+              Nilai ini disimpan sebagai <b>actual</b> di S-Curve baseline periode ini + progress header proyek.
+            </p>
           </div>
-          <div><label className={labelCls}>Severity</label><select value={riskSeverity} onChange={e => setRiskSeverity(e.target.value)} className={inputCls}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div>
-          <div><label className={labelCls}>Probability</label><select value={riskProbability} onChange={e => setRiskProbability(e.target.value)} className={inputCls}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="very-high">Very High</option></select></div>
-          <div><label className={labelCls}>Impact</label><select value={riskImpact} onChange={e => setRiskImpact(e.target.value)} className={inputCls}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="very-high">Very High</option></select></div>
-          <div><label className={labelCls}>Risk Owner</label><input value={riskOwner} onChange={e => setRiskOwner(e.target.value)} className={inputCls} placeholder="Nama PM" /></div>
-          <div className="sm:col-span-2"><label className={labelCls}>Mitigation / Description</label><input value={riskMitigation} onChange={e => setRiskMitigation(e.target.value)} className={inputCls} placeholder="Rencana mitigasi" /></div>
-        </div>
-        <button onClick={handleAddRisk} disabled={saving || !riskTitle} className="mt-3 flex items-center gap-2 px-4 py-2 bg-warning text-warning-foreground rounded-lg text-xs font-medium hover:bg-warning/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Risk"}</button>
-      </div>
 
-      <RiskResolvePanel projectId={projectId} />
+          {/* === STEP 3: Milestones (status + actual date) === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" /> Step 3 · Update Milestones
+              </h3>
+              <button onClick={() => onNavigate?.("milestones")} className="text-[10px] text-primary hover:underline">Kelola lengkap →</button>
+            </div>
+            {milestones.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Belum ada milestone.</p>
+            ) : (
+              <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/60 sticky top-0">
+                    <tr>
+                      <th className="text-left py-1.5 px-2 text-[10px] uppercase text-muted-foreground">Milestone</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] uppercase text-muted-foreground">Target</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] uppercase text-muted-foreground">Actual</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] uppercase text-muted-foreground">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {milestones.map(m => (
+                      <tr key={m.id} className="border-b border-border/40">
+                        <td className="py-1 px-2 text-foreground">{m.name}</td>
+                        <td className="py-1 px-2 text-muted-foreground">{m.target_date ? new Date(m.target_date).toLocaleDateString("id-ID") : "—"}</td>
+                        <td className="py-1 px-2">
+                          <input type="date" defaultValue={m.actual_date || ""}
+                            onBlur={e => e.target.value !== (m.actual_date || "") && updateMilestone(m.id, { actual_date: e.target.value || null }, m.name)}
+                            className="px-1.5 py-0.5 text-[11px] bg-card border border-border rounded" />
+                        </td>
+                        <td className="py-1 px-2">
+                          <select value={m.status}
+                            onChange={e => updateMilestone(m.id, {
+                              status: e.target.value,
+                              actual_date: e.target.value === "completed" ? (m.actual_date || selectedPeriod.period_end) : m.actual_date,
+                            }, m.name)}
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium bg-transparent ${m.status === "completed" ? "text-success border-success/40" : m.status === "in-progress" ? "text-info border-info/40" : m.status === "delayed" ? "text-destructive border-destructive/40" : "text-muted-foreground border-border"}`}>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="delayed">Delayed</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
-      <ProcurementPanel projectId={projectId} />
+          {/* === STEP 4: Work Item (WBS) quick actual === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" /> Step 4 · Work Item Progress (WBS)
+              </h3>
+              <button onClick={() => onNavigate?.("wbs")} className="text-[10px] text-primary hover:underline">Full WBS CRUD →</button>
+            </div>
+            {workItems.length === 0 ? <p className="text-xs text-muted-foreground">Belum ada work item.</p> : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>Work Item</label>
+                  <select value={wiId} onChange={e => setWiId(e.target.value)} className={inputCls}>
+                    <option value="">— Pilih Item —</option>
+                    {workItems.map(w => (
+                      <option key={w.id} value={w.id}>
+                        {w.code} — {w.name} ({Number(w.qty_completed)}/{Number(w.qty_total)} {w.unit})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {currentWi && (
+                  <>
+                    <div>
+                      <label className={labelCls}>Actual Qty (of {Number(currentWi.qty_total)} {currentWi.unit})</label>
+                      <input type="number" min="0" value={wiQty} onChange={e => setWiQty(e.target.value)} className={inputCls} placeholder={String(Number(currentWi.qty_completed))} />
+                    </div>
+                    <button onClick={saveWorkItem} className="sm:col-span-3 flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90">
+                      <Save className="h-3.5 w-3.5" /> Update Work Item
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
-      {/* Weekly Photo Upload */}
-      <div className="glass-card rounded-lg shadow-card p-4 lg:col-span-2">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Camera className="h-4 w-4 text-primary" /> Upload Foto Progress Mingguan</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-          <div>
-            <label className={labelCls}>Periode Minggu</label>
-            <select value={photoWeekLabel} onChange={e => setPhotoWeekLabel(e.target.value)} className={inputCls}>
-              {getWeekOptions().map(opt => (<option key={opt} value={opt}>{opt}</option>))}
-            </select>
+          {/* === STEP 5: Risk === */}
+          <RiskResolvePanel projectId={projectId} />
+
+          {/* === STEP 6: Jump-to tabs === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary" /> Step 6 · Lanjut ke Modul Terkait
+            </h3>
+            <p className="text-[10px] text-muted-foreground mb-3">
+              Untuk update yang lebih detail, langsung buka tab-nya di bawah. Periode <b>{selectedPeriod.period_label}</b> tetap jadi acuan.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <NavBtn tab="procurement" icon={Package} label="Procurement / PO" hint="Update status & actual date" />
+              <NavBtn tab="finance" icon={DollarSign} label="Finance (Cash Flow)" hint="Input cash in / cash out" />
+              <NavBtn tab="weekly-report" icon={FileText} label="Weekly Report" hint={`Buat report untuk ${selectedPeriod.period_label}`} />
+              <NavBtn tab="photos" icon={Camera} label="Weekly Photos" hint={`Upload foto ${selectedPeriod.period_label}`} />
+            </div>
           </div>
-          <div>
-            <label className={labelCls}>Caption (opsional)</label>
-            <input value={photoCaption} onChange={e => setPhotoCaption(e.target.value)} className={inputCls} placeholder="Deskripsi foto..." />
-          </div>
-          <div>
-            <label className={labelCls}>Pilih Foto (multi)</label>
-            <input type="file" accept="image/*" multiple onChange={async (e) => {
-              const files = e.target.files;
-              if (!files || files.length === 0) return;
-              setSaving(true);
-              try {
-                for (const file of Array.from(files)) {
-                  const ext = file.name.split('.').pop();
-                  const path = `${projectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-                  const { error: uploadErr } = await supabase.storage.from('project-photos').upload(path, file);
-                  if (uploadErr) throw uploadErr;
-                  const { data: urlData } = supabase.storage.from('project-photos').getPublicUrl(path);
-                  await supabase.from('project_photos').insert({ project_id: projectId, photo_url: urlData.publicUrl, caption: photoCaption, week_label: photoWeekLabel });
-                }
-                await logActivity(supabase, "photo", "create", `${files.length} photos uploaded (${photoWeekLabel})`, projectId);
-                queryClient.invalidateQueries({ queryKey: ["project_photos"] });
-                queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-                toast({ title: "✅ Berhasil", description: `${files.length} foto berhasil diupload` });
-              } catch (err: any) {
-                toast({ title: "❌ Error", description: err.message, variant: "destructive" });
-              } finally { setSaving(false); }
-            }} className={inputCls + " file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-primary file:text-primary-foreground"} />
-          </div>
-        </div>
-        <PhotoGallery projectId={projectId} />
-      </div>
+        </>
+      )}
     </div>
   );
 }
