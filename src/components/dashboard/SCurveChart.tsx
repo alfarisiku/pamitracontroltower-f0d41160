@@ -32,6 +32,8 @@ interface SCurveDataPoint {
   planned_progress: number;
   actual_progress: number | null;
   curve_type: string;
+  period_start?: string | null;
+  period_end?: string | null;
 }
 
 interface SCurveProps {
