@@ -729,8 +729,10 @@ export type Database = {
           created_at: string
           curve_type: string
           id: string
+          period_end: string | null
           period_label: string
           period_order: number
+          period_start: string | null
           planned_progress: number
           project_id: string
         }
@@ -739,8 +741,10 @@ export type Database = {
           created_at?: string
           curve_type?: string
           id?: string
+          period_end?: string | null
           period_label: string
           period_order?: number
+          period_start?: string | null
           planned_progress?: number
           project_id: string
         }
@@ -749,8 +753,10 @@ export type Database = {
           created_at?: string
           curve_type?: string
           id?: string
+          period_end?: string | null
           period_label?: string
           period_order?: number
+          period_start?: string | null
           planned_progress?: number
           project_id?: string
         }
