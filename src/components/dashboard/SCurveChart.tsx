@@ -143,7 +143,22 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
 
   return (
     <div className="w-full">
+      {hasCustom && (
+        <div className="flex items-center justify-end gap-1 mb-2">
+          <span className="text-[10px] text-muted-foreground mr-1">View:</span>
+          {(["weekly", "monthly"] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setViewMode(m)}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${viewMode === m ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}
+            >
+              {m === "weekly" ? "Weekly" : "Monthly"}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="h-[300px]">
+
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
