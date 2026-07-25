@@ -88,6 +88,8 @@ export type DbSCurveData = {
   planned_progress: number;
   actual_progress: number | null;
   curve_type: string;
+  period_start: string | null;
+  period_end: string | null;
   created_at: string;
 };
 

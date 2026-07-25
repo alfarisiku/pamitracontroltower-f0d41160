@@ -423,19 +423,27 @@ const ProjectDetail = () => {
                   if (yr < 100) yr += 2000;
                   return yr * 12 + (mo - 1);
                 };
+                const ymFromRow = (s: any): number | null => {
+                  if (s.period_end) {
+                    const d = new Date(s.period_end);
+                    if (!isNaN(d.getTime())) return d.getUTCFullYear() * 12 + d.getUTCMonth();
+                  }
+                  return parseScurveYm(s.period_label);
+                };
                 const availableCurves = Array.from(new Set(scurveData.map(s => s.curve_type)));
                 if (!availableCurves.includes("baseline")) availableCurves.unshift("baseline");
                 const activeCurve = availableCurves.includes(cashflowCurve) ? cashflowCurve : "baseline";
                 const scurvePoints: { ym: number; plan: number | null; actual: number | null }[] = [];
                 const byYm: Record<number, { plan: number | null; actual: number | null }> = {};
                 scurveData.filter(s => s.curve_type === activeCurve).forEach(s => {
-                  const ym = parseScurveYm(s.period_label);
+                  const ym = ymFromRow(s);
                   if (ym == null) return;
                   if (!byYm[ym]) byYm[ym] = { plan: null, actual: null };
                   if (s.planned_progress != null) byYm[ym].plan = Number(s.planned_progress);
                   if (s.actual_progress != null) byYm[ym].actual = Number(s.actual_progress);
                 });
                 Object.keys(byYm).map(k => parseInt(k, 10)).sort((a, b) => a - b).forEach(ym => scurvePoints.push({ ym, ...byYm[ym] }));
+
 
                 const interpAt = (ym: number, field: "plan" | "actual"): number | null => {
                   if (scurvePoints.length === 0) return null;
