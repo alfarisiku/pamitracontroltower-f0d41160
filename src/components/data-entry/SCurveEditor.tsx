@@ -31,7 +31,7 @@ const fromISO = (iso: string) => (iso ? new Date(iso + "T00:00:00") : undefined)
 
 export function SCurveEditor({ projectId }: { projectId: string }) {
   const { data: scurveData = [], isLoading } = useSCurveData(projectId);
-  const { data: project } = useProject(projectId);
+  
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
