@@ -125,9 +125,13 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           {/* Left: metadata fields */}
           <div className="lg:col-span-3 grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Photo Date*</label>
-              <input type="date" value={photoDate} onChange={e => setPhotoDate(e.target.value)} className={inputCls} />
+            <div className="col-span-2">
+              <label className={labelCls}>Week Range (Start → Cut-off)*</label>
+              <DateRangeInput
+                startISO={weekStart}
+                endISO={weekEnd}
+                onChange={(s, e) => { setWeekStart(s); setWeekEnd(e); }}
+              />
             </div>
             <div>
               <label className={labelCls}>Activity Category</label>
@@ -135,7 +139,7 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
                 {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
-            <div className="col-span-2">
+            <div>
               <label className={labelCls}>Week Label {!customWeek && "(auto)"}</label>
               <div className="flex gap-1">
                 <input value={weekLabel} onChange={e => { setCustomWeek(true); setWeekLabel(e.target.value); }} className={inputCls} />
