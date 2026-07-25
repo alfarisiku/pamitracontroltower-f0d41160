@@ -29,12 +29,13 @@ function rangeToWeekLabel(startISO: string, endISO: string): string {
 export function PhotoUploader({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
   const [files, setFiles] = useState<FileList | null>(null);
-  const [photoDate, setPhotoDate] = useState(new Date().toISOString().slice(0,10));
+  const [weekStart, setWeekStart] = useState(new Date().toISOString().slice(0,10));
+  const [weekEnd, setWeekEnd] = useState(addDaysISO(new Date().toISOString().slice(0,10), 6));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("construction");
   const [location, setLocation] = useState("");
-  const [weekLabel, setWeekLabel] = useState(toWeekLabel(new Date().toISOString().slice(0,10)));
+  const [weekLabel, setWeekLabel] = useState(rangeToWeekLabel(new Date().toISOString().slice(0,10), addDaysISO(new Date().toISOString().slice(0,10), 6)));
   const [customWeek, setCustomWeek] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<any[]>([]);
@@ -49,7 +50,8 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
     setPhotos(data || []);
   };
   useEffect(() => { if (projectId) load(); }, [projectId]);
-  useEffect(() => { if (!customWeek) setWeekLabel(toWeekLabel(photoDate)); }, [photoDate, customWeek]);
+  useEffect(() => { if (!customWeek) setWeekLabel(rangeToWeekLabel(weekStart, weekEnd)); }, [weekStart, weekEnd, customWeek]);
+
 
   const handleUpload = async () => {
     if (!files || files.length === 0) { toast({ title: "Pilih file dulu", variant: "destructive" }); return; }
