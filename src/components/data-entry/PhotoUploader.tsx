@@ -67,7 +67,7 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
           project_id: projectId, photo_url: pub.publicUrl,
           caption: title || description || "",
           week_label: weekLabel,
-          title, description, photo_date: photoDate,
+          title, description, photo_date: weekStart,
           activity_category: category, location,
         });
       }
