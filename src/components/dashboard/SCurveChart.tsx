@@ -74,7 +74,6 @@ function generateSCurveData(startDate: string, endDate: string, progress: number
 }
 
 export function SCurveChart({ startDate, endDate, progress, milestones = [], customData }: SCurveProps) {
-  const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
   // If custom data exists, use it
   const hasCustom = customData && customData.length > 0;
 
@@ -86,7 +85,6 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
     const types = [...new Set(customData.map(d => d.curve_type))];
     curveTypes = types;
     // Merge into single array keyed by period_order
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const periodMap: Record<number, any> = {};
     customData.forEach(d => {
       if (!periodMap[d.period_order]) {
@@ -101,26 +99,6 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
       }
     });
     chartData = Object.values(periodMap).sort((a: any, b: any) => a._order - b._order);
-
-    if (viewMode === "monthly") {
-      // Prefer period_end date for month key; fallback to label parser.
-      const byMonth: Record<string, any> = {};
-      const monthOrder: string[] = [];
-      chartData.forEach(row => {
-        let key: string | null = null;
-        if (row._end) {
-          const d = new Date(row._end);
-          if (!isNaN(d.getTime())) key = `${monthNames[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(-2)}`;
-        }
-        if (!key) key = periodLabelToMonthKey(row.month) || row.month;
-        if (!byMonth[key]) { byMonth[key] = { month: key }; monthOrder.push(key); }
-        Object.keys(row).forEach(k => {
-          if (k === "month" || k === "_order" || k === "_end") return;
-          if (row[k] != null) byMonth[key!][k] = row[k];
-        });
-      });
-      chartData = monthOrder.map(k => byMonth[k]);
-    }
   } else {
     chartData = generateSCurveData(startDate, endDate, progress);
   }
