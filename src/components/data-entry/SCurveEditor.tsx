@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2, CalendarClock, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { supabase, logActivity } from "@/lib/supabase";
 import { useSCurveData, useProject } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import type { DateRange } from "react-day-picker";
-import { cn } from "@/lib/utils";
+import { DateRangeInput } from "@/components/ui/date-range-input";
 
 type Row = {
   period_label: string;
