@@ -207,8 +207,9 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                 {FINANCE_CATEGORIES.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
-            <div><label className={labelCls}>Date From</label><input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className={inputCls} /></div>
-            <div><label className={labelCls}>Date To</label><input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className={inputCls} /></div>
+            <div className="sm:col-span-2"><label className={labelCls}>Date Range</label>
+              <DateRangeInput startISO={dateFrom} endISO={dateTo} onChange={(s, e) => { setDateFrom(s); setDateTo(e); }} />
+            </div>
             <div><label className={labelCls}>Search</label>
               <div className="flex items-center gap-1"><Search className="h-3 w-3 text-muted-foreground shrink-0" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Description..." className={inputCls} /></div>
             </div>
