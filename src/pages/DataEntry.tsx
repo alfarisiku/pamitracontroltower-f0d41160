@@ -136,7 +136,7 @@ const DataEntry = () => {
             );
           })()}
 
-          {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} />}
+          {activeTab === "regular" && updateProjectId && <RegularUpdateTab projectId={updateProjectId} projects={projects} onNavigate={(tab) => setActiveTab(tab as ActiveTab)} />}
 
           {activeTab === "wbs" && updateProjectId && <WBSCrudPanel projectId={updateProjectId} />}
           {activeTab === "milestones" && updateProjectId && <MilestonesEditor projectId={updateProjectId} />}
