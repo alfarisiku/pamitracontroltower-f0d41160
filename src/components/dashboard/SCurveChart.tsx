@@ -1,30 +1,5 @@
-import { useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from "recharts";
 
-/** Parse a period label like "2024-W23", "W23-2024", "Jun 24", "2024-06" into a month key "MMM YY".
- *  Returns null if it can't be parsed (leave as-is in that case). */
-function periodLabelToMonthKey(label: string): string | null {
-  if (!label) return null;
-  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  // ISO week: 2024-W23 or W23-2024
-  let m = label.match(/^(\d{4})-W(\d{1,2})$/i) || label.match(/^W(\d{1,2})-(\d{4})$/i);
-  if (m) {
-    const year = Number(m[1].length === 4 ? m[1] : m[2]);
-    const week = Number(m[1].length === 4 ? m[2] : m[1]);
-    // ISO week → date of the Thursday of that week
-    const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
-    const dow = simple.getUTCDay();
-    const isoThu = new Date(simple);
-    isoThu.setUTCDate(simple.getUTCDate() + (dow <= 4 ? 4 - dow : 11 - dow));
-    return `${monthNames[isoThu.getUTCMonth()]} ${String(isoThu.getUTCFullYear()).slice(-2)}`;
-  }
-  // "Jun 24" already monthly
-  if (/^[A-Za-z]{3}\s?\d{2}$/.test(label)) return label.replace(/\s+/, " ");
-  // "2024-06"
-  m = label.match(/^(\d{4})-(\d{1,2})$/);
-  if (m) return `${monthNames[Number(m[2]) - 1]} ${m[1].slice(-2)}`;
-  return null;
-}
 
 interface SCurveDataPoint {
   period_label: string;
@@ -75,7 +50,6 @@ function generateSCurveData(startDate: string, endDate: string, progress: number
 }
 
 export function SCurveChart({ startDate, endDate, progress, milestones = [], customData }: SCurveProps) {
-  const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
   // If custom data exists, use it
   const hasCustom = customData && customData.length > 0;
 
@@ -87,7 +61,6 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
     const types = [...new Set(customData.map(d => d.curve_type))];
     curveTypes = types;
     // Merge into single array keyed by period_order
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const periodMap: Record<number, any> = {};
     customData.forEach(d => {
       if (!periodMap[d.period_order]) {
@@ -102,26 +75,6 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
       }
     });
     chartData = Object.values(periodMap).sort((a: any, b: any) => a._order - b._order);
-
-    if (viewMode === "monthly") {
-      // Prefer period_end date for month key; fallback to label parser.
-      const byMonth: Record<string, any> = {};
-      const monthOrder: string[] = [];
-      chartData.forEach(row => {
-        let key: string | null = null;
-        if (row._end) {
-          const d = new Date(row._end);
-          if (!isNaN(d.getTime())) key = `${monthNames[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(-2)}`;
-        }
-        if (!key) key = periodLabelToMonthKey(row.month) || row.month;
-        if (!byMonth[key]) { byMonth[key] = { month: key }; monthOrder.push(key); }
-        Object.keys(row).forEach(k => {
-          if (k === "month" || k === "_order" || k === "_end") return;
-          if (row[k] != null) byMonth[key!][k] = row[k];
-        });
-      });
-      chartData = monthOrder.map(k => byMonth[k]);
-    }
   } else {
     chartData = generateSCurveData(startDate, endDate, progress);
   }
@@ -150,20 +103,6 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
 
   return (
     <div className="w-full">
-      {hasCustom && (
-        <div className="flex items-center justify-end gap-1 mb-2">
-          <span className="text-[10px] text-muted-foreground mr-1">View:</span>
-          {(["weekly", "monthly"] as const).map(m => (
-            <button
-              key={m}
-              onClick={() => setViewMode(m)}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${viewMode === m ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}
-            >
-              {m === "weekly" ? "Weekly" : "Monthly"}
-            </button>
-          ))}
-        </div>
-      )}
       <div className="h-[300px]">
 
         <ResponsiveContainer width="100%" height="100%">
