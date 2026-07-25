@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
-import { supabase, formatRupiah, FINANCE_CATEGORIES, resolveImageUrl } from "@/lib/supabase";
+import { supabase, formatRupiah, formatIDR, FINANCE_CATEGORIES, resolveImageUrl } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
@@ -1275,15 +1275,15 @@ const ProjectDetail = () => {
                       </div>
                       <div className="bg-success/5 rounded-lg p-3 border border-success/20 text-center">
                         <p className="text-[9px] text-muted-foreground uppercase">Installed</p>
-                        <p className="text-lg font-bold font-mono-data text-success">{procurementItems.filter(i => i.status === 'installed').length}</p>
+                        <p className="text-lg font-bold font-mono-data text-success">{procurementItems.filter(i => ['installed','onsite'].includes(i.status)).length}</p>
                       </div>
                       <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
                         <p className="text-[9px] text-muted-foreground uppercase">In Progress</p>
-                        <p className="text-lg font-bold font-mono-data text-warning">{procurementItems.filter(i => !['installed','planned'].includes(i.status)).length}</p>
+                        <p className="text-lg font-bold font-mono-data text-warning">{procurementItems.filter(i => !['installed','onsite','planned','ded'].includes(i.status)).length}</p>
                       </div>
                       <div className="bg-accent/5 rounded-lg p-3 border border-border text-center">
                         <p className="text-[9px] text-muted-foreground uppercase">Total Cost</p>
-                        <p className="text-lg font-bold font-mono-data text-foreground">{formatRupiah(procurementItems.reduce((s, i) => s + i.amount, 0))}</p>
+                        <p className="text-lg font-bold font-mono-data text-foreground">{formatIDR(procurementItems.reduce((s, i) => s + i.amount, 0))}</p>
                       </div>
                     </div>
                   </div>
@@ -1323,7 +1323,7 @@ const ProjectDetail = () => {
                             <tr key={item.id} className="border-b border-border/30 hover:bg-muted/20">
                               <td className="py-2 px-3"><p className="font-medium text-foreground">{item.item_name}</p>{item.description && <p className="text-[9px] text-muted-foreground">{item.description}</p>}</td>
                               <td className="py-2 px-3 text-muted-foreground">{item.vendor || "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono-data text-foreground">{formatRupiah(item.amount)}</td>
+                              <td className="py-2 px-3 text-right font-mono-data text-foreground">{formatIDR(item.amount)}</td>
                               <td className="py-2 px-3 text-center"><span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${procStatusColors[item.status] || ""}`}>{procStatusLabels[item.status] || item.status}</span></td>
                               {pairs.map(([planF, actF], i) => {
                                 const plan = (item as any)[planF];
