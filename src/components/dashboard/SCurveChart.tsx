@@ -1,29 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from "recharts";
 
-/** Parse a period label like "2024-W23", "W23-2024", "Jun 24", "2024-06" into a month key "MMM YY".
- *  Returns null if it can't be parsed (leave as-is in that case). */
-function periodLabelToMonthKey(label: string): string | null {
-  if (!label) return null;
-  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  // ISO week: 2024-W23 or W23-2024
-  let m = label.match(/^(\d{4})-W(\d{1,2})$/i) || label.match(/^W(\d{1,2})-(\d{4})$/i);
-  if (m) {
-    const year = Number(m[1].length === 4 ? m[1] : m[2]);
-    const week = Number(m[1].length === 4 ? m[2] : m[1]);
-    // ISO week → date of the Thursday of that week
-    const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
-    const dow = simple.getUTCDay();
-    const isoThu = new Date(simple);
-    isoThu.setUTCDate(simple.getUTCDate() + (dow <= 4 ? 4 - dow : 11 - dow));
-    return `${monthNames[isoThu.getUTCMonth()]} ${String(isoThu.getUTCFullYear()).slice(-2)}`;
-  }
-  // "Jun 24" already monthly
-  if (/^[A-Za-z]{3}\s?\d{2}$/.test(label)) return label.replace(/\s+/, " ");
-  // "2024-06"
-  m = label.match(/^(\d{4})-(\d{1,2})$/);
-  if (m) return `${monthNames[Number(m[2]) - 1]} ${m[1].slice(-2)}`;
-  return null;
-}
 
 interface SCurveDataPoint {
   period_label: string;
