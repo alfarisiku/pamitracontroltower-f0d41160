@@ -110,20 +110,6 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
   // ---------- render ----------
   if (!project) return null;
 
-  const NavBtn = ({ tab, icon: Icon, label, hint }: { tab: NavKey; icon: any; label: string; hint: string }) => (
-    <button
-      onClick={() => onNavigate?.(tab)}
-      className="flex items-center gap-2 p-3 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-left w-full group"
-    >
-      <div className="p-2 rounded-md bg-primary/10 text-primary"><Icon className="h-4 w-4" /></div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-foreground truncate">{label}</p>
-        <p className="text-[10px] text-muted-foreground truncate">{hint}</p>
-      </div>
-      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary" />
-    </button>
-  );
-
   return (
     <div className="space-y-4 mb-5">
       {/* === PERIOD PICKER === */}
