@@ -260,20 +260,52 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
           {/* === STEP 5: Risk === */}
           <RiskResolvePanel projectId={projectId} />
 
-          {/* === STEP 6: Jump-to tabs === */}
+          {/* === STEP 6: Procurement / PO === */}
           <div className="glass-card rounded-lg shadow-card p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary" /> Step 6 · Lanjut ke Modul Terkait
+            <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+              <Package className="h-4 w-4 text-primary" /> Step 6 · Procurement / PO
             </h3>
             <p className="text-[10px] text-muted-foreground mb-3">
-              Untuk update yang lebih detail, langsung buka tab-nya di bawah. Periode <b>{selectedPeriod.period_label}</b> tetap jadi acuan.
+              Update <b>Actual PR / PO / Delivery / On Site</b> dan <b>status</b> item procurement. Tambah item baru di sini juga.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-              <NavBtn tab="procurement" icon={Package} label="Procurement / PO" hint="Update status & actual date" />
-              <NavBtn tab="finance" icon={DollarSign} label="Finance (Cash Flow)" hint="Input cash in / cash out" />
-              <NavBtn tab="weekly-report" icon={FileText} label="Weekly Report" hint={`Buat report untuk ${selectedPeriod.period_label}`} />
-              <NavBtn tab="photos" icon={Camera} label="Weekly Photos" hint={`Upload foto ${selectedPeriod.period_label}`} />
-            </div>
+            <ProcurementPanel projectId={projectId} />
+          </div>
+
+          {/* === STEP 7: Finance Cashflow === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" /> Step 7 · Finance — Cash Flow
+            </h3>
+            <p className="text-[10px] text-muted-foreground mb-3">
+              Tambah transaksi baru (cash in / cash out) untuk periode <b>{selectedPeriod.period_label}</b>.
+            </p>
+            <FinanceEntriesEditor projectId={projectId} />
+          </div>
+
+          {/* === STEP 8: Weekly Report === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" /> Step 8 · Weekly Report
+            </h3>
+            <p className="text-[10px] text-muted-foreground mb-3">
+              Buat report baru untuk periode <b>{selectedPeriod.period_label}</b>.
+            </p>
+            <WeeklyReportEditor projectId={projectId} />
+          </div>
+
+          {/* === STEP 9: Weekly Photos === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+              <Camera className="h-4 w-4 text-primary" /> Step 9 · Weekly Photos
+            </h3>
+            <p className="text-[10px] text-muted-foreground mb-3">
+              Upload foto lapangan untuk periode <b>{selectedPeriod.period_label}</b>.
+            </p>
+            <PhotoUploader projectId={projectId} />
+          </div>
+
+          <div className="text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-2">
+            <CheckCircle2 className="h-3 w-3 text-success" /> Semua modul mingguan tersedia langsung di halaman ini.
           </div>
         </>
       )}
