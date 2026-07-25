@@ -4,27 +4,38 @@ import { Camera, Upload, Trash2, Calendar, MapPin, Edit3, Save, X } from "lucide
 import { supabase, logActivity, EPCC_CATEGORIES } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import { DateRangeInput } from "@/components/ui/date-range-input";
+import { format } from "date-fns";
 
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
-function toWeekLabel(dateStr: string): string {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  const jan1 = new Date(d.getFullYear(), 0, 1);
-  const week = Math.ceil(((d.getTime() - jan1.getTime()) / 86400000 + jan1.getDay() + 1) / 7);
-  return `Week ${week} - ${d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}`;
+const addDaysISO = (iso: string, days: number) => {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
+function rangeToWeekLabel(startISO: string, endISO: string): string {
+  if (!startISO) return "";
+  const s = new Date(startISO + "T00:00:00");
+  const e = endISO ? new Date(endISO + "T00:00:00") : s;
+  const jan1 = new Date(s.getFullYear(), 0, 1);
+  const week = Math.ceil(((s.getTime() - jan1.getTime()) / 86400000 + jan1.getDay() + 1) / 7);
+  return `Week ${week} · ${format(s, "dd MMM")} – ${format(e, "dd MMM yyyy")}`;
 }
+
 
 export function PhotoUploader({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
   const [files, setFiles] = useState<FileList | null>(null);
-  const [photoDate, setPhotoDate] = useState(new Date().toISOString().slice(0,10));
+  const [weekStart, setWeekStart] = useState(new Date().toISOString().slice(0,10));
+  const [weekEnd, setWeekEnd] = useState(addDaysISO(new Date().toISOString().slice(0,10), 6));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("construction");
   const [location, setLocation] = useState("");
-  const [weekLabel, setWeekLabel] = useState(toWeekLabel(new Date().toISOString().slice(0,10)));
+  const [weekLabel, setWeekLabel] = useState(rangeToWeekLabel(new Date().toISOString().slice(0,10), addDaysISO(new Date().toISOString().slice(0,10), 6)));
   const [customWeek, setCustomWeek] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<any[]>([]);
@@ -39,7 +50,8 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
     setPhotos(data || []);
   };
   useEffect(() => { if (projectId) load(); }, [projectId]);
-  useEffect(() => { if (!customWeek) setWeekLabel(toWeekLabel(photoDate)); }, [photoDate, customWeek]);
+  useEffect(() => { if (!customWeek) setWeekLabel(rangeToWeekLabel(weekStart, weekEnd)); }, [weekStart, weekEnd, customWeek]);
+
 
   const handleUpload = async () => {
     if (!files || files.length === 0) { toast({ title: "Pilih file dulu", variant: "destructive" }); return; }
@@ -55,7 +67,7 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
           project_id: projectId, photo_url: pub.publicUrl,
           caption: title || description || "",
           week_label: weekLabel,
-          title, description, photo_date: photoDate,
+          title, description, photo_date: weekStart,
           activity_category: category, location,
         });
       }
@@ -113,9 +125,13 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           {/* Left: metadata fields */}
           <div className="lg:col-span-3 grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Photo Date*</label>
-              <input type="date" value={photoDate} onChange={e => setPhotoDate(e.target.value)} className={inputCls} />
+            <div className="col-span-2">
+              <label className={labelCls}>Week Range (Start → Cut-off)*</label>
+              <DateRangeInput
+                startISO={weekStart}
+                endISO={weekEnd}
+                onChange={(s, e) => { setWeekStart(s); setWeekEnd(e); }}
+              />
             </div>
             <div>
               <label className={labelCls}>Activity Category</label>
@@ -123,7 +139,7 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
                 {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
-            <div className="col-span-2">
+            <div>
               <label className={labelCls}>Week Label {!customWeek && "(auto)"}</label>
               <div className="flex gap-1">
                 <input value={weekLabel} onChange={e => { setCustomWeek(true); setWeekLabel(e.target.value); }} className={inputCls} />
