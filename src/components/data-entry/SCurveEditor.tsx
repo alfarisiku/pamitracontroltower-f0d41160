@@ -106,38 +106,6 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     setNewCurveType("");
   };
 
-  const autoGenerateWeekly = () => {
-    if (!project?.start_date || !project?.end_date) {
-      toast({ title: "⚠️ Project belum punya tanggal", description: "Set start_date & end_date di project", variant: "destructive" });
-      return;
-    }
-    const start = project.start_date.slice(0, 10);
-    const end = project.end_date.slice(0, 10);
-    const out: Row[] = [];
-    let order = 0;
-    let cursor = start;
-    while (cursor <= end) {
-      const ps = cursor;
-      const pe = addDays(ps, 6) > end ? end : addDays(ps, 6);
-      out.push({
-        period_label: `W${order + 1}`,
-        period_order: order,
-        planned_progress: "0",
-        actual_progress: "",
-        curve_type: curveType,
-        period_start: ps,
-        period_end: pe,
-      });
-      order++;
-      cursor = addDays(pe, 1);
-    }
-    setRows(prev => out.map((r, i) => ({
-      ...r,
-      planned_progress: prev[i]?.planned_progress ?? r.planned_progress,
-      actual_progress: prev[i]?.actual_progress ?? r.actual_progress,
-    })));
-    toast({ title: "📅 Periode weekly dibuat", description: `${out.length} minggu` });
-  };
 
   const handleSave = async () => {
     setSaving(true);
