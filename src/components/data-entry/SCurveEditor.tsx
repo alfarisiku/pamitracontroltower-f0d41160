@@ -141,7 +141,6 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
   };
-  };
 
   const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
   const missingDates = rows.some(r => !r.period_end || !r.period_start);
