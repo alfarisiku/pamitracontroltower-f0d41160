@@ -73,6 +73,7 @@ function generateSCurveData(startDate: string, endDate: string, progress: number
 }
 
 export function SCurveChart({ startDate, endDate, progress, milestones = [], customData }: SCurveProps) {
+  const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
   // If custom data exists, use it
   const hasCustom = customData && customData.length > 0;
 
@@ -87,7 +88,7 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
     const periodMap: Record<number, any> = {};
     customData.forEach(d => {
       if (!periodMap[d.period_order]) {
-        periodMap[d.period_order] = { month: d.period_label };
+        periodMap[d.period_order] = { month: d.period_label, _order: d.period_order };
       }
       if (d.curve_type === "baseline") {
         periodMap[d.period_order].planned = Number(d.planned_progress);
@@ -98,14 +99,26 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
         periodMap[d.period_order][`actual_${d.curve_type}`] = d.actual_progress != null ? Number(d.actual_progress) : null;
       }
     });
-    chartData = Object.values(periodMap).sort((a: any, b: any) => {
-      const aIdx = customData.find(d => d.period_label === a.month)?.period_order ?? 0;
-      const bIdx = customData.find(d => d.period_label === b.month)?.period_order ?? 0;
-      return aIdx - bIdx;
-    });
+    chartData = Object.values(periodMap).sort((a: any, b: any) => a._order - b._order);
+
+    if (viewMode === "monthly") {
+      // Aggregate by month: last cumulative % within each month is the month's value.
+      const byMonth: Record<string, any> = {};
+      const monthOrder: string[] = [];
+      chartData.forEach(row => {
+        const key = periodLabelToMonthKey(row.month) || row.month;
+        if (!byMonth[key]) { byMonth[key] = { month: key }; monthOrder.push(key); }
+        Object.keys(row).forEach(k => {
+          if (k === "month" || k === "_order") return;
+          if (row[k] != null) byMonth[key][k] = row[k]; // last-write-wins = latest cumulative %
+        });
+      });
+      chartData = monthOrder.map(k => byMonth[k]);
+    }
   } else {
     chartData = generateSCurveData(startDate, endDate, progress);
   }
+
 
   // Cut-off = periode terakhir yang punya actual data (bukan calendar today)
   const lastActualIdx = (() => {
