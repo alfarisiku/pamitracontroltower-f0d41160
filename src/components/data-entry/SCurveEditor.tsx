@@ -115,27 +115,32 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     setSaving(true);
     try {
       await supabase.from("s_curve_data").delete().eq("project_id", projectId).eq("curve_type", curveType);
-      const inserts = rows.map((r, i) => ({
-        project_id: projectId,
-        period_label: r.period_label,
-        period_order: i,
-        planned_progress: parseFloat(r.planned_progress) || 0,
-        actual_progress: r.actual_progress ? parseFloat(r.actual_progress) : null,
-        curve_type: curveType,
-        period_start: r.period_start || null,
-        period_end: r.period_end || null,
-      }));
+      // For non-baseline curves, skip periods where user left Planned empty — this creates
+      // an addendum/KSO line that starts only at the period where the change actually begins.
+      const inserts = rows
+        .filter(r => curveType === "baseline" ? true : r.planned_progress !== "" || r.actual_progress !== "")
+        .map((r, i) => ({
+          project_id: projectId,
+          period_label: r.period_label,
+          period_order: r.period_order,
+          planned_progress: parseFloat(r.planned_progress) || 0,
+          actual_progress: r.actual_progress ? parseFloat(r.actual_progress) : null,
+          curve_type: curveType,
+          period_start: r.period_start || null,
+          period_end: r.period_end || null,
+        }));
       if (inserts.length > 0) {
         const { error } = await supabase.from("s_curve_data").insert(inserts);
         if (error) throw error;
       }
-      await logActivity(supabase, "s_curve", "update", `S-Curve ${curveType} updated (${rows.length} periods)`, projectId);
+      await logActivity(supabase, "s_curve", "update", `S-Curve ${curveType} updated (${inserts.length} periode terisi)`, projectId);
       queryClient.invalidateQueries({ queryKey: ["s_curve_data"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: `S-Curve ${curveType} tersimpan` });
+      toast({ title: "✅ Berhasil", description: `S-Curve ${curveType} tersimpan (${inserts.length} periode)` });
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
+  };
   };
 
   const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
