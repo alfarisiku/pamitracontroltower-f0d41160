@@ -11,30 +11,48 @@ const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
 export function WeeklyReportEditor({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
+  const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const [reports, setReports] = useState<DbWeeklyReport[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
-  const today = new Date().toISOString().slice(0,10);
-  const [form, setForm] = useState<Omit<DbWeeklyReport, "id"|"project_id"|"created_at"|"updated_at">>({
-    week_start_date: mondayOf(today), week_end_date: sundayOf(mondayOf(today)),
-    achievements: [], outstanding_items: [], next_week_targets: [], escalations: [], summary: "",
+  const [periodOrder, setPeriodOrder] = useState<string>("");
+  const selectedPeriod = useMemo(() => periods.find(p => String(p.period_order) === periodOrder), [periods, periodOrder]);
+
+  const emptyForm = () => ({
+    week_start_date: "", week_end_date: "",
+    achievements: [] as DbWeeklyReport["achievements"],
+    outstanding_items: [] as DbWeeklyReport["outstanding_items"],
+    next_week_targets: [] as DbWeeklyReport["next_week_targets"],
+    escalations: [] as DbWeeklyReport["escalations"],
+    summary: "",
   });
+  const [form, setForm] = useState<Omit<DbWeeklyReport, "id"|"project_id"|"created_at"|"updated_at">>(emptyForm());
 
   const load = async () => {
     const { data } = await (supabase as any).from("weekly_progress_reports").select("*").eq("project_id", projectId).order("week_start_date", { ascending: false });
     setReports((data || []) as DbWeeklyReport[]);
   };
   useEffect(() => { if (projectId) load(); }, [projectId]);
-  useEffect(() => { setForm(f => ({ ...f, week_end_date: sundayOf(f.week_start_date) })); }, [form.week_start_date]);
+
+  // When opening new-form, auto-suggest next unfilled S-Curve period
+  useEffect(() => {
+    if (newOpen && !periodOrder && nextUnfilled) setPeriodOrder(String(nextUnfilled.period_order));
+  }, [newOpen, nextUnfilled?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Selected period drives form dates (single source of truth = S-Curve)
+  useEffect(() => {
+    if (selectedPeriod) setForm(f => ({ ...f, week_start_date: selectedPeriod.period_start, week_end_date: selectedPeriod.period_end }));
+  }, [selectedPeriod?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
-    if (!form.week_start_date) { toast({ title: "Isi tanggal minggu", variant: "destructive" }); return; }
+    if (!form.week_start_date || !form.week_end_date) { toast({ title: "Pilih periode dari S-Curve", variant: "destructive" }); return; }
     const { error } = await (supabase as any).from("weekly_progress_reports").insert({ project_id: projectId, ...form });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "weekly_report", "create", `Weekly report ${form.week_start_date} → ${form.week_end_date}`, projectId);
     qc.invalidateQueries({ queryKey: ["weekly_reports"] });
     setNewOpen(false);
-    setForm({ week_start_date: mondayOf(today), week_end_date: sundayOf(mondayOf(today)), achievements: [], outstanding_items: [], next_week_targets: [], escalations: [], summary: "" });
+    setPeriodOrder("");
+    setForm(emptyForm());
     load(); toast({ title: "✅ Weekly report tersimpan" });
   };
 
