@@ -87,16 +87,16 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
     const types = [...new Set(customData.map(d => d.curve_type))];
     curveTypes = types;
     // Merge into single array keyed by period_order
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const periodMap: Record<number, any> = {};
     customData.forEach(d => {
       if (!periodMap[d.period_order]) {
-        periodMap[d.period_order] = { month: d.period_label, _order: d.period_order };
+        periodMap[d.period_order] = { month: d.period_label, _order: d.period_order, _end: d.period_end || null };
       }
       if (d.curve_type === "baseline") {
         periodMap[d.period_order].planned = Number(d.planned_progress);
         periodMap[d.period_order].actual = d.actual_progress != null ? Number(d.actual_progress) : null;
       } else {
-        // Additional curves (JO)
         periodMap[d.period_order][`planned_${d.curve_type}`] = Number(d.planned_progress);
         periodMap[d.period_order][`actual_${d.curve_type}`] = d.actual_progress != null ? Number(d.actual_progress) : null;
       }
@@ -104,15 +104,20 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
     chartData = Object.values(periodMap).sort((a: any, b: any) => a._order - b._order);
 
     if (viewMode === "monthly") {
-      // Aggregate by month: last cumulative % within each month is the month's value.
+      // Prefer period_end date for month key; fallback to label parser.
       const byMonth: Record<string, any> = {};
       const monthOrder: string[] = [];
       chartData.forEach(row => {
-        const key = periodLabelToMonthKey(row.month) || row.month;
+        let key: string | null = null;
+        if (row._end) {
+          const d = new Date(row._end);
+          if (!isNaN(d.getTime())) key = `${monthNames[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(-2)}`;
+        }
+        if (!key) key = periodLabelToMonthKey(row.month) || row.month;
         if (!byMonth[key]) { byMonth[key] = { month: key }; monthOrder.push(key); }
         Object.keys(row).forEach(k => {
-          if (k === "month" || k === "_order") return;
-          if (row[k] != null) byMonth[key][k] = row[k]; // last-write-wins = latest cumulative %
+          if (k === "month" || k === "_order" || k === "_end") return;
+          if (row[k] != null) byMonth[key!][k] = row[k];
         });
       });
       chartData = monthOrder.map(k => byMonth[k]);
