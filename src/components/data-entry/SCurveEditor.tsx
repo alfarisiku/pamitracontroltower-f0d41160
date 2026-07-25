@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2, CalendarClock } from "lucide-react";
+import { Plus, Save, Trash2, CalendarClock, Calendar as CalendarIcon } from "lucide-react";
 import { supabase, logActivity } from "@/lib/supabase";
 import { useSCurveData, useProject } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 
 type Row = {
   period_label: string;
@@ -20,23 +25,13 @@ const addDays = (iso: string, days: number) => {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 };
-const endOfMonth = (iso: string) => {
-  const d = new Date(iso);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+const toISO = (d: Date) => {
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${yr}-${mo}-${da}`;
 };
-const startOfMonth = (iso: string) => {
-  const d = new Date(iso);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
-};
-const fmtMonthLabel = (iso: string) => {
-  const d = new Date(iso);
-  const mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
-  return `M${d.getUTCMonth() + 1}/${String(d.getUTCFullYear()).slice(-2)} (${mo})`;
-};
-const fmtWeekLabel = (iso: string, wk: number) => {
-  const d = new Date(iso);
-  return `W${wk} ${d.getUTCFullYear()}`;
-};
+const fromISO = (iso: string) => (iso ? new Date(iso + "T00:00:00") : undefined);
 
 export function SCurveEditor({ projectId }: { projectId: string }) {
   const { data: scurveData = [], isLoading } = useSCurveData(projectId);
@@ -86,7 +81,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
       pe = addDays(ps, 6);
     }
     setRows(prev => [...prev, {
-      period_label: `Period ${prev.length + 1}`,
+      period_label: `W${prev.length + 1}`,
       period_order: prev.length,
       planned_progress: "0",
       actual_progress: "",
@@ -96,7 +91,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     }]);
   };
   const removeRow = (idx: number) => setRows(prev => prev.filter((_, i) => i !== idx));
-  const updateRow = (idx: number, key: keyof Row, val: string) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, [key]: val } as Row : r));
+  const updateRow = (idx: number, patch: Partial<Row>) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r));
 
   const handleAddCurve = () => {
     if (!newCurveType.trim()) return;
@@ -115,7 +110,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     setNewCurveType("");
   };
 
-  const autoGenerate = (mode: "weekly" | "monthly") => {
+  const autoGenerateWeekly = () => {
     if (!project?.start_date || !project?.end_date) {
       toast({ title: "⚠️ Project belum punya tanggal", description: "Set start_date & end_date di project", variant: "destructive" });
       return;
@@ -124,51 +119,28 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     const end = project.end_date.slice(0, 10);
     const out: Row[] = [];
     let order = 0;
-    if (mode === "weekly") {
-      let cursor = start;
-      while (cursor <= end) {
-        const ps = cursor;
-        const pe = addDays(ps, 6) > end ? end : addDays(ps, 6);
-        // ISO-ish week number
-        const d = new Date(pe);
-        const jan1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        const wk = Math.ceil(((d.getTime() - jan1.getTime()) / 86400000 + jan1.getUTCDay() + 1) / 7);
-        out.push({
-          period_label: fmtWeekLabel(pe, wk),
-          period_order: order++,
-          planned_progress: "0",
-          actual_progress: "",
-          curve_type: curveType,
-          period_start: ps,
-          period_end: pe,
-        });
-        cursor = addDays(pe, 1);
-      }
-    } else {
-      let cursor = startOfMonth(start);
-      while (cursor <= end) {
-        const ps = cursor < start ? start : cursor;
-        const eom = endOfMonth(cursor);
-        const pe = eom > end ? end : eom;
-        out.push({
-          period_label: fmtMonthLabel(pe),
-          period_order: order++,
-          planned_progress: "0",
-          actual_progress: "",
-          curve_type: curveType,
-          period_start: ps,
-          period_end: pe,
-        });
-        cursor = addDays(eom, 1);
-      }
+    let cursor = start;
+    while (cursor <= end) {
+      const ps = cursor;
+      const pe = addDays(ps, 6) > end ? end : addDays(ps, 6);
+      out.push({
+        period_label: `W${order + 1}`,
+        period_order: order,
+        planned_progress: "0",
+        actual_progress: "",
+        curve_type: curveType,
+        period_start: ps,
+        period_end: pe,
+      });
+      order++;
+      cursor = addDays(pe, 1);
     }
-    // preserve any existing plan/actual by order
     setRows(prev => out.map((r, i) => ({
       ...r,
       planned_progress: prev[i]?.planned_progress ?? r.planned_progress,
       actual_progress: prev[i]?.actual_progress ?? r.actual_progress,
     })));
-    toast({ title: "📅 Tanggal periode dibuat", description: `${out.length} periode (${mode})` });
+    toast({ title: "📅 Periode weekly dibuat", description: `${out.length} minggu` });
   };
 
   const handleSave = async () => {
@@ -199,14 +171,14 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   };
 
   const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
-  const missingDates = rows.some(r => !r.period_end);
+  const missingDates = rows.some(r => !r.period_end || !r.period_start);
 
   return (
     <div className="space-y-4">
       <div className="glass-card rounded-lg shadow-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">📈 S-Curve Data Editor</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">📈 S-Curve Data Editor (Weekly)</h3>
         <p className="text-[10px] text-muted-foreground mb-3">
-          Edit baseline atau tambahkan kurva KSO. <b>Isi tanggal Period Start & Period End</b> agar grafik dan tabel finance ter-sinkron per bulan / minggu.
+          Data S-Curve wajib <b>weekly</b>. Klik kolom <b>Periode</b> untuk pilih tanggal mulai lalu tanggal cut-off dalam satu kalender.
         </p>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           {curveTypes.map(ct => (
@@ -223,11 +195,10 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
 
         <div className="flex items-center gap-2 mb-3 flex-wrap p-2 bg-muted/40 rounded border border-border">
           <CalendarClock className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[10px] font-medium text-muted-foreground">Auto-generate periods:</span>
-          <button onClick={() => autoGenerate("weekly")} className="px-2 py-1 bg-card border border-border rounded text-[10px] font-medium hover:bg-muted">Weekly</button>
-          <button onClick={() => autoGenerate("monthly")} className="px-2 py-1 bg-card border border-border rounded text-[10px] font-medium hover:bg-muted">Monthly</button>
+          <span className="text-[10px] font-medium text-muted-foreground">Auto-generate:</span>
+          <button onClick={autoGenerateWeekly} className="px-2 py-1 bg-card border border-border rounded text-[10px] font-medium hover:bg-muted">Weekly (7 hari)</button>
           {missingDates && (
-            <span className="text-[10px] text-warning ml-auto">⚠️ Beberapa periode belum punya tanggal — grafik akan fallback ke label.</span>
+            <span className="text-[10px] text-warning ml-auto">⚠️ Ada periode tanpa tanggal.</span>
           )}
         </div>
 
@@ -237,32 +208,67 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
               <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-muted/80 backdrop-blur">
                   <tr className="border-b border-border">
-                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-8">#</th>
-                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Period Label</th>
-                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Period Start</th>
-                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Period End (cut-off)</th>
-                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Planned %</th>
-                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Actual %</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-10">#</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground">Periode (Start → Cut-off)</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-28">Label</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-24">Planned %</th>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-24">Actual %</th>
                     <th className="text-left py-2 px-2 text-[10px] uppercase text-muted-foreground w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={i} className="border-b border-border/30">
-                      <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
-                      <td className="py-1 px-2"><input value={r.period_label} onChange={e => updateRow(i, "period_label", e.target.value)} className={inputCls} /></td>
-                      <td className="py-1 px-2"><input type="date" value={r.period_start} onChange={e => updateRow(i, "period_start", e.target.value)} className={inputCls} /></td>
-                      <td className="py-1 px-2"><input type="date" value={r.period_end} onChange={e => updateRow(i, "period_end", e.target.value)} className={inputCls} /></td>
-                      <td className="py-1 px-2"><input type="number" value={r.planned_progress} onChange={e => updateRow(i, "planned_progress", e.target.value)} className={inputCls} /></td>
-                      <td className="py-1 px-2"><input type="number" value={r.actual_progress} onChange={e => updateRow(i, "actual_progress", e.target.value)} className={inputCls} placeholder="—" /></td>
-                      <td className="py-1 px-2"><button onClick={() => removeRow(i)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
-                    </tr>
-                  ))}
+                  {rows.map((r, i) => {
+                    const range: DateRange | undefined = r.period_start || r.period_end
+                      ? { from: fromISO(r.period_start), to: fromISO(r.period_end) }
+                      : undefined;
+                    const label = range?.from
+                      ? `${format(range.from, "dd MMM yy")} → ${range.to ? format(range.to, "dd MMM yy") : "…"}`
+                      : "Pilih tanggal";
+                    return (
+                      <tr key={i} className="border-b border-border/30">
+                        <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
+                        <td className="py-1 px-2">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-2 py-1.5 text-xs bg-card border border-border rounded hover:bg-muted text-left",
+                                  !range?.from && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{label}</span>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="range"
+                                selected={range}
+                                onSelect={(sel) => {
+                                  updateRow(i, {
+                                    period_start: sel?.from ? toISO(sel.from) : "",
+                                    period_end: sel?.to ? toISO(sel.to) : (sel?.from ? toISO(sel.from) : ""),
+                                  });
+                                }}
+                                numberOfMonths={2}
+                                initialFocus
+                                className={cn("p-3 pointer-events-auto")}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </td>
+                        <td className="py-1 px-2"><input value={r.period_label} onChange={e => updateRow(i, { period_label: e.target.value })} className={inputCls} placeholder="W1" /></td>
+                        <td className="py-1 px-2"><input type="number" step="0.01" value={r.planned_progress} onChange={e => updateRow(i, { planned_progress: e.target.value })} className={inputCls} /></td>
+                        <td className="py-1 px-2"><input type="number" step="0.01" value={r.actual_progress} onChange={e => updateRow(i, { actual_progress: e.target.value })} className={inputCls} placeholder="—" /></td>
+                        <td className="py-1 px-2"><button onClick={() => removeRow(i)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
             <div className="flex items-center gap-2 mt-3">
-              <button onClick={addRow} className="flex items-center gap-1 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Plus className="h-3 w-3" /> Add Period</button>
+              <button onClick={addRow} className="flex items-center gap-1 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Plus className="h-3 w-3" /> Add Week</button>
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-1 px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Save className="h-3 w-3" /> {saving ? "Saving..." : "Save S-Curve"}</button>
             </div>
           </>
