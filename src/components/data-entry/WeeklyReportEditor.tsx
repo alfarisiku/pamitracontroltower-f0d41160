@@ -83,9 +83,14 @@ export function WeeklyReportEditor({ projectId }: { projectId: string }) {
 
       {newOpen && (
         <div className="mb-3 p-3 bg-muted/30 rounded border border-border/50 space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <div><label className={labelCls}>Week Start*</label><input type="date" value={form.week_start_date} onChange={e => setForm({...form, week_start_date: e.target.value})} className={inputCls} /></div>
-            <div><label className={labelCls}>Week End</label><input type="date" value={form.week_end_date} onChange={e => setForm({...form, week_end_date: e.target.value})} className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>Periode Weekly (dari S-Curve) *</label>
+            <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
+            {selectedPeriod && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")}
+              </p>
+            )}
           </div>
 
           <div>
@@ -167,9 +172,16 @@ export function WeeklyReportEditor({ projectId }: { projectId: string }) {
               </button>
               {isOpen && (
                 <div className="p-3 border-t border-border space-y-3 text-xs bg-muted/10">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <div><label className={labelCls}>Week Start</label><input type="date" defaultValue={r.week_start_date} onBlur={e => e.target.value !== r.week_start_date && updateRow(r.id, { week_start_date: e.target.value })} className={inputCls} /></div>
-                    <div><label className={labelCls}>Week End</label><input type="date" defaultValue={r.week_end_date} onBlur={e => e.target.value !== r.week_end_date && updateRow(r.id, { week_end_date: e.target.value })} className={inputCls} /></div>
+                  <div>
+                    <label className={labelCls}>Periode Weekly (dari S-Curve)</label>
+                    <PeriodSelect
+                      projectId={projectId}
+                      value={String(periods.find(p => p.period_start === r.week_start_date && p.period_end === r.week_end_date)?.period_order ?? "")}
+                      onChange={(p) => p && updateRow(r.id, { week_start_date: p.period_start, week_end_date: p.period_end })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(r.week_start_date).toLocaleDateString("id-ID")} → {new Date(r.week_end_date).toLocaleDateString("id-ID")}
+                    </p>
                   </div>
 
                   <EditableList
