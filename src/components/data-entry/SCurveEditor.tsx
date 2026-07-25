@@ -39,8 +39,8 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const [newCurveType, setNewCurveType] = useState("");
 
   useEffect(() => {
-    const filtered = scurveData.filter(d => d.curve_type === curveType);
-    if (filtered.length > 0) {
+    if (curveType === "baseline") {
+      const filtered = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
       setRows(filtered.map(d => ({
         period_label: d.period_label,
         period_order: d.period_order,
@@ -50,19 +50,24 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
         period_start: d.period_start ?? "",
         period_end: d.period_end ?? "",
       })));
-    } else if (curveType !== "baseline") {
-      const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
-      setRows(baseline.map((d, i) => ({
-        period_label: d.period_label,
-        period_order: i,
-        planned_progress: String(d.planned_progress),
-        actual_progress: "",
-        curve_type: curveType,
-        period_start: d.period_start ?? "",
-        period_end: d.period_end ?? "",
-      })));
     } else {
-      setRows([]);
+      // Non-baseline: LOCK periods to baseline cut-off dates. Merge saved values on top.
+      const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
+      const saved = new Map(
+        scurveData.filter(d => d.curve_type === curveType).map(d => [d.period_order, d])
+      );
+      setRows(baseline.map((d, i) => {
+        const s = saved.get(d.period_order) ?? saved.get(i);
+        return {
+          period_label: s?.period_label ?? d.period_label,
+          period_order: i,
+          planned_progress: s ? String(s.planned_progress) : "",
+          actual_progress: s?.actual_progress != null ? String(s.actual_progress) : "",
+          curve_type: curveType,
+          period_start: d.period_start ?? "",
+          period_end: d.period_end ?? "",
+        };
+      }));
     }
   }, [scurveData, curveType]);
 
@@ -79,7 +84,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     setRows(prev => [...prev, {
       period_label: `W${prev.length + 1}`,
       period_order: prev.length,
-      planned_progress: "0",
+      planned_progress: curveType === "baseline" ? "0" : "",
       actual_progress: "",
       curve_type: curveType,
       period_start: ps,
@@ -90,20 +95,19 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const updateRow = (idx: number, patch: Partial<Row>) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r));
 
   const handleAddCurve = () => {
-    if (!newCurveType.trim()) return;
     const name = newCurveType.trim();
-    const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
-    setRows(baseline.map((d, i) => ({
-      period_label: d.period_label,
-      period_order: i,
-      planned_progress: String(d.planned_progress),
-      actual_progress: "",
-      curve_type: name,
-      period_start: d.period_start ?? "",
-      period_end: d.period_end ?? "",
-    })));
+    if (!name) {
+      toast({ title: "Nama curve wajib diisi", description: "Contoh: KSO, Addendum-1", variant: "destructive" });
+      return;
+    }
+    if (curveTypes.includes(name)) {
+      toast({ title: "Curve sudah ada", description: `${name} sudah terdaftar`, variant: "destructive" });
+      return;
+    }
+    // Just switch — the useEffect will seed rows from baseline periods with empty values.
     setCurveType(name);
     setNewCurveType("");
+    toast({ title: `Curve "${name}" siap diisi`, description: "Periode terkunci ke baseline. Isi Planned/Actual hanya di periode yang relevan (kosongkan periode sebelum addendum mulai)." });
   };
 
 
