@@ -115,25 +115,19 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
           {/* Left: metadata fields */}
           <div className="lg:col-span-3 grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className={labelCls}>Week Range (Start → Cut-off)*</label>
-              <DateRangeInput
-                startISO={weekStart}
-                endISO={weekEnd}
-                onChange={(s, e) => { setWeekStart(s); setWeekEnd(e); }}
-              />
+              <label className={labelCls}>Periode Weekly (dari S-Curve) *</label>
+              <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
+              {selectedPeriod && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")} · Label otomatis: <span className="font-mono-data">{weekLabel}</span>
+                </p>
+              )}
             </div>
-            <div>
+            <div className="col-span-2">
               <label className={labelCls}>Activity Category</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className={inputCls}>
                 {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
-            </div>
-            <div>
-              <label className={labelCls}>Week Label {!customWeek && "(auto)"}</label>
-              <div className="flex gap-1">
-                <input value={weekLabel} onChange={e => { setCustomWeek(true); setWeekLabel(e.target.value); }} className={inputCls} />
-                {customWeek && <button onClick={() => setCustomWeek(false)} className="px-2 text-[10px] bg-muted rounded border border-border whitespace-nowrap">auto</button>}
-              </div>
             </div>
             <div className="col-span-2">
               <label className={labelCls}>Title</label>
