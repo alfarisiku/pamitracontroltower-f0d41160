@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from "recharts";
 
 /** Parse a period label like "2024-W23", "W23-2024", "Jun 24", "2024-06" into a month key "MMM YY".
