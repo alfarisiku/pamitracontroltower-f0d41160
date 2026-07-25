@@ -1,53 +1,58 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase, logActivity, ACHIEVEMENT_CATEGORIES, DbWeeklyReport } from "@/lib/supabase";
 import { FileText, Plus, Trash2, Save, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { PeriodSelect } from "@/components/ui/period-select";
+import { useProjectPeriods } from "@/hooks/useProjectPeriods";
 
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
-type Achievement = { category: string; description: string };
-type Outstanding = { item: string; note?: string };
-type Target = { target: string; owner?: string };
-type Escalation = { issue: string; decision_needed?: string };
-
-function mondayOf(dateStr: string): string {
-  const d = new Date(dateStr); const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff)).toISOString().slice(0,10);
-}
-function sundayOf(mondayStr: string): string {
-  const d = new Date(mondayStr); d.setDate(d.getDate() + 6);
-  return d.toISOString().slice(0,10);
-}
-
 export function WeeklyReportEditor({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
+  const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const [reports, setReports] = useState<DbWeeklyReport[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
-  const today = new Date().toISOString().slice(0,10);
-  const [form, setForm] = useState<Omit<DbWeeklyReport, "id"|"project_id"|"created_at"|"updated_at">>({
-    week_start_date: mondayOf(today), week_end_date: sundayOf(mondayOf(today)),
-    achievements: [], outstanding_items: [], next_week_targets: [], escalations: [], summary: "",
+  const [periodOrder, setPeriodOrder] = useState<string>("");
+  const selectedPeriod = useMemo(() => periods.find(p => String(p.period_order) === periodOrder), [periods, periodOrder]);
+
+  const emptyForm = () => ({
+    week_start_date: "", week_end_date: "",
+    achievements: [] as DbWeeklyReport["achievements"],
+    outstanding_items: [] as DbWeeklyReport["outstanding_items"],
+    next_week_targets: [] as DbWeeklyReport["next_week_targets"],
+    escalations: [] as DbWeeklyReport["escalations"],
+    summary: "",
   });
+  const [form, setForm] = useState<Omit<DbWeeklyReport, "id"|"project_id"|"created_at"|"updated_at">>(emptyForm());
 
   const load = async () => {
     const { data } = await (supabase as any).from("weekly_progress_reports").select("*").eq("project_id", projectId).order("week_start_date", { ascending: false });
     setReports((data || []) as DbWeeklyReport[]);
   };
   useEffect(() => { if (projectId) load(); }, [projectId]);
-  useEffect(() => { setForm(f => ({ ...f, week_end_date: sundayOf(f.week_start_date) })); }, [form.week_start_date]);
+
+  // When opening new-form, auto-suggest next unfilled S-Curve period
+  useEffect(() => {
+    if (newOpen && !periodOrder && nextUnfilled) setPeriodOrder(String(nextUnfilled.period_order));
+  }, [newOpen, nextUnfilled?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Selected period drives form dates (single source of truth = S-Curve)
+  useEffect(() => {
+    if (selectedPeriod) setForm(f => ({ ...f, week_start_date: selectedPeriod.period_start, week_end_date: selectedPeriod.period_end }));
+  }, [selectedPeriod?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
-    if (!form.week_start_date) { toast({ title: "Isi tanggal minggu", variant: "destructive" }); return; }
+    if (!form.week_start_date || !form.week_end_date) { toast({ title: "Pilih periode dari S-Curve", variant: "destructive" }); return; }
     const { error } = await (supabase as any).from("weekly_progress_reports").insert({ project_id: projectId, ...form });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "weekly_report", "create", `Weekly report ${form.week_start_date} → ${form.week_end_date}`, projectId);
     qc.invalidateQueries({ queryKey: ["weekly_reports"] });
     setNewOpen(false);
-    setForm({ week_start_date: mondayOf(today), week_end_date: sundayOf(mondayOf(today)), achievements: [], outstanding_items: [], next_week_targets: [], escalations: [], summary: "" });
+    setPeriodOrder("");
+    setForm(emptyForm());
     load(); toast({ title: "✅ Weekly report tersimpan" });
   };
 
@@ -78,9 +83,14 @@ export function WeeklyReportEditor({ projectId }: { projectId: string }) {
 
       {newOpen && (
         <div className="mb-3 p-3 bg-muted/30 rounded border border-border/50 space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <div><label className={labelCls}>Week Start*</label><input type="date" value={form.week_start_date} onChange={e => setForm({...form, week_start_date: e.target.value})} className={inputCls} /></div>
-            <div><label className={labelCls}>Week End</label><input type="date" value={form.week_end_date} onChange={e => setForm({...form, week_end_date: e.target.value})} className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>Periode Weekly (dari S-Curve) *</label>
+            <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
+            {selectedPeriod && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")}
+              </p>
+            )}
           </div>
 
           <div>
@@ -162,9 +172,16 @@ export function WeeklyReportEditor({ projectId }: { projectId: string }) {
               </button>
               {isOpen && (
                 <div className="p-3 border-t border-border space-y-3 text-xs bg-muted/10">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <div><label className={labelCls}>Week Start</label><input type="date" defaultValue={r.week_start_date} onBlur={e => e.target.value !== r.week_start_date && updateRow(r.id, { week_start_date: e.target.value })} className={inputCls} /></div>
-                    <div><label className={labelCls}>Week End</label><input type="date" defaultValue={r.week_end_date} onBlur={e => e.target.value !== r.week_end_date && updateRow(r.id, { week_end_date: e.target.value })} className={inputCls} /></div>
+                  <div>
+                    <label className={labelCls}>Periode Weekly (dari S-Curve)</label>
+                    <PeriodSelect
+                      projectId={projectId}
+                      value={String(periods.find(p => p.period_start === r.week_start_date && p.period_end === r.week_end_date)?.period_order ?? "")}
+                      onChange={(p) => p && updateRow(r.id, { week_start_date: p.period_start, week_end_date: p.period_end })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(r.week_start_date).toLocaleDateString("id-ID")} → {new Date(r.week_end_date).toLocaleDateString("id-ID")}
+                    </p>
                   </div>
 
                   <EditableList
