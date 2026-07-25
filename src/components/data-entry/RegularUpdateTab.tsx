@@ -1,12 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Save, Layers, TrendingUp, Target, Package, DollarSign, AlertTriangle, FileText, Camera, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Save, Layers, TrendingUp, Target, Package, DollarSign, FileText, Camera, CheckCircle2 } from "lucide-react";
 import { supabase, logActivity, DbProject } from "@/lib/supabase";
 import { useWorkAreas, useWorkItems, useMilestones } from "@/hooks/useProjects";
 import { useProjectPeriods, type ProjectPeriod } from "@/hooks/useProjectPeriods";
 import { PeriodSelect } from "@/components/ui/period-select";
 import { toast } from "@/hooks/use-toast";
 import { RiskResolvePanel } from "./RiskResolvePanel";
+import { ProcurementPanel } from "./ProcurementPanel";
+import { FinanceEntriesEditor } from "./FinanceEntriesEditor";
+import { WeeklyReportEditor } from "./WeeklyReportEditor";
+import { PhotoUploader } from "./PhotoUploader";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
