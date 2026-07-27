@@ -103,7 +103,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         addendum_code: edit.addendum_code,
         description: edit.description,
         addendum_date: edit.addendum_date || null,
-        cost_impact: parseInt(edit.cost_impact) || 0,
+        cost_impact: rupiahToJuta(edit.cost_impact),
         schedule_impact_days: parseInt(edit.schedule_impact_days) || 0,
       }).eq("id", id);
       if (error) throw error;
