@@ -9,14 +9,18 @@ import { useProjectPeriods } from "@/hooks/useProjectPeriods";
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
-export function WeeklyReportEditor({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
+export function WeeklyReportEditor({ projectId, compact = false, lockedPeriodId, onLogged }: { projectId: string; compact?: boolean; lockedPeriodId?: string; onLogged?: (msg: string) => void }) {
   const qc = useQueryClient();
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const [reports, setReports] = useState<DbWeeklyReport[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [periodOrder, setPeriodOrder] = useState<string>("");
-  const selectedPeriod = useMemo(() => periods.find(p => String(p.period_order) === periodOrder), [periods, periodOrder]);
+  const lockedPeriod = useMemo(() => periods.find(p => p.id === lockedPeriodId), [periods, lockedPeriodId]);
+  const selectedPeriod = useMemo(
+    () => lockedPeriod ?? periods.find(p => String(p.period_order) === periodOrder),
+    [periods, periodOrder, lockedPeriod]
+  );
 
   const emptyForm = () => ({
     week_start_date: "", week_end_date: "",
@@ -36,8 +40,9 @@ export function WeeklyReportEditor({ projectId, compact = false }: { projectId: 
 
   // When opening new-form, auto-suggest next unfilled S-Curve period
   useEffect(() => {
+    if (lockedPeriod) return;
     if (newOpen && !periodOrder && nextUnfilled) setPeriodOrder(String(nextUnfilled.period_order));
-  }, [newOpen, nextUnfilled?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [newOpen, nextUnfilled?.id, lockedPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Selected period drives form dates (single source of truth = S-Curve)
   useEffect(() => {
@@ -49,9 +54,10 @@ export function WeeklyReportEditor({ projectId, compact = false }: { projectId: 
     const { error } = await (supabase as any).from("weekly_progress_reports").insert({ project_id: projectId, ...form });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "weekly_report", "create", `Weekly report ${form.week_start_date} → ${form.week_end_date}`, projectId);
+    onLogged?.(`Weekly Report dibuat — ${selectedPeriod?.period_label ?? `${form.week_start_date} → ${form.week_end_date}`} (${form.achievements.length} achievements, ${form.outstanding_items.length} outstanding, ${form.escalations.length} escalations)`);
     qc.invalidateQueries({ queryKey: ["weekly_reports"] });
     setNewOpen(false);
-    setPeriodOrder("");
+    if (!lockedPeriod) setPeriodOrder("");
     setForm(emptyForm());
     load(); toast({ title: "✅ Weekly report tersimpan" });
   };
