@@ -431,16 +431,16 @@ const ProjectDetail = () => {
               {(() => {
                 const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number }> = {};
                 financeEntries.forEach(fe => {
-                  const key = fe.period_label || fe.period_date;
-                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
+                  const b = bucketFor(fe, cashflowGranularity);
+                  if (!periodMap[b.key]) periodMap[b.key] = { label: b.label, order: b.order, cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
                   const amt = Number(fe.amount) || 0;
                   const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
                   if (fe.entry_kind === "actual") {
-                    if (fe.direction === "in") periodMap[key].cashIn += amt;
-                    else periodMap[key].cashOut += amt;
+                    if (fe.direction === "in") periodMap[b.key].cashIn += amt;
+                    else periodMap[b.key].cashOut += amt;
                   } else if (isPlan) {
-                    if (fe.direction === "in") periodMap[key].planIn += amt;
-                    else periodMap[key].planOut += amt;
+                    if (fe.direction === "in") periodMap[b.key].planIn += amt;
+                    else periodMap[b.key].planOut += amt;
                   }
                 });
                 const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
