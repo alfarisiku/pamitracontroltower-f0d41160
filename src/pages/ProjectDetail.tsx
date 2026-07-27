@@ -540,7 +540,7 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Cash In</span>
                                     <span className="font-mono-data text-primary font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(cashIn)}</span>
                                     <span className="text-muted-foreground">Actual Cash Out</span>
-                                    <span className="font-mono-data text-foreground font-semibold text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="font-mono-data text-accent font-semibold text-right">{formatRupiah(cashOut)}</span>
                                   </div>
                                 </div>
                               );
@@ -551,10 +551,10 @@ const ProjectDetail = () => {
                           {(() => {
                             // Cash bars ALWAYS use the same fiscal palette so switching curve never changes bar meaning.
                             const cash = {
-                              planIn:  "hsl(var(--primary) / 0.3)",
+                              planIn:  "hsl(var(--primary) / 0.35)",
                               actIn:   "hsl(var(--primary))",
-                              planOut: "hsl(var(--muted-foreground) / 0.3)",
-                              actOut:  "hsl(var(--muted-foreground))",
+                              planOut: "hsl(var(--accent) / 0.35)",
+                              actOut:  "hsl(var(--accent))",
                             };
                             // Curve-typed color for the progress line (plan & actual share the same HUE).
                             const extrasList = availableCurves.filter(c => c !== "baseline");
@@ -724,19 +724,19 @@ const ProjectDetail = () => {
                                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                                     <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Planning</span><span />
                                     <span className="text-muted-foreground">Cash In</span>
-                                    <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
+                                    <span className="font-mono-data text-primary/70 text-right">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Cash Out</span>
-                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="font-mono-data text-accent/70 text-right">{formatRupiah(planOut)}</span>
                                     <span className="text-muted-foreground">Kumulatif Net</span>
-                                    <span className="font-mono-data text-foreground font-semibold text-right">{cumPlan == null ? "—" : formatRupiah(cumPlan)}</span>
+                                    <span className="font-mono-data text-info font-semibold text-right">{cumPlan == null ? "—" : formatRupiah(cumPlan)}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
                                     <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Actual</span><span />
                                     <span className="text-muted-foreground">Cash In</span>
                                     <span className="font-mono-data text-primary font-semibold text-right">{hasAct ? formatRupiah(actIn) : "—"}</span>
                                     <span className="text-muted-foreground">Cash Out</span>
-                                    <span className="font-mono-data text-foreground font-semibold text-right">{hasAct ? formatRupiah(actOut) : "—"}</span>
+                                    <span className="font-mono-data text-accent font-semibold text-right">{hasAct ? formatRupiah(actOut) : "—"}</span>
                                     <span className="text-muted-foreground">Kumulatif Net</span>
-                                    <span className="font-mono-data text-foreground font-bold text-right">{cumAct == null ? "—" : formatRupiah(cumAct)}</span>
+                                    <span className="font-mono-data text-success font-bold text-right">{cumAct == null ? "—" : formatRupiah(cumAct)}</span>
                                   </div>
                                 </div>
                               );
@@ -745,12 +745,12 @@ const ProjectDetail = () => {
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
                           {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--primary))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--primary))", fontSize: 10, position: "top" }} />}
-                          <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.3)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--muted-foreground) / 0.3)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--muted-foreground))" radius={[0,0,3,3]} />
-                          <Line type="monotone" dataKey="Cum. Plan Net" name="Kumulatif Plan (Net)" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 2.5, fill: "hsl(var(--primary))" }} connectNulls />
-                          <Line type="monotone" dataKey="Cum. Actual Net" name="Kumulatif Actual (Net)" stroke="hsl(var(--foreground))" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--foreground))" }} connectNulls />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
+                          <Line type="monotone" dataKey="Cum. Plan Net" name="Kumulatif Plan (Net)" stroke="hsl(var(--info))" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 2.5, fill: "hsl(var(--info))" }} connectNulls />
+                          <Line type="monotone" dataKey="Cum. Actual Net" name="Kumulatif Actual (Net)" stroke="hsl(var(--success))" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--success))" }} connectNulls />
 
                         </ComposedChart>
                       </ResponsiveContainer>
