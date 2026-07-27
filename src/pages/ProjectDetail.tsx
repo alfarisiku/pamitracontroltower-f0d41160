@@ -724,19 +724,19 @@ const ProjectDetail = () => {
                                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                                     <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Planning</span><span />
                                     <span className="text-muted-foreground">Cash In</span>
-                                    <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
+                                    <span className="font-mono-data text-primary/70 text-right">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Cash Out</span>
-                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="font-mono-data text-accent/70 text-right">{formatRupiah(planOut)}</span>
                                     <span className="text-muted-foreground">Kumulatif Net</span>
-                                    <span className="font-mono-data text-foreground font-semibold text-right">{cumPlan == null ? "—" : formatRupiah(cumPlan)}</span>
+                                    <span className="font-mono-data text-info font-semibold text-right">{cumPlan == null ? "—" : formatRupiah(cumPlan)}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
                                     <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Actual</span><span />
                                     <span className="text-muted-foreground">Cash In</span>
                                     <span className="font-mono-data text-primary font-semibold text-right">{hasAct ? formatRupiah(actIn) : "—"}</span>
                                     <span className="text-muted-foreground">Cash Out</span>
-                                    <span className="font-mono-data text-foreground font-semibold text-right">{hasAct ? formatRupiah(actOut) : "—"}</span>
+                                    <span className="font-mono-data text-accent font-semibold text-right">{hasAct ? formatRupiah(actOut) : "—"}</span>
                                     <span className="text-muted-foreground">Kumulatif Net</span>
-                                    <span className="font-mono-data text-foreground font-bold text-right">{cumAct == null ? "—" : formatRupiah(cumAct)}</span>
+                                    <span className="font-mono-data text-success font-bold text-right">{cumAct == null ? "—" : formatRupiah(cumAct)}</span>
                                   </div>
                                 </div>
                               );
