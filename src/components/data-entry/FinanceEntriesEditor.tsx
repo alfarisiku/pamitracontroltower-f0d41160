@@ -198,12 +198,20 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
                   </select>
                 </div>
               )}
-              <div><label className={labelCls}>Periode Weekly*</label>
-                <select value={form.period_id} onChange={e => setForm({...form, period_id: e.target.value})} className={inputCls} disabled={periods.length === 0}>
-                  {periods.length === 0 && <option value="">— Belum ada baseline S-Curve —</option>}
-                  {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
-                </select>
-              </div>
+              {lockedPeriodId ? (
+                <div><label className={labelCls}>Periode Weekly (terkunci)</label>
+                  <div className="px-2 py-1.5 text-xs bg-muted/40 border border-border rounded text-foreground">
+                    {(() => { const p = periodById.get(lockedPeriodId); return p ? periodOptionLabel(p) : "—"; })()}
+                  </div>
+                </div>
+              ) : (
+                <div><label className={labelCls}>Periode Weekly*</label>
+                  <select value={form.period_id} onChange={e => setForm({...form, period_id: e.target.value})} className={inputCls} disabled={periods.length === 0}>
+                    {periods.length === 0 && <option value="">— Belum ada baseline S-Curve —</option>}
+                    {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
+                  </select>
+                </div>
+              )}
               <div><label className={labelCls}>Amount (Rp — utuh)*</label>
                 <input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 150000000" />
                 {form.amount && <p className="text-[9px] text-muted-foreground mt-0.5">= {formatIDR(parseFloat(form.amount) || 0)}</p>}
