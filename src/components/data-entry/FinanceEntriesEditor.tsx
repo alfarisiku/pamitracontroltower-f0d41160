@@ -196,7 +196,12 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                   </select>
                 </div>
               )}
-              <div><label className={labelCls}>Transaction Date*</label><input type="date" value={form.period_date} onChange={e => setForm({...form, period_date: e.target.value})} className={inputCls} /></div>
+              <div><label className={labelCls}>Periode Weekly*</label>
+                <select value={form.period_id} onChange={e => setForm({...form, period_id: e.target.value})} className={inputCls} disabled={periods.length === 0}>
+                  {periods.length === 0 && <option value="">— Belum ada baseline S-Curve —</option>}
+                  {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
+                </select>
+              </div>
               <div><label className={labelCls}>Amount (Rp — utuh)*</label>
                 <input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 150000000" />
                 {form.amount && <p className="text-[9px] text-muted-foreground mt-0.5">= {formatIDR(parseFloat(form.amount) || 0)}</p>}
