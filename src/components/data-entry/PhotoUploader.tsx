@@ -118,12 +118,20 @@ export function PhotoUploader({ projectId, compact = false, lockedPeriodId, onLo
           {/* Left: metadata fields */}
           <div className="lg:col-span-3 grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className={labelCls}>Periode Weekly (dari S-Curve) *</label>
-              <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
-              {selectedPeriod && (
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")} · Label otomatis: <span className="font-mono-data">{weekLabel}</span>
-                </p>
+              <label className={labelCls}>Periode Weekly {lockedPeriod ? "(terkunci dari Step 1)" : "(dari S-Curve)"} *</label>
+              {lockedPeriod ? (
+                <div className="px-2 py-1.5 text-xs bg-muted/40 border border-border rounded text-foreground">
+                  {weekLabel}
+                </div>
+              ) : (
+                <>
+                  <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
+                  {selectedPeriod && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")} · Label otomatis: <span className="font-mono-data">{weekLabel}</span>
+                    </p>
+                  )}
+                </>
               )}
             </div>
             <div className="col-span-2">
