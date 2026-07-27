@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { Info, X } from "lucide-react";
 
 interface FormulaTooltipProps {
@@ -10,20 +11,37 @@ interface FormulaTooltipProps {
 
 export function FormulaTooltip({ title, formula, description, interpretation }: FormulaTooltipProps) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const width = 256;
+    const margin = 8;
+    let left = rect.left + rect.width / 2 - width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    const top = rect.top - margin; // panel positioned above via translateY(-100%)
+    setPos({ top, left });
+  }, [open]);
 
   return (
     <span className="relative inline-flex">
       <button
+        ref={btnRef}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         className="ml-1 p-0.5 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
         aria-label={`Info: ${title}`}
       >
         <Info className="h-3 w-3" />
       </button>
-      {open && (
+      {open && pos && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-card border border-border rounded-lg shadow-lg p-3 text-left animate-in fade-in-0 zoom-in-95">
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-[9999] w-64 bg-card border border-border rounded-lg shadow-xl p-3 text-left animate-in fade-in-0 zoom-in-95"
+            style={{ top: pos.top, left: pos.left, transform: "translateY(-100%)" }}
+          >
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-semibold text-foreground">{title}</span>
               <button onClick={() => setOpen(false)} className="p-0.5 hover:bg-muted rounded"><X className="h-3 w-3" /></button>
@@ -38,7 +56,8 @@ export function FormulaTooltip({ title, formula, description, interpretation }: 
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </span>
   );
