@@ -343,7 +343,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <p className="text-[10px] text-muted-foreground mb-3">
               Upload foto lapangan untuk periode <b>{selectedPeriod.period_label}</b>.
             </p>
-            <PhotoUploader projectId={projectId} />
+            <PhotoUploader projectId={projectId} compact />
           </div>
 
           <div className="text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-2">
