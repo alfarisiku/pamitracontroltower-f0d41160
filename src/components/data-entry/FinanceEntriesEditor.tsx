@@ -97,26 +97,27 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
     try {
       const rp = parseFloat(form.amount) || 0;
       if (rp <= 0) throw new Error("Amount (Rp) harus > 0");
-      const amt = rupiahToJuta(rp); // store in Juta for backwards compat
-      const { monthLabel } = periodLabels(form.period_date);
+      const period = periodById.get(form.period_id);
+      if (!period) throw new Error("Pilih periode weekly dulu.");
+      const amt = rupiahToJuta(rp);
       const { error } = await (supabase as any).from("finance_entries").insert({
         project_id: projectId,
         direction: form.direction,
         category: form.direction === "in" ? null : form.category,
         entry_kind: form.entry_kind,
-        frequency: "monthly",
-        period_date: form.period_date,
-        period_label: monthLabel,
+        frequency: "weekly",
+        period_date: period.period_end,
+        period_label: period.period_label,
         amount: amt,
         description: form.description || null,
       });
       if (error) throw error;
-      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} on ${form.period_date}`, projectId);
+      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} · ${period.period_label}`, projectId);
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
       toast({ title: "✅ Saved" });
-      setForm(emptyForm()); setShowAdd(false);
+      setForm({ ...emptyForm(), period_id: nextUnfilled?.id ?? "" }); setShowAdd(false);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -125,18 +126,20 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const saveEdit = async (id: string) => {
     const rp = parseFloat(edit.amount) || 0;
     const amt = rupiahToJuta(rp);
-    const { monthLabel } = periodLabels(edit.period_date);
+    const period = periodById.get(edit.period_id);
+    if (!period) { toast({ title: "Error", description: "Pilih periode weekly.", variant: "destructive" }); return; }
     const { error } = await (supabase as any).from("finance_entries").update({
       direction: edit.direction, category: edit.direction === "in" ? null : edit.category,
-      entry_kind: edit.entry_kind, period_date: edit.period_date, period_label: monthLabel,
-      amount: amt, description: edit.description || null,
+      entry_kind: edit.entry_kind, period_date: period.period_end, period_label: period.period_label,
+      frequency: "weekly", amount: amt, description: edit.description || null,
     }).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatIDR(rp)}`, projectId, id);
+    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatIDR(rp)} · ${period.period_label}`, projectId, id);
     qc.invalidateQueries({ queryKey: ["finance_entries"] });
     qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
     setEditingId(null); toast({ title: "✅ Updated" });
   };
+
 
 
   const handleDelete = async (e: DbFinanceEntry) => {
