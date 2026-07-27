@@ -169,9 +169,9 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
 
       <div className="glass-card rounded-lg shadow-card p-4">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cash Flow Transactions ({filtered.length}/{visible.length})</h3>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cash Flow Transactions{compact ? "" : ` (${filtered.length}/${visible.length})`}</h3>
           <div className="flex gap-1">
-            <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Download className="h-3 w-3" /> CSV</button>
+            {!compact && <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Download className="h-3 w-3" /> CSV</button>}
             <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px]"><Plus className="h-3 w-3" /> Add</button>
           </div>
         </div>
