@@ -321,7 +321,7 @@ const ProjectDetail = () => {
                   <p className="text-[10px] text-muted-foreground">{criticalAlerts} critical/high</p>
                 </div>
                 <div className="glass-card rounded-lg p-3 border border-border">
-                  <div className="flex items-center gap-1.5 mb-1"><Clock className="h-3.5 w-3.5 text-primary" /><span className="text-[10px] text-muted-foreground uppercase">Time Progress</span></div>
+                  <div className="flex items-center gap-1.5 mb-1"><Clock className="h-3.5 w-3.5 text-primary" /><span className="text-[10px] text-muted-foreground uppercase">Time Progress</span><FormulaTooltip {...FORMULAS.timeProgress} /></div>
                   <p className="text-sm font-bold text-foreground">{elapsedPct}%</p>
                   <p className="text-[10px] text-muted-foreground">{totalDuration - Math.max(0, daysRemaining)}d of {totalDuration}d</p>
                 </div>
@@ -534,13 +534,13 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground">Actual Progress</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
                                     <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Planning Cash In</span>
-                                    <span className="font-mono-data text-success/70 text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(planIn)}</span>
-                                    <span className="text-muted-foreground">Actual Cash In</span>
-                                    <span className="font-mono-data text-success text-right">{formatRupiah(cashIn)}</span>
+                                    <span className="font-mono-data text-muted-foreground text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Planning Cash Out</span>
-                                    <span className="font-mono-data text-accent/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Cash In</span>
+                                    <span className="font-mono-data text-primary font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(cashIn)}</span>
                                     <span className="text-muted-foreground">Actual Cash Out</span>
-                                    <span className="font-mono-data text-accent text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="font-mono-data text-foreground font-semibold text-right">{formatRupiah(cashOut)}</span>
                                   </div>
                                 </div>
                               );
@@ -551,10 +551,10 @@ const ProjectDetail = () => {
                           {(() => {
                             // Cash bars ALWAYS use the same fiscal palette so switching curve never changes bar meaning.
                             const cash = {
-                              planIn:  "hsl(var(--success) / 0.35)",
-                              actIn:   "hsl(var(--success))",
-                              planOut: "hsl(var(--accent) / 0.35)",
-                              actOut:  "hsl(var(--accent))",
+                              planIn:  "hsl(var(--primary) / 0.3)",
+                              actIn:   "hsl(var(--primary))",
+                              planOut: "hsl(var(--muted-foreground) / 0.3)",
+                              actOut:  "hsl(var(--muted-foreground))",
                             };
                             // Curve-typed color for the progress line (plan & actual share the same HUE).
                             const extrasList = availableCurves.filter(c => c !== "baseline");
@@ -586,14 +586,18 @@ const ProjectDetail = () => {
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
                             <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress % <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-success border-l border-border">Cash In</th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-accent border-l border-border">Cash Out</th>
-                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net Kumulatif (Actual)</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
+                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">
+                              <span className="inline-flex items-center gap-0.5">Net Kumulatif (Actual)<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
+                            </th>
                           </tr>
                           <tr className="bg-muted/70 border-b border-border">
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <span className="inline-flex items-center gap-0.5">Deviasi<FormulaTooltip {...FORMULAS.deviation} /></span>
+                            </th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
@@ -615,11 +619,11 @@ const ProjectDetail = () => {
                                 <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct.toFixed(1)}%</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-accent/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{formatRupiah(r.cashOut)}</td>
-                                <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : cum >= 0 ? "text-success" : "text-destructive"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{formatRupiah(r.cashIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{formatRupiah(r.cashOut)}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : "text-foreground"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
                               </tr>
                               );
                             });
@@ -695,21 +699,52 @@ const ProjectDetail = () => {
                     <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Cashflow — Plan vs Actual
                     </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-primary">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-primary">{breakevenLabel}</span></>}.</p>
                     <div className="h-[340px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
                           <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: any, name: string) => {
-                            if (v == null) return ["—", name];
-                            const raw = Number(v);
-                            return [`${raw < 0 ? "-" : ""}${formatRupiah(Math.abs(raw))}`, name];
-                          }} />
+                          <RTooltip
+                            contentStyle={chartTooltip}
+                            content={({ active, payload, label }: any) => {
+                              if (!active || !payload || payload.length === 0) return null;
+                              const row = payload[0]?.payload || {};
+                              const planIn = Number(row.planIn) || 0;
+                              const planOut = Number(row.planOut) || 0;
+                              const actIn = Number(row.actIn) || 0;
+                              const actOut = Number(row.actOut) || 0;
+                              const cumPlan = row._cumPlan;
+                              const cumAct = row._cumAct;
+                              const hasAct = actIn !== 0 || actOut !== 0;
+                              return (
+                                <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
+                                  <p className="text-foreground font-bold mb-1.5">{label}</p>
+                                  <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Planning</span><span />
+                                    <span className="text-muted-foreground">Cash In</span>
+                                    <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
+                                    <span className="text-muted-foreground">Cash Out</span>
+                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="text-muted-foreground">Kumulatif Net</span>
+                                    <span className="font-mono-data text-foreground font-semibold text-right">{cumPlan == null ? "—" : formatRupiah(cumPlan)}</span>
+                                    <span className="col-span-2 border-t border-border/60 my-1" />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Actual</span><span />
+                                    <span className="text-muted-foreground">Cash In</span>
+                                    <span className="font-mono-data text-primary font-semibold text-right">{hasAct ? formatRupiah(actIn) : "—"}</span>
+                                    <span className="text-muted-foreground">Cash Out</span>
+                                    <span className="font-mono-data text-foreground font-semibold text-right">{hasAct ? formatRupiah(actOut) : "—"}</span>
+                                    <span className="text-muted-foreground">Kumulatif Net</span>
+                                    <span className="font-mono-data text-foreground font-bold text-right">{cumAct == null ? "—" : formatRupiah(cumAct)}</span>
+                                  </div>
+                                </div>
+                              );
+                            }}
+                          />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
-                          {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--success))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--success))", fontSize: 10, position: "top" }} />}
+                          {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--primary))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--primary))", fontSize: 10, position: "top" }} />}
                           <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.3)" radius={[3,3,0,0]} />
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} />
                           <Bar dataKey="Plan Cash Out" fill="hsl(var(--muted-foreground) / 0.3)" radius={[0,0,3,3]} />
@@ -728,20 +763,26 @@ const ProjectDetail = () => {
                           <thead className="sticky top-0 z-10">
                             <tr className="bg-muted border-b border-border">
                               <th rowSpan={2} className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
-                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
-                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
-                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Net Periode</th>
-                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Kumulatif Net</th>
+                              <th colSpan={4} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Planning</th>
+                              <th colSpan={4} className="text-center py-1 px-2 text-[9px] uppercase text-foreground border-l-2 border-border">Actual</th>
                             </tr>
                             <tr className="bg-muted/70 border-b border-border">
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                                <span className="inline-flex items-center gap-0.5 justify-end w-full">Net<FormulaTooltip {...FORMULAS.netPeriode} /></span>
+                              </th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                                <span className="inline-flex items-center gap-0.5 justify-end w-full">Kumulatif<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
+                              </th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l-2 border-border">Cash In</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                                <span className="inline-flex items-center gap-0.5 justify-end w-full">Net<FormulaTooltip {...FORMULAS.netPeriode} /></span>
+                              </th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                                <span className="inline-flex items-center gap-0.5 justify-end w-full">Kumulatif<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
@@ -752,14 +793,14 @@ const ProjectDetail = () => {
                               return (
                                 <tr key={idx} className="border-b border-border/30 hover:bg-muted/20">
                                   <td className="py-1.5 px-2 font-medium">{r.label}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{hasAct ? formatRupiah(r.actIn) : "—"}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70">{formatRupiah(r.planOut)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground/80">{formatRupiah(netPlan)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{formatRupiah(r._cumPlan)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold border-l-2 border-border/60">{hasAct ? formatRupiah(r.actIn) : "—"}</td>
                                   <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{hasAct ? formatRupiah(r.actOut) : "—"}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data border-l border-border/40 ${netPlan >= 0 ? "text-success/80" : "text-destructive/80"}`}>{formatRupiah(netPlan)}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${netAct == null ? "text-muted-foreground" : netAct >= 0 ? "text-success" : "text-destructive"}`}>{netAct == null ? "—" : formatRupiah(netAct)}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data border-l border-border/40 ${r._cumPlan >= 0 ? "text-success/80" : "text-destructive/80"}`}>{formatRupiah(r._cumPlan)}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${r._cumAct == null ? "text-muted-foreground" : r._cumAct >= 0 ? "text-success" : "text-destructive"}`}>{r._cumAct == null ? "—" : formatRupiah(r._cumAct)}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${netAct == null ? "text-muted-foreground" : "text-foreground"}`}>{netAct == null ? "—" : formatRupiah(netAct)}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${r._cumAct == null ? "text-muted-foreground" : "text-foreground"}`}>{r._cumAct == null ? "—" : formatRupiah(r._cumAct)}</td>
                                 </tr>
                               );
                             })}
@@ -770,17 +811,19 @@ const ProjectDetail = () => {
                               const tActOut = bipolar.reduce((s, r) => s + r.actOut, 0);
                               const tNetPlan = tPlanIn - tPlanOut;
                               const tNetAct = tActIn - tActOut;
+                              const lastCumPlan = bipolar[bipolar.length - 1]?._cumPlan ?? tNetPlan;
+                              const lastCumAct = bipolar[bipolar.length - 1]?._cumAct ?? tNetAct;
                               return (
                                 <tr className="bg-primary/5 font-bold border-t-2 border-primary/30">
                                   <td className="py-2 px-2 text-foreground text-[11px]">TOTAL</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(tPlanIn)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(tActIn)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(tPlanOut)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(tPlanIn)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground/70">{formatRupiah(tPlanOut)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-foreground/80">{formatRupiah(tNetPlan)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(lastCumPlan)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-primary border-l-2 border-border/60">{formatRupiah(tActIn)}</td>
                                   <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(tActOut)}</td>
-                                  <td className={`py-2 px-2 text-right font-mono-data border-l border-border/40 ${tNetPlan >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(tNetPlan)}</td>
-                                  <td className={`py-2 px-2 text-right font-mono-data ${tNetAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(tNetAct)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">—</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground">—</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(tNetAct)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{lastCumAct == null ? "—" : formatRupiah(lastCumAct)}</td>
                                 </tr>
                               );
                             })()}
@@ -822,8 +865,12 @@ const ProjectDetail = () => {
                             <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Kategori</th>
                             <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">RAP</th>
                             <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Variance</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">%</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">
+                              <span className="inline-flex items-center gap-0.5 justify-end w-full">Variance<FormulaTooltip {...FORMULAS.costVariance} /></span>
+                            </th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">
+                              <span className="inline-flex items-center gap-0.5 justify-end w-full">%<FormulaTooltip {...FORMULAS.costUtilization} /></span>
+                            </th>
                           </tr></thead>
                           <tbody>
                             {rows.map(r => (

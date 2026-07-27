@@ -72,8 +72,44 @@ export const FORMULAS = {
   },
   scheduleHealth: {
     title: "Schedule Health",
-    formula: "Deviasi = Actual Progress - Planned Progress",
-    description: "Perbandingan progress aktual vs progress yang seharusnya berdasarkan waktu yang telah berjalan.",
+    formula: "Deviasi = Actual Progress − Planned Progress",
+    description: "Perbandingan progress aktual vs progress yang seharusnya berdasarkan waktu yang telah berjalan. Positif = ahead, Negatif = behind.",
     interpretation: "Deviasi ≥ -5% = Good, -5% s/d -15% = At Risk, < -15% = Critical",
+  },
+  timeProgress: {
+    title: "Time Progress",
+    formula: "Time % = (Hari Berjalan / Total Durasi) × 100%",
+    description: "Persentase waktu proyek yang telah berjalan. Hari Berjalan = Total Durasi − Sisa Hari (dihitung dari start_date sampai hari ini).",
+    interpretation: "Bandingkan dengan Progress Aktual: jika Actual < Time = behind, Actual ≈ Time = on track, Actual > Time = ahead.",
+  },
+  deviation: {
+    title: "Deviasi Progress",
+    formula: "Deviasi = Actual % − Planned %",
+    description: "Selisih realisasi terhadap rencana pada periode berjalan. Positif (+) = di atas rencana, Negatif (−) = di bawah rencana.",
+    interpretation: "≥ 0% = Sesuai/Ahead, -5% s/d 0% = Watch, < -5% = Behind",
+  },
+  netPeriode: {
+    title: "Net Cashflow Periode",
+    formula: "Net = Cash In − Cash Out",
+    description: "Selisih arus kas masuk dan keluar pada satu periode. Dihitung terpisah untuk Plan dan Actual. Positif = surplus periode, Negatif = defisit periode.",
+    interpretation: "Positif = periode profit, Negatif = periode butuh talangan cash",
+  },
+  cumulativeNet: {
+    title: "Kumulatif Net Cashflow",
+    formula: "Kumulatif Net = Σ (Cash In − Cash Out) sampai periode ini",
+    description: "Akumulasi Net Periode dari awal proyek hingga periode berjalan. Titik potong dari negatif ke positif = breakeven proyek.",
+    interpretation: "Positif = sudah breakeven, Negatif = belum breakeven / masih defisit kumulatif",
+  },
+  costVariance: {
+    title: "Cost Variance per Kategori",
+    formula: "Variance = RAP − Actual",
+    description: "Sisa RAP terhadap realisasi pengeluaran per kategori. Positif (+) = hemat / masih ada sisa RAP, Negatif (−) = over RAP.",
+    interpretation: "Positif = under budget (baik), 0 = pas RAP, Negatif = over RAP (buruk)",
+  },
+  costUtilization: {
+    title: "Utilisasi RAP per Kategori",
+    formula: "% = (Actual / RAP) × 100%",
+    description: "Persentase realisasi cash out terhadap RAP kategori. Digunakan untuk memantau kategori mana yang paling terkuras.",
+    interpretation: "< 85% = Normal, 85-100% = Perlu perhatian, > 100% = Over RAP (kritis)",
   },
 };
