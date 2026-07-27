@@ -534,13 +534,13 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground">Actual Progress</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
                                     <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Planning Cash In</span>
-                                    <span className="font-mono-data text-success/70 text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(planIn)}</span>
-                                    <span className="text-muted-foreground">Actual Cash In</span>
-                                    <span className="font-mono-data text-success text-right">{formatRupiah(cashIn)}</span>
+                                    <span className="font-mono-data text-muted-foreground text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Planning Cash Out</span>
-                                    <span className="font-mono-data text-accent/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Cash In</span>
+                                    <span className="font-mono-data text-primary font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(cashIn)}</span>
                                     <span className="text-muted-foreground">Actual Cash Out</span>
-                                    <span className="font-mono-data text-accent text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="font-mono-data text-foreground font-semibold text-right">{formatRupiah(cashOut)}</span>
                                   </div>
                                 </div>
                               );
