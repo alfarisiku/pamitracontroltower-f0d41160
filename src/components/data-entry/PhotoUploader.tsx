@@ -65,6 +65,7 @@ export function PhotoUploader({ projectId, compact = false, lockedPeriodId, onLo
       const { error } = await supabase.from("project_photos").insert(rows as any);
       if (error) throw error;
       await logActivity(supabase, "photo", "create", `Uploaded ${rows.length} photo(s) for ${weekLabel}`, projectId);
+      onLogged?.(`Foto Weekly: ${rows.length} file diupload — ${weekLabel}${title ? ` (“${title}”)` : ""}`);
       qc.invalidateQueries({ queryKey: ["project_photos"] });
       toast({ title: "✅ Uploaded", description: `${rows.length} foto berhasil diupload` });
       setFiles(null); setTitle(""); setDescription(""); setLocation("");
