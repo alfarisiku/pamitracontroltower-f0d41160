@@ -683,15 +683,15 @@ const ProjectDetail = () => {
               {(() => {
                 const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
                 financeEntries.forEach(fe => {
-                  const key = fe.period_label || fe.period_date;
-                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
+                  const b = bucketFor(fe, financeGranularity);
+                  if (!map[b.key]) map[b.key] = { label: b.label, order: b.order, planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
                   const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
                   const isAct = fe.entry_kind === "actual";
                   const amt = Number(fe.amount) || 0;
-                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
-                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
-                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
-                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
+                  if (fe.direction === "in" && isPlan) map[b.key].planIn += amt;
+                  if (fe.direction === "in" && isAct) map[b.key].actIn += amt;
+                  if (fe.direction === "out" && isPlan) map[b.key].planOut += amt;
+                  if (fe.direction === "out" && isAct) map[b.key].actOut += amt;
                 });
                 const sorted = Object.values(map).sort((a, b) => a.order - b.order);
                 let cumPlan = 0, cumAct = 0;
