@@ -284,7 +284,7 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground">{e.category ? (FINANCE_CATEGORIES.find(c => c.value === e.category)?.label || e.category) : "—"}</td>
                     <td className={`py-1.5 px-2 text-right font-mono-data font-medium ${e.direction === "in" ? "text-success" : "text-destructive"}`}>{formatIDR(jutaToRupiah(Number(e.amount)))}</td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground truncate max-w-[240px]">{e.description || "—"}</td>
-                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); setEdit({...e, amount: jutaToRupiah(Number(e.amount))}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); const matched = findPeriodByDate(e.period_date); setEdit({...e, period_id: matched?.id ?? "", amount: jutaToRupiah(Number(e.amount))}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
                   </tr>
 
                 ))}
