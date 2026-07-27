@@ -519,19 +519,22 @@ const ProjectDetail = () => {
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
                       <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
-                      {availableCurves.length > 1 && (
-                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
-                          {availableCurves.map(ct => (
-                            <button
-                              key={ct}
-                              onClick={() => setCashflowCurve(ct)}
-                              className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                            >
-                              {ct === "baseline" ? "Baseline" : ct}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <GranularityToggle value={cashflowGranularity} onChange={setCashflowGranularity} />
+                        {availableCurves.length > 1 && (
+                          <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+                            {availableCurves.map(ct => (
+                              <button
+                                key={ct}
+                                onClick={() => setCashflowCurve(ct)}
+                                className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                              >
+                                {ct === "baseline" ? "Baseline" : ct}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti data Cashflow hingga proyek selesai.</p>
                     <div className="h-[280px] mb-3">
