@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FileBarChart, Plus, Pencil, Trash2, Check, X } from "lucide-react";
-import { supabase, formatRupiah, logActivity, DbProject } from "@/lib/supabase";
+import { supabase, formatIDR, logActivity, DbProject } from "@/lib/supabase";
 import { useAddendums } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
 
@@ -18,15 +18,25 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
 
+  // Cost impact is stored in JUTA in DB (aligned with projects.budget unit).
+  // UI accepts raw Rupiah for easier data entry; we convert on save/load.
+  const rupiahToJuta = (rp: string) => Math.round((parseInt(rp || "0", 10) || 0) / 1_000_000);
+  const jutaToRupiah = (jt: number) => String(Math.round((Number(jt) || 0) * 1_000_000));
+  const previewRp = (rp: string) => {
+    const n = parseInt(rp || "0", 10) || 0;
+    return n === 0 ? "" : formatIDR(n);
+  };
+
   const handleAddAddendum = async () => {
     if (!projectId || !addendumCode) return;
     setSaving(true);
     try {
+      const costJuta = rupiahToJuta(addendumCost);
       const { error } = await supabase.from("addendums").insert({
         project_id: projectId, addendum_code: addendumCode,
         description: addendumDesc,
         addendum_date: addendumDate || null,
-        cost_impact: parseInt(addendumCost) || 0, schedule_impact_days: parseInt(addendumDays) || 0,
+        cost_impact: costJuta, schedule_impact_days: parseInt(addendumDays) || 0,
       });
       if (error) throw error;
       await logActivity(supabase, "addendum", "create", `Addendum ${addendumCode} created`, projectId);
@@ -60,7 +70,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
           queryClient.invalidateQueries({ queryKey: ["projects"] });
         }
       }
-      await logActivity(supabase, "addendum", "approve", `Addendum approved (cost: ${formatRupiah(costImpact)}, schedule: +${scheduleDays}d)`, projectId, id);
+      await logActivity(supabase, "addendum", "approve", `Addendum approved (cost: ${formatIDR((costImpact || 0) * 1_000_000)}, schedule: +${scheduleDays}d)`, projectId, id);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Approved", description: "Addendum disetujui & proyek diupdate" });
@@ -80,7 +90,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       addendum_code: a.addendum_code || "",
       description: a.description || "",
       addendum_date: a.addendum_date || "",
-      cost_impact: String(a.cost_impact ?? 0),
+      cost_impact: jutaToRupiah(a.cost_impact ?? 0),
       schedule_impact_days: String(a.schedule_impact_days ?? 0),
     });
   };
@@ -93,7 +103,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         addendum_code: edit.addendum_code,
         description: edit.description,
         addendum_date: edit.addendum_date || null,
-        cost_impact: parseInt(edit.cost_impact) || 0,
+        cost_impact: rupiahToJuta(edit.cost_impact),
         schedule_impact_days: parseInt(edit.schedule_impact_days) || 0,
       }).eq("id", id);
       if (error) throw error;
@@ -130,7 +140,11 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
           <div><label className={labelCls}>Addendum ID</label><input value={addendumCode} onChange={e => setAddendumCode(e.target.value)} className={inputCls} placeholder="ADD-001" /></div>
           <div><label className={labelCls}>Description</label><input value={addendumDesc} onChange={e => setAddendumDesc(e.target.value)} className={inputCls} placeholder="Perubahan scope" /></div>
           <div><label className={labelCls}>Addendum Date</label><input type="date" value={addendumDate} onChange={e => setAddendumDate(e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Cost Impact (Juta)</label><input type="number" value={addendumCost} onChange={e => setAddendumCost(e.target.value)} className={inputCls} placeholder="50000" /></div>
+          <div>
+            <label className={labelCls}>Cost Impact (Rp)</label>
+            <input type="number" value={addendumCost} onChange={e => setAddendumCost(e.target.value)} className={inputCls} placeholder="50000000" />
+            {addendumCost && <p className="text-[10px] text-muted-foreground mt-0.5">≈ {previewRp(addendumCost)}</p>}
+          </div>
           <div><label className={labelCls}>Schedule Impact (Days)</label><input type="number" value={addendumDays} onChange={e => setAddendumDays(e.target.value)} className={inputCls} placeholder="30" /></div>
         </div>
         <button onClick={handleAddAddendum} disabled={saving || !addendumCode} className="mt-3 flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Addendum"}</button>
@@ -158,7 +172,10 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                         <td className="py-1.5 px-2"><input value={edit.addendum_code} onChange={e => setEdit(s => ({ ...s, addendum_code: e.target.value }))} className={inputCls} /></td>
                         <td className="py-1.5 px-2"><input type="date" value={edit.addendum_date} onChange={e => setEdit(s => ({ ...s, addendum_date: e.target.value }))} className={inputCls} /></td>
                         <td className="py-1.5 px-2"><input value={edit.description} onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} className={inputCls} /></td>
-                        <td className="py-1.5 px-2"><input type="number" value={edit.cost_impact} onChange={e => setEdit(s => ({ ...s, cost_impact: e.target.value }))} className={`${inputCls} text-right`} /></td>
+                        <td className="py-1.5 px-2">
+                          <input type="number" value={edit.cost_impact} onChange={e => setEdit(s => ({ ...s, cost_impact: e.target.value }))} className={`${inputCls} text-right`} placeholder="Rupiah utuh" />
+                          {edit.cost_impact && <p className="text-[9px] text-muted-foreground mt-0.5 text-right">≈ {previewRp(edit.cost_impact)}</p>}
+                        </td>
                         <td className="py-1.5 px-2"><input type="number" value={edit.schedule_impact_days} onChange={e => setEdit(s => ({ ...s, schedule_impact_days: e.target.value }))} className={`${inputCls} text-right`} /></td>
                         <td className="py-2 px-3">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
@@ -175,7 +192,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                         <td className="py-2 px-3 font-mono-data text-primary whitespace-nowrap">{a.addendum_code}</td>
                         <td className="py-2 px-3 whitespace-nowrap text-foreground">{a.addendum_date ? new Date(a.addendum_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
                         <td className="py-2 px-3 text-foreground">{a.description}</td>
-                        <td className="py-2 px-3 text-right font-mono-data text-accent whitespace-nowrap">{a.cost_impact > 0 ? "+" : ""}{formatRupiah(a.cost_impact)}</td>
+                        <td className="py-2 px-3 text-right font-mono-data text-accent whitespace-nowrap">{a.cost_impact > 0 ? "+" : ""}{formatIDR((a.cost_impact || 0) * 1_000_000)}</td>
                         <td className="py-2 px-3 text-right font-mono-data whitespace-nowrap">{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
                         <td className="py-2 px-3">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>

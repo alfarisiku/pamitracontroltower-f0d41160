@@ -482,8 +482,9 @@ const ProjectDetail = () => {
                   if (scurvePoints.length === 0) return null;
                   const pts = scurvePoints.filter(p => p[field] != null) as { ym: number; plan: number; actual: number }[];
                   if (pts.length === 0) return null;
-                  if (ym <= pts[0].ym) return pts[0][field];
-                  if (ym >= pts[pts.length - 1].ym) return pts[pts.length - 1][field];
+                  // No extrapolation: outside the curve's own data range, return null so the line/dot
+                  // simply doesn't render at that period (esp. for KSO/addendum curves starting mid-project).
+                  if (ym < pts[0].ym || ym > pts[pts.length - 1].ym) return null;
                   for (let i = 0; i < pts.length - 1; i++) {
                     const a = pts[i], b = pts[i + 1];
                     if (ym >= a.ym && ym <= b.ym) {
@@ -491,7 +492,7 @@ const ProjectDetail = () => {
                       return a[field] + (b[field] - a[field]) * t;
                     }
                   }
-                  return null;
+                  return pts[pts.length - 1][field];
                 };
 
                 const todayYm = (() => { const d = new Date(); return d.getFullYear() * 12 + d.getMonth(); })();
@@ -503,12 +504,12 @@ const ProjectDetail = () => {
                 const rows = periodList.map(p => {
                   const d = new Date(p.order);
                   const ym = d.getFullYear() * 12 + d.getMonth();
-                  const planPct = interpAt(ym, "plan") ?? 0;
+                  const planPct = interpAt(ym, "plan");
                   const cutoffYm = lastActualYm === -Infinity ? todayYm : lastActualYm;
                   const actPct = (ym <= cutoffYm) ? interpAt(ym, "actual") : null;
                   return {
                     label: p.label,
-                    planPct: Number(planPct),
+                    planPct: planPct == null ? null : Number(planPct),
                     actPct: actPct == null ? null : Number(actPct),
                     cashIn: p.cashIn,
                     cashOut: p.cashOut,
@@ -645,16 +646,16 @@ const ProjectDetail = () => {
                             let cum = 0;
                             let hasAnyActual = false;
                             return rows.map(r => {
-                              const dev = (r.actPct ?? 0) - r.planPct;
+                              const dev = r.planPct != null && r.actPct != null ? r.actPct - r.planPct : null;
                               const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
                               if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
                               const showNet = hasAnyActual && r.actPct != null;
                               return (
                               <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                                 <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct.toFixed(1)}%</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct == null ? "—" : `${r.planPct.toFixed(1)}%`}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
-                                <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{dev == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{formatRupiah(r.cashIn)}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
@@ -739,11 +740,12 @@ const ProjectDetail = () => {
                       <GranularityToggle value={financeGranularity} onChange={setFinanceGranularity} />
                     </div>
                     <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-primary">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-primary">{breakevenLabel}</span></>}.</p>
-                    <div className="h-[340px]">
+                    <div className="h-[340px] overflow-x-auto">
+                      <div style={{ minWidth: financeGranularity === "weekly" ? Math.max(700, bipolar.length * 42) : "100%", height: "100%" }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} interval={0} angle={financeGranularity === "weekly" ? -35 : 0} textAnchor={financeGranularity === "weekly" ? "end" : "middle"} height={financeGranularity === "weekly" ? 60 : 30} />
                           <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
                           <RTooltip
                             contentStyle={chartTooltip}
@@ -784,15 +786,16 @@ const ProjectDetail = () => {
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
                           {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--primary))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--primary))", fontSize: 10, position: "top" }} />}
-                          <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} minPointSize={2} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} minPointSize={2} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} minPointSize={2} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} minPointSize={2} />
                           <Line type="monotone" dataKey="Cum. Plan Net" name="Kumulatif Plan (Net)" stroke="hsl(var(--info))" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 2.5, fill: "hsl(var(--info))" }} connectNulls />
                           <Line type="monotone" dataKey="Cum. Actual Net" name="Kumulatif Actual (Net)" stroke="hsl(var(--success))" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--success))" }} connectNulls />
 
                         </ComposedChart>
                       </ResponsiveContainer>
+                      </div>
                     </div>
 
                     {/* === Detailed Cashflow Table === */}
@@ -1012,23 +1015,27 @@ const ProjectDetail = () => {
                 {(() => {
                   let chartRows: any[] = scurveData;
                   if (scurveGranularity === "monthly" && scurveData.length > 0) {
-                    // For each curve_type + calendar-month bucket keep the LAST row (highest cumulative %)
+                    // Bucket by calendar month; keep the LAST row per (curve_type + month) so cumulative %
+                    // is highest of the month. Assign a SHARED period_order across curves so KSO/addendum
+                    // curves stay anchored to the actual calendar month (no back-drag to project start).
                     const groups: Record<string, any> = {};
+                    const monthKeys = new Set<string>();
                     for (const s of scurveData) {
                       const dstr = (s as any).period_end || (s as any).period_date;
                       if (!dstr) continue;
                       const d = new Date(dstr);
                       const bkt = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+                      monthKeys.add(bkt);
                       const key = `${s.curve_type}|${bkt}`;
                       const existing = groups[key];
-                      if (!existing || s.period_order > existing.period_order) groups[key] = { ...s, _monthLabel: d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" }) };
+                      if (!existing || s.period_order > existing.period_order) groups[key] = { ...s, _bkt: bkt, _monthLabel: d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" }) };
                     }
-                    const arr = Object.values(groups).sort((a: any, b: any) => (a.curve_type as string).localeCompare(b.curve_type) || a.period_order - b.period_order);
-                    const seq: Record<string, number> = {};
-                    chartRows = arr.map((s: any) => {
-                      seq[s.curve_type] = (seq[s.curve_type] ?? -1) + 1;
-                      return { ...s, period_order: seq[s.curve_type], period_label: s._monthLabel };
-                    });
+                    const orderedMonths = Array.from(monthKeys).sort();
+                    const monthOrder: Record<string, number> = {};
+                    orderedMonths.forEach((m, i) => { monthOrder[m] = i; });
+                    chartRows = Object.values(groups)
+                      .sort((a: any, b: any) => (a.curve_type as string).localeCompare(b.curve_type) || monthOrder[a._bkt] - monthOrder[b._bkt])
+                      .map((s: any) => ({ ...s, period_order: monthOrder[s._bkt], period_label: s._monthLabel }));
                   }
                   return (
                     <SCurveChart
@@ -1734,7 +1741,7 @@ const ProjectDetail = () => {
                           <td className="py-2 px-3 font-mono-data text-primary whitespace-nowrap">{a.addendum_code}</td>
                           <td className="py-2 px-3 whitespace-nowrap text-foreground">{a.addendum_date ? new Date(a.addendum_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
                           <td className="py-2 px-3 text-foreground">{a.description}</td>
-                          <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.cost_impact > 0 ? "text-accent" : a.cost_impact < 0 ? "text-success" : "text-muted-foreground"}`}>{a.cost_impact > 0 ? "+" : ""}{formatRupiah(a.cost_impact)}</td>
+                          <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.cost_impact > 0 ? "text-accent" : a.cost_impact < 0 ? "text-success" : "text-muted-foreground"}`}>{a.cost_impact > 0 ? "+" : ""}{formatIDR((a.cost_impact || 0) * 1_000_000)}</td>
                           <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.schedule_impact_days > 0 ? "text-warning" : a.schedule_impact_days < 0 ? "text-success" : "text-muted-foreground"}`}>{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
                           <td className="py-2 px-3">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
