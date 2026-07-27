@@ -38,7 +38,7 @@ const DATE_PAIRS: { key: string; label: string; planField: string; actualField: 
   { key: "onsite",   label: "Onsite",   planField: "onsite_plan_date",   actualField: "onsite_actual_date" },
 ];
 
-export function ProcurementPanel({ projectId }: { projectId: string }) {
+export function ProcurementPanel({ projectId, onLogged }: { projectId: string; onLogged?: (msg: string) => void }) {
   const { data: items = [], isLoading } = useProcurementItems(projectId);
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
