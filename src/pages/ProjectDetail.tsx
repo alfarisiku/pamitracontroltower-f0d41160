@@ -504,12 +504,12 @@ const ProjectDetail = () => {
                 const rows = periodList.map(p => {
                   const d = new Date(p.order);
                   const ym = d.getFullYear() * 12 + d.getMonth();
-                  const planPct = interpAt(ym, "plan") ?? 0;
+                  const planPct = interpAt(ym, "plan");
                   const cutoffYm = lastActualYm === -Infinity ? todayYm : lastActualYm;
                   const actPct = (ym <= cutoffYm) ? interpAt(ym, "actual") : null;
                   return {
                     label: p.label,
-                    planPct: Number(planPct),
+                    planPct: planPct == null ? null : Number(planPct),
                     actPct: actPct == null ? null : Number(actPct),
                     cashIn: p.cashIn,
                     cashOut: p.cashOut,
