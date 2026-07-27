@@ -24,7 +24,8 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
     try {
       const { error } = await supabase.from("addendums").insert({
         project_id: projectId, addendum_code: addendumCode,
-        description: addendumDesc, scope_change: addendumScope,
+        description: addendumDesc,
+        addendum_date: addendumDate || null,
         cost_impact: parseInt(addendumCost) || 0, schedule_impact_days: parseInt(addendumDays) || 0,
       });
       if (error) throw error;
@@ -32,7 +33,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Addendum ditambahkan" });
-      setAddendumCode(""); setAddendumDesc(""); setAddendumScope(""); setAddendumCost(""); setAddendumDays("");
+      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays("");
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
