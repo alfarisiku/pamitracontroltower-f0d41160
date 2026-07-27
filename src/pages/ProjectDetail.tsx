@@ -107,6 +107,7 @@ const ProjectDetail = () => {
   const { data: purchaseOrders = [] } = usePurchaseOrders(id);
   const { data: cashflowData = [] } = useProjectCashflow(id);
   const { data: financeEntries = [] } = useFinanceEntries(id);
+  const { data: addendums = [] } = useAddendums(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
