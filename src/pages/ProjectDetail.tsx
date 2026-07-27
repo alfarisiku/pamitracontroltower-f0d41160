@@ -699,7 +699,7 @@ const ProjectDetail = () => {
                     <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Cashflow — Plan vs Actual
                     </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-primary">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-primary">{breakevenLabel}</span></>}.</p>
                     <div className="h-[340px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
