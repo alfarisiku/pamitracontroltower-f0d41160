@@ -540,7 +540,7 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground pt-1 border-t border-border/50 mt-0.5">Actual Cash In</span>
                                     <span className="font-mono-data text-primary font-semibold text-right pt-1 border-t border-border/50 mt-0.5">{formatRupiah(cashIn)}</span>
                                     <span className="text-muted-foreground">Actual Cash Out</span>
-                                    <span className="font-mono-data text-foreground font-semibold text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="font-mono-data text-accent font-semibold text-right">{formatRupiah(cashOut)}</span>
                                   </div>
                                 </div>
                               );
