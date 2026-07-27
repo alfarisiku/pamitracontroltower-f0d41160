@@ -1013,23 +1013,27 @@ const ProjectDetail = () => {
                 {(() => {
                   let chartRows: any[] = scurveData;
                   if (scurveGranularity === "monthly" && scurveData.length > 0) {
-                    // For each curve_type + calendar-month bucket keep the LAST row (highest cumulative %)
+                    // Bucket by calendar month; keep the LAST row per (curve_type + month) so cumulative %
+                    // is highest of the month. Assign a SHARED period_order across curves so KSO/addendum
+                    // curves stay anchored to the actual calendar month (no back-drag to project start).
                     const groups: Record<string, any> = {};
+                    const monthKeys = new Set<string>();
                     for (const s of scurveData) {
                       const dstr = (s as any).period_end || (s as any).period_date;
                       if (!dstr) continue;
                       const d = new Date(dstr);
                       const bkt = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+                      monthKeys.add(bkt);
                       const key = `${s.curve_type}|${bkt}`;
                       const existing = groups[key];
-                      if (!existing || s.period_order > existing.period_order) groups[key] = { ...s, _monthLabel: d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" }) };
+                      if (!existing || s.period_order > existing.period_order) groups[key] = { ...s, _bkt: bkt, _monthLabel: d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" }) };
                     }
-                    const arr = Object.values(groups).sort((a: any, b: any) => (a.curve_type as string).localeCompare(b.curve_type) || a.period_order - b.period_order);
-                    const seq: Record<string, number> = {};
-                    chartRows = arr.map((s: any) => {
-                      seq[s.curve_type] = (seq[s.curve_type] ?? -1) + 1;
-                      return { ...s, period_order: seq[s.curve_type], period_label: s._monthLabel };
-                    });
+                    const orderedMonths = Array.from(monthKeys).sort();
+                    const monthOrder: Record<string, number> = {};
+                    orderedMonths.forEach((m, i) => { monthOrder[m] = i; });
+                    chartRows = Object.values(groups)
+                      .sort((a: any, b: any) => (a.curve_type as string).localeCompare(b.curve_type) || monthOrder[a._bkt] - monthOrder[b._bkt])
+                      .map((s: any) => ({ ...s, period_order: monthOrder[s._bkt], period_label: s._monthLabel }));
                   }
                   return (
                     <SCurveChart
