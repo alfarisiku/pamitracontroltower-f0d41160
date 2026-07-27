@@ -431,10 +431,11 @@ const ProjectDetail = () => {
 
               {/* === Progress vs Cashflow per Periode (moved from Finance) === */}
               {(() => {
-                const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number }> = {};
+                type Period = { key: string; label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number };
+                const periodMap: Record<string, Period> = {};
                 financeEntries.forEach(fe => {
                   const b = bucketFor(fe, cashflowGranularity);
-                  if (!periodMap[b.key]) periodMap[b.key] = { label: b.label, order: b.order, cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
+                  if (!periodMap[b.key]) periodMap[b.key] = { key: b.key, label: b.label, order: b.order, cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
                   const amt = Number(fe.amount) || 0;
                   const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
                   if (fe.entry_kind === "actual") {
@@ -445,68 +446,83 @@ const ProjectDetail = () => {
                     else periodMap[b.key].planOut += amt;
                   }
                 });
-                const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
-                if (periodList.length === 0) return null;
 
-                const parseScurveYm = (label: string): number | null => {
-                  const m = label.match(/M(\d{1,2})\/(\d{2,4})/i);
-                  if (!m) return null;
-                  const mo = parseInt(m[1], 10);
-                  let yr = parseInt(m[2], 10);
-                  if (yr < 100) yr += 2000;
-                  return yr * 12 + (mo - 1);
-                };
-                const ymFromRow = (s: any): number | null => {
-                  if (s.period_end) {
-                    const d = new Date(s.period_end);
-                    if (!isNaN(d.getTime())) return d.getUTCFullYear() * 12 + d.getUTCMonth();
-                  }
-                  return parseScurveYm(s.period_label);
-                };
                 const availableCurves = Array.from(new Set(scurveData.map(s => s.curve_type)));
                 if (!availableCurves.includes("baseline")) availableCurves.unshift("baseline");
                 const activeCurve = availableCurves.includes(cashflowCurve) ? cashflowCurve : "baseline";
-                const scurvePoints: { ym: number; plan: number | null; actual: number | null }[] = [];
-                const byYm: Record<number, { plan: number | null; actual: number | null }> = {};
-                scurveData.filter(s => s.curve_type === activeCurve).forEach(s => {
-                  const ym = ymFromRow(s);
-                  if (ym == null) return;
-                  if (!byYm[ym]) byYm[ym] = { plan: null, actual: null };
-                  if (s.planned_progress != null) byYm[ym].plan = Number(s.planned_progress);
-                  if (s.actual_progress != null) byYm[ym].actual = Number(s.actual_progress);
+                const activeRows = scurveData.filter(s => s.curve_type === activeCurve);
+
+                // Add S-Curve periods so we show plan/actual even where no cashflow entry exists.
+                activeRows.forEach(s => {
+                  const anchor = s.period_end || s.period_start;
+                  if (!anchor) return;
+                  const d = new Date(anchor);
+                  if (isNaN(d.getTime())) return;
+                  let key: string, label: string, order: number;
+                  if (cashflowGranularity === "weekly") {
+                    key = s.period_label || anchor;
+                    label = s.period_label || anchor;
+                    order = d.getTime();
+                  } else {
+                    const y = d.getUTCFullYear(); const m = d.getUTCMonth();
+                    key = `${y}-${String(m + 1).padStart(2, "0")}`;
+                    label = d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
+                    order = Date.UTC(y, m, 1);
+                  }
+                  if (!periodMap[key]) periodMap[key] = { key, label, order, cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
                 });
-                Object.keys(byYm).map(k => parseInt(k, 10)).sort((a, b) => a - b).forEach(ym => scurvePoints.push({ ym, ...byYm[ym] }));
 
+                const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
+                if (periodList.length === 0) return null;
 
-                const interpAt = (ym: number, field: "plan" | "actual"): number | null => {
-                  if (scurvePoints.length === 0) return null;
-                  const pts = scurvePoints.filter(p => p[field] != null) as { ym: number; plan: number; actual: number }[];
+                // Build a date-anchored point set (ms) directly from active curve rows.
+                const points = activeRows
+                  .map(s => {
+                    const anchor = s.period_end || s.period_start;
+                    if (!anchor) return null;
+                    const t = new Date(anchor).getTime();
+                    if (isNaN(t)) return null;
+                    return {
+                      t,
+                      start: s.period_start ? new Date(s.period_start).getTime() : t,
+                      end: s.period_end ? new Date(s.period_end).getTime() : t,
+                      plan: s.planned_progress != null ? Number(s.planned_progress) : null,
+                      actual: s.actual_progress != null ? Number(s.actual_progress) : null,
+                    };
+                  })
+                  .filter(Boolean) as { t: number; start: number; end: number; plan: number | null; actual: number | null }[];
+                points.sort((a, b) => a.t - b.t);
+
+                const valueAt = (periodMs: number, field: "plan" | "actual"): number | null => {
+                  if (points.length === 0) return null;
+                  // 1) Exact window: any scurve row whose [start,end] contains the period date
+                  const hit = points.find(p => p[field] != null && periodMs >= p.start && periodMs <= p.end);
+                  if (hit) return hit[field]!;
+                  // 2) Interpolate between neighbours; no extrapolation outside the curve's data range
+                  const pts = points.filter(p => p[field] != null) as { t: number; plan: number; actual: number }[];
                   if (pts.length === 0) return null;
-                  // No extrapolation: outside the curve's own data range, return null so the line/dot
-                  // simply doesn't render at that period (esp. for KSO/addendum curves starting mid-project).
-                  if (ym < pts[0].ym || ym > pts[pts.length - 1].ym) return null;
+                  if (periodMs < pts[0].t || periodMs > pts[pts.length - 1].t) return null;
                   for (let i = 0; i < pts.length - 1; i++) {
                     const a = pts[i], b = pts[i + 1];
-                    if (ym >= a.ym && ym <= b.ym) {
-                      const t = (ym - a.ym) / (b.ym - a.ym);
-                      return a[field] + (b[field] - a[field]) * t;
+                    if (periodMs >= a.t && periodMs <= b.t) {
+                      const r = (periodMs - a.t) / Math.max(1, b.t - a.t);
+                      return a[field] + (b[field] - a[field]) * r;
                     }
                   }
                   return pts[pts.length - 1][field];
                 };
 
-                const todayYm = (() => { const d = new Date(); return d.getFullYear() * 12 + d.getMonth(); })();
-                const lastActualYm = (() => {
-                  const withAct = scurvePoints.filter(p => p.actual != null);
-                  return withAct.length ? withAct[withAct.length - 1].ym : -Infinity;
+                const todayMs = Date.now();
+                const lastActualMs = (() => {
+                  const withAct = points.filter(p => p.actual != null);
+                  return withAct.length ? withAct[withAct.length - 1].t : -Infinity;
                 })();
 
                 const rows = periodList.map(p => {
-                  const d = new Date(p.order);
-                  const ym = d.getFullYear() * 12 + d.getMonth();
-                  const planPct = interpAt(ym, "plan");
-                  const cutoffYm = lastActualYm === -Infinity ? todayYm : lastActualYm;
-                  const actPct = (ym <= cutoffYm) ? interpAt(ym, "actual") : null;
+                  const periodMs = p.order;
+                  const planPct = valueAt(periodMs, "plan");
+                  const cutoffMs = lastActualMs === -Infinity ? todayMs : lastActualMs;
+                  const actPct = periodMs <= cutoffMs ? valueAt(periodMs, "actual") : null;
                   return {
                     label: p.label,
                     planPct: planPct == null ? null : Number(planPct),
