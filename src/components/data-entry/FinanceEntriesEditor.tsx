@@ -33,7 +33,7 @@ function periodOptionLabel(p: ProjectPeriod) {
   return `${p.period_label} — ${fmtDMY(p.period_start)} → ${fmtDMY(p.period_end)}`;
 }
 
-export function FinanceEntriesEditor({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
+export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodId, onLogged }: { projectId: string; compact?: boolean; lockedPeriodId?: string; onLogged?: (msg: string) => void }) {
   const { data: entries = [], isLoading } = useFinanceEntries(projectId);
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const qc = useQueryClient();
@@ -51,8 +51,9 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
   const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
+    if (lockedPeriodId) { setForm(f => ({ ...f, period_id: lockedPeriodId })); return; }
     if (!form.period_id && nextUnfilled) setForm(f => ({ ...f, period_id: nextUnfilled.id }));
-  }, [nextUnfilled, form.period_id]);
+  }, [nextUnfilled, form.period_id, lockedPeriodId]);
 
   const periodById = useMemo(() => {
     const m = new Map<string, ProjectPeriod>();
