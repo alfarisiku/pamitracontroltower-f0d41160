@@ -218,6 +218,7 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
         )}
 
         {/* Filters — reorganized: labeled grid */}
+        {!compact && (
         <div className="bg-muted/20 border border-border/50 rounded-lg p-3 mb-3">
           <div className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground font-semibold mb-2"><Filter className="h-3 w-3" /> Filter & Search</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -241,9 +242,9 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
             </div>
           </div>
         </div>
+        )}
 
-
-        {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : filtered.length === 0 ? (
+        {!compact && (isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">Belum ada transaksi yang cocok.</p>
         ) : (
           <div className="overflow-auto max-h-[520px] border border-border rounded-md">
