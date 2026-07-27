@@ -90,12 +90,20 @@ export function WeeklyReportEditor({ projectId, compact = false, lockedPeriodId,
       {newOpen && (
         <div className="mb-3 p-3 bg-muted/30 rounded border border-border/50 space-y-3">
           <div>
-            <label className={labelCls}>Periode Weekly (dari S-Curve) *</label>
-            <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
-            {selectedPeriod && (
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")}
-              </p>
+            <label className={labelCls}>Periode Weekly {lockedPeriod ? "(terkunci dari Step 1)" : "(dari S-Curve)"} *</label>
+            {lockedPeriod ? (
+              <div className="px-2 py-1.5 text-xs bg-muted/40 border border-border rounded text-foreground">
+                {lockedPeriod.period_label} · {new Date(lockedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(lockedPeriod.period_end).toLocaleDateString("id-ID")}
+              </div>
+            ) : (
+              <>
+                <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
+                {selectedPeriod && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")}
+                  </p>
+                )}
+              </>
             )}
           </div>
 
