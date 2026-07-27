@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries, useAddendums } from "@/hooks/useProjects";
 import { supabase, formatRupiah, formatIDR, FINANCE_CATEGORIES, resolveImageUrl } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
