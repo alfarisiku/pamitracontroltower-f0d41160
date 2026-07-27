@@ -619,11 +619,11 @@ const ProjectDetail = () => {
                                 <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct.toFixed(1)}%</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-success/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-success font-semibold">{formatRupiah(r.cashIn)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-accent/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{formatRupiah(r.cashOut)}</td>
-                                <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : cum >= 0 ? "text-success" : "text-destructive"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{formatRupiah(r.cashIn)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{formatRupiah(r.cashOut)}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : "text-foreground"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
                               </tr>
                               );
                             });
