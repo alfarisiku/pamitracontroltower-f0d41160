@@ -706,14 +706,45 @@ const ProjectDetail = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
                           <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
                           <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
-                          <RTooltip contentStyle={chartTooltip} formatter={(v: any, name: string) => {
-                            if (v == null) return ["—", name];
-                            const raw = Number(v);
-                            return [`${raw < 0 ? "-" : ""}${formatRupiah(Math.abs(raw))}`, name];
-                          }} />
+                          <RTooltip
+                            contentStyle={chartTooltip}
+                            content={({ active, payload, label }: any) => {
+                              if (!active || !payload || payload.length === 0) return null;
+                              const row = payload[0]?.payload || {};
+                              const planIn = Number(row.planIn) || 0;
+                              const planOut = Number(row.planOut) || 0;
+                              const actIn = Number(row.actIn) || 0;
+                              const actOut = Number(row.actOut) || 0;
+                              const cumPlan = row._cumPlan;
+                              const cumAct = row._cumAct;
+                              const hasAct = actIn !== 0 || actOut !== 0;
+                              return (
+                                <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
+                                  <p className="text-foreground font-bold mb-1.5">{label}</p>
+                                  <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Planning</span><span />
+                                    <span className="text-muted-foreground">Cash In</span>
+                                    <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
+                                    <span className="text-muted-foreground">Cash Out</span>
+                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                    <span className="text-muted-foreground">Kumulatif Net</span>
+                                    <span className="font-mono-data text-foreground font-semibold text-right">{cumPlan == null ? "—" : formatRupiah(cumPlan)}</span>
+                                    <span className="col-span-2 border-t border-border/60 my-1" />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Actual</span><span />
+                                    <span className="text-muted-foreground">Cash In</span>
+                                    <span className="font-mono-data text-primary font-semibold text-right">{hasAct ? formatRupiah(actIn) : "—"}</span>
+                                    <span className="text-muted-foreground">Cash Out</span>
+                                    <span className="font-mono-data text-foreground font-semibold text-right">{hasAct ? formatRupiah(actOut) : "—"}</span>
+                                    <span className="text-muted-foreground">Kumulatif Net</span>
+                                    <span className="font-mono-data text-foreground font-bold text-right">{cumAct == null ? "—" : formatRupiah(cumAct)}</span>
+                                  </div>
+                                </div>
+                              );
+                            }}
+                          />
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
-                          {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--success))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--success))", fontSize: 10, position: "top" }} />}
+                          {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--primary))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--primary))", fontSize: 10, position: "top" }} />}
                           <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.3)" radius={[3,3,0,0]} />
                           <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} />
                           <Bar dataKey="Plan Cash Out" fill="hsl(var(--muted-foreground) / 0.3)" radius={[0,0,3,3]} />
