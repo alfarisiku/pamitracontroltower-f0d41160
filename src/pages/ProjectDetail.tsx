@@ -315,6 +315,7 @@ const ProjectDetail = () => {
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
+              { key: "addendum" as const, label: `Addendum (${addendums.length})`, icon: FileText, publicOk: true },
             ]).filter(t => !isClient || t.publicOk)).map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${
