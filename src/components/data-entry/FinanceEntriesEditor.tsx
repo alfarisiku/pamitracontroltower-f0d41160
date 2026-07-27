@@ -275,7 +275,10 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                   </tr>
                 ) : (
                   <tr key={e.id} className="border-b border-border/30 hover:bg-muted/20">
-                    <td className="py-1.5 px-2 font-medium text-foreground">{new Date(e.period_date).toLocaleDateString('id-ID')}</td>
+                    <td className="py-1.5 px-2">
+                      <div className="font-medium text-foreground">{e.period_label}</div>
+                      <div className="text-[9px] text-muted-foreground">{fmtDMY(e.period_date)}</div>
+                    </td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.direction === "in" ? "bg-success/15 text-success border-success/30" : "bg-destructive/15 text-destructive border-destructive/30"}`}>{e.direction === "in" ? "IN" : "OUT"}</span></td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.entry_kind === "rap" ? "bg-warning/15 text-warning border-warning/30" : "bg-primary/15 text-primary border-primary/30"}`}>{e.entry_kind === "rap" ? "PLAN" : "ACTUAL"}</span></td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground">{e.category ? (FINANCE_CATEGORIES.find(c => c.value === e.category)?.label || e.category) : "—"}</td>
