@@ -482,8 +482,9 @@ const ProjectDetail = () => {
                   if (scurvePoints.length === 0) return null;
                   const pts = scurvePoints.filter(p => p[field] != null) as { ym: number; plan: number; actual: number }[];
                   if (pts.length === 0) return null;
-                  if (ym <= pts[0].ym) return pts[0][field];
-                  if (ym >= pts[pts.length - 1].ym) return pts[pts.length - 1][field];
+                  // No extrapolation: outside the curve's own data range, return null so the line/dot
+                  // simply doesn't render at that period (esp. for KSO/addendum curves starting mid-project).
+                  if (ym < pts[0].ym || ym > pts[pts.length - 1].ym) return null;
                   for (let i = 0; i < pts.length - 1; i++) {
                     const a = pts[i], b = pts[i + 1];
                     if (ym >= a.ym && ym <= b.ym) {
@@ -491,7 +492,7 @@ const ProjectDetail = () => {
                       return a[field] + (b[field] - a[field]) * t;
                     }
                   }
-                  return null;
+                  return pts[pts.length - 1][field];
                 };
 
                 const todayYm = (() => { const d = new Date(); return d.getFullYear() * 12 + d.getMonth(); })();
