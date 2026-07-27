@@ -260,7 +260,12 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
               <tbody>
                 {filtered.map(e => editingId === e.id ? (
                   <tr key={e.id} className="border-b border-border/30 bg-muted/20">
-                    <td className="py-1 px-1"><input type="date" value={edit.period_date} onChange={ev => setEdit({...edit, period_date: ev.target.value})} className={inputCls} /></td>
+                    <td className="py-1 px-1">
+                      <select value={edit.period_id || ""} onChange={ev => setEdit({...edit, period_id: ev.target.value})} className={inputCls}>
+                        {!edit.period_id && <option value="">— pilih —</option>}
+                        {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
+                      </select>
+                    </td>
                     <td className="py-1 px-1"><select value={edit.direction} onChange={ev => setEdit({...edit, direction: ev.target.value})} className={inputCls}><option value="in">In</option><option value="out">Out</option></select></td>
                     <td className="py-1 px-1"><select value={edit.entry_kind} onChange={ev => setEdit({...edit, entry_kind: ev.target.value})} className={inputCls}><option value="rap">Plan</option><option value="actual">Actual</option></select></td>
                     <td className="py-1 px-1">{edit.direction === "out" ? (<select value={edit.category || ""} onChange={ev => setEdit({...edit, category: ev.target.value})} className={inputCls}>{FINANCE_CATEGORIES.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select>) : "—"}</td>
