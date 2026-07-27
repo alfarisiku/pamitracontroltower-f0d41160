@@ -586,14 +586,18 @@ const ProjectDetail = () => {
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
                             <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress % <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-success border-l border-border">Cash In</th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-accent border-l border-border">Cash Out</th>
-                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">Net Kumulatif (Actual)</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
+                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">
+                              <span className="inline-flex items-center gap-0.5">Net Kumulatif (Actual)<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
+                            </th>
                           </tr>
                           <tr className="bg-muted/70 border-b border-border">
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Deviasi</th>
+                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <span className="inline-flex items-center gap-0.5">Deviasi<FormulaTooltip {...FORMULAS.deviation} /></span>
+                            </th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
