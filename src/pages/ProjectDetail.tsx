@@ -1351,25 +1351,34 @@ const ProjectDetail = () => {
               ) : (
                 <>
                   <div className="glass-card rounded-lg p-3 shadow-card">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase">Total Items</p>
-                        <p className="text-lg font-bold font-mono-data text-primary">{procurementItems.length}</p>
-                      </div>
-                      <div className="bg-success/5 rounded-lg p-3 border border-success/20 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase">Installed</p>
-                        <p className="text-lg font-bold font-mono-data text-success">{procurementItems.filter(i => ['installed','onsite'].includes(i.status)).length}</p>
-                      </div>
-                      <div className="bg-warning/5 rounded-lg p-3 border border-warning/20 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase">In Progress</p>
-                        <p className="text-lg font-bold font-mono-data text-warning">{procurementItems.filter(i => !['installed','onsite','planned','ded'].includes(i.status)).length}</p>
-                      </div>
-                      <div className="bg-accent/5 rounded-lg p-3 border border-border text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase">Total Cost</p>
-                        <p className="text-lg font-bold font-mono-data text-foreground">{formatIDR(procurementItems.reduce((s, i) => s + i.amount, 0))}</p>
-                      </div>
-                    </div>
+                    {(() => {
+                      const countBy = (keys: string[]) => procurementItems.filter(i => keys.includes(i.status)).length;
+                      const cards = [
+                        { label: "Total",     value: procurementItems.length,                     tone: "text-primary",     bg: "bg-primary/5 border-primary/20" },
+                        { label: "DED",       value: countBy(["ded","planned","bq"]),             tone: "text-slate-700",   bg: "bg-slate-100/60 border-slate-200" },
+                        { label: "PR",        value: countBy(["pr","rfq-sent"]),                  tone: "text-sky-700",     bg: "bg-sky-50 border-sky-200" },
+                        { label: "PO",        value: countBy(["po","po-issued","rfq","approval","fabrication"]), tone: "text-indigo-700", bg: "bg-indigo-50 border-indigo-200" },
+                        { label: "Delivery",  value: countBy(["delivery"]),                       tone: "text-orange-700",  bg: "bg-orange-50 border-orange-200" },
+                        { label: "On Site",   value: countBy(["onsite","installed"]),             tone: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+                      ];
+                      const totalCost = procurementItems.reduce((s, i) => s + i.amount, 0);
+                      return (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                          {cards.map(c => (
+                            <div key={c.label} className={`rounded-lg p-3 border text-center ${c.bg}`}>
+                              <p className="text-[9px] text-muted-foreground uppercase">{c.label}</p>
+                              <p className={`text-lg font-bold font-mono-data ${c.tone}`}>{c.value}</p>
+                            </div>
+                          ))}
+                          <div className="rounded-lg p-3 border border-border bg-muted/40 text-center col-span-2 sm:col-span-4 lg:col-span-1">
+                            <p className="text-[9px] text-muted-foreground uppercase">Total Cost</p>
+                            <p className="text-lg font-bold font-mono-data text-foreground">{formatIDR(totalCost)}</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
+
                   <div className="glass-card rounded-lg shadow-card overflow-hidden">
                     <div className="overflow-auto max-h-[520px]">
                       <table className="w-full text-xs">
