@@ -551,10 +551,10 @@ const ProjectDetail = () => {
                           {(() => {
                             // Cash bars ALWAYS use the same fiscal palette so switching curve never changes bar meaning.
                             const cash = {
-                              planIn:  "hsl(var(--primary) / 0.3)",
+                              planIn:  "hsl(var(--primary) / 0.35)",
                               actIn:   "hsl(var(--primary))",
-                              planOut: "hsl(var(--muted-foreground) / 0.3)",
-                              actOut:  "hsl(var(--muted-foreground))",
+                              planOut: "hsl(var(--accent) / 0.35)",
+                              actOut:  "hsl(var(--accent))",
                             };
                             // Curve-typed color for the progress line (plan & actual share the same HUE).
                             const extrasList = availableCurves.filter(c => c !== "baseline");
