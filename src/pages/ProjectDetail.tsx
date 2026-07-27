@@ -1739,7 +1739,7 @@ const ProjectDetail = () => {
                           <td className="py-2 px-3">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
                           </td>
-                          <td className="py-2 px-3 whitespace-nowrap text-muted-foreground">{a.approved_at ? new Date(a.approved_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                          
                         </tr>
                       ))}
                     </tbody>
