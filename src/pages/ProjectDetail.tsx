@@ -865,8 +865,12 @@ const ProjectDetail = () => {
                             <th className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground">Kategori</th>
                             <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">RAP</th>
                             <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">Variance</th>
-                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">%</th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">
+                              <span className="inline-flex items-center gap-0.5 justify-end w-full">Variance<FormulaTooltip {...FORMULAS.costVariance} /></span>
+                            </th>
+                            <th className="text-right py-2 px-2 text-[9px] uppercase text-muted-foreground">
+                              <span className="inline-flex items-center gap-0.5 justify-end w-full">%<FormulaTooltip {...FORMULAS.costUtilization} /></span>
+                            </th>
                           </tr></thead>
                           <tbody>
                             {rows.map(r => (
