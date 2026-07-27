@@ -142,28 +142,58 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
             <table className="w-full text-xs">
               <thead><tr className="bg-muted/50 border-b border-border">
                 <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">ID</th>
+                <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Date</th>
                 <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Description</th>
                 <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Cost Impact</th>
                 <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Schedule</th>
                 <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
                 <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Action</th>
               </tr></thead>
-              <tbody>{addendums.map(a => (
-                <tr key={a.id} className="border-b border-border/30">
-                  <td className="py-2 px-3 font-mono-data text-primary">{a.addendum_code}</td>
-                  <td className="py-2 px-3 text-foreground">{a.description}</td>
-                  <td className="py-2 px-3 text-right font-mono-data text-accent">{a.cost_impact > 0 ? "+" : ""}{formatRupiah(a.cost_impact)}</td>
-                  <td className="py-2 px-3 text-right font-mono-data">{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
-                  <td className="py-2 px-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
-                  </td>
-                  <td className="py-2 px-3">
-                    {a.approval_status === "pending" && (
-                      <button onClick={() => handleApproveAddendum(a.id, a.cost_impact, a.schedule_impact_days)} disabled={saving} className="text-[10px] px-2 py-1 bg-success text-success-foreground rounded hover:bg-success/90 disabled:opacity-50">Approve</button>
+              <tbody>{addendums.map(a => {
+                const isEditing = editingId === a.id;
+                return (
+                  <tr key={a.id} className="border-b border-border/30">
+                    {isEditing ? (
+                      <>
+                        <td className="py-1.5 px-2"><input value={edit.addendum_code} onChange={e => setEdit(s => ({ ...s, addendum_code: e.target.value }))} className={inputCls} /></td>
+                        <td className="py-1.5 px-2"><input type="date" value={edit.addendum_date} onChange={e => setEdit(s => ({ ...s, addendum_date: e.target.value }))} className={inputCls} /></td>
+                        <td className="py-1.5 px-2"><input value={edit.description} onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} className={inputCls} /></td>
+                        <td className="py-1.5 px-2"><input type="number" value={edit.cost_impact} onChange={e => setEdit(s => ({ ...s, cost_impact: e.target.value }))} className={`${inputCls} text-right`} /></td>
+                        <td className="py-1.5 px-2"><input type="number" value={edit.schedule_impact_days} onChange={e => setEdit(s => ({ ...s, schedule_impact_days: e.target.value }))} className={`${inputCls} text-right`} /></td>
+                        <td className="py-2 px-3">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleSaveEdit(a.id)} disabled={saving} className="text-[10px] p-1 bg-success text-success-foreground rounded hover:bg-success/90 disabled:opacity-50" title="Simpan"><Check className="h-3 w-3" /></button>
+                            <button onClick={cancelEdit} disabled={saving} className="text-[10px] p-1 bg-muted text-foreground rounded hover:bg-muted/80 border border-border" title="Batal"><X className="h-3 w-3" /></button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 font-mono-data text-primary whitespace-nowrap">{a.addendum_code}</td>
+                        <td className="py-2 px-3 whitespace-nowrap text-foreground">{a.addendum_date ? new Date(a.addendum_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                        <td className="py-2 px-3 text-foreground">{a.description}</td>
+                        <td className="py-2 px-3 text-right font-mono-data text-accent whitespace-nowrap">{a.cost_impact > 0 ? "+" : ""}{formatRupiah(a.cost_impact)}</td>
+                        <td className="py-2 px-3 text-right font-mono-data whitespace-nowrap">{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
+                        <td className="py-2 px-3">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {a.approval_status === "pending" && (
+                              <button onClick={() => handleApproveAddendum(a.id, a.cost_impact, a.schedule_impact_days)} disabled={saving} className="text-[10px] px-2 py-1 bg-success text-success-foreground rounded hover:bg-success/90 disabled:opacity-50">Approve</button>
+                            )}
+                            <button onClick={() => startEdit(a)} disabled={saving} className="text-[10px] p-1 bg-primary/10 text-primary rounded hover:bg-primary/20 border border-primary/30" title="Edit"><Pencil className="h-3 w-3" /></button>
+                            <button onClick={() => handleDelete(a.id, a.addendum_code)} disabled={saving} className="text-[10px] p-1 bg-destructive/10 text-destructive rounded hover:bg-destructive/20 border border-destructive/30" title="Hapus"><Trash2 className="h-3 w-3" /></button>
+                          </div>
+                        </td>
+                      </>
                     )}
-                  </td>
-                </tr>
-              ))}</tbody>
+                  </tr>
+                );
+              })}</tbody>
             </table>
           </div>
         </div>
