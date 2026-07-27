@@ -1,42 +1,41 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2, Wallet, Filter, Search, Edit3, X, Download } from "lucide-react";
 import { supabase, formatRupiah, formatIDR, jutaToRupiah, rupiahToJuta, logActivity, FINANCE_CATEGORIES, DbFinanceEntry, FinanceCategory, FinanceDirection } from "@/lib/supabase";
 import { DateRangeInput } from "@/components/ui/date-range-input";
 import { useFinanceEntries } from "@/hooks/useProjects";
+import { useProjectPeriods, ProjectPeriod } from "@/hooks/useProjectPeriods";
 import { toast } from "@/hooks/use-toast";
 
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
-// Simplified: only planning | actual
 type PlanKind = "rap" | "actual"; // rap = planning
 type Form = {
   direction: FinanceDirection;
   category: FinanceCategory;
   entry_kind: PlanKind;
-  period_date: string;
+  period_id: string; // id of s_curve baseline row
   amount: string;
   description: string;
 };
 
 const emptyForm = (): Form => ({
   direction: "out", category: "material", entry_kind: "actual",
-  period_date: new Date().toISOString().slice(0,10),
+  period_id: "",
   amount: "", description: "",
 });
 
-function periodLabels(dateStr: string) {
-  const d = new Date(dateStr);
-  const monthLabel = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  const day = d.getDay();
-  const monday = new Date(d); monday.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
-  const weekLabel = `Wk ${monday.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-  return { weekLabel, monthLabel };
+function fmtDMY(iso: string) {
+  return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+}
+function periodOptionLabel(p: ProjectPeriod) {
+  return `${p.period_label} — ${fmtDMY(p.period_start)} → ${fmtDMY(p.period_end)}`;
 }
 
 export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const { data: entries = [], isLoading } = useFinanceEntries(projectId);
+  const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,10 +45,27 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const [fDir, setFDir] = useState<"all"|FinanceDirection>("all");
   const [fKind, setFKind] = useState<"all"|PlanKind>("all");
   const [fCat, setFCat] = useState<"all"|FinanceCategory>("all");
-  const [fFreq, setFFreq] = useState<"all"|"weekly"|"monthly">("all"); // visualisation filter
+  const [fFreq, setFFreq] = useState<"all"|"weekly"|"monthly">("all");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  useEffect(() => {
+    if (!form.period_id && nextUnfilled) setForm(f => ({ ...f, period_id: nextUnfilled.id }));
+  }, [nextUnfilled, form.period_id]);
+
+  const periodById = useMemo(() => {
+    const m = new Map<string, ProjectPeriod>();
+    periods.forEach(p => m.set(p.id, p));
+    return m;
+  }, [periods]);
+
+  // Match a raw period_date (ISO) to a baseline period whose range contains it.
+  const findPeriodByDate = (iso: string): ProjectPeriod | undefined => {
+    if (!iso) return undefined;
+    return periods.find(p => iso >= p.period_start && iso <= p.period_end)
+      ?? periods.find(p => p.period_end === iso);
+  };
 
   // Filter entries: only show plan (rap) & actual entries (drop legacy po/forecast)
   const visible = useMemo(() => entries.filter(e => e.entry_kind === "rap" || e.entry_kind === "actual"), [entries]);
@@ -81,26 +97,27 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
     try {
       const rp = parseFloat(form.amount) || 0;
       if (rp <= 0) throw new Error("Amount (Rp) harus > 0");
-      const amt = rupiahToJuta(rp); // store in Juta for backwards compat
-      const { monthLabel } = periodLabels(form.period_date);
+      const period = periodById.get(form.period_id);
+      if (!period) throw new Error("Pilih periode weekly dulu.");
+      const amt = rupiahToJuta(rp);
       const { error } = await (supabase as any).from("finance_entries").insert({
         project_id: projectId,
         direction: form.direction,
         category: form.direction === "in" ? null : form.category,
         entry_kind: form.entry_kind,
-        frequency: "monthly",
-        period_date: form.period_date,
-        period_label: monthLabel,
+        frequency: "weekly",
+        period_date: period.period_end,
+        period_label: period.period_label,
         amount: amt,
         description: form.description || null,
       });
       if (error) throw error;
-      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} on ${form.period_date}`, projectId);
+      await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} · ${period.period_label}`, projectId);
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
       toast({ title: "✅ Saved" });
-      setForm(emptyForm()); setShowAdd(false);
+      setForm({ ...emptyForm(), period_id: nextUnfilled?.id ?? "" }); setShowAdd(false);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -109,18 +126,20 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const saveEdit = async (id: string) => {
     const rp = parseFloat(edit.amount) || 0;
     const amt = rupiahToJuta(rp);
-    const { monthLabel } = periodLabels(edit.period_date);
+    const period = periodById.get(edit.period_id);
+    if (!period) { toast({ title: "Error", description: "Pilih periode weekly.", variant: "destructive" }); return; }
     const { error } = await (supabase as any).from("finance_entries").update({
       direction: edit.direction, category: edit.direction === "in" ? null : edit.category,
-      entry_kind: edit.entry_kind, period_date: edit.period_date, period_label: monthLabel,
-      amount: amt, description: edit.description || null,
+      entry_kind: edit.entry_kind, period_date: period.period_end, period_label: period.period_label,
+      frequency: "weekly", amount: amt, description: edit.description || null,
     }).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatIDR(rp)}`, projectId, id);
+    await logActivity(supabase, "finance", "update", `Finance entry updated ${formatIDR(rp)} · ${period.period_label}`, projectId, id);
     qc.invalidateQueries({ queryKey: ["finance_entries"] });
     qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
     setEditingId(null); toast({ title: "✅ Updated" });
   };
+
 
 
   const handleDelete = async (e: DbFinanceEntry) => {
@@ -177,16 +196,22 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                   </select>
                 </div>
               )}
-              <div><label className={labelCls}>Transaction Date*</label><input type="date" value={form.period_date} onChange={e => setForm({...form, period_date: e.target.value})} className={inputCls} /></div>
+              <div><label className={labelCls}>Periode Weekly*</label>
+                <select value={form.period_id} onChange={e => setForm({...form, period_id: e.target.value})} className={inputCls} disabled={periods.length === 0}>
+                  {periods.length === 0 && <option value="">— Belum ada baseline S-Curve —</option>}
+                  {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
+                </select>
+              </div>
               <div><label className={labelCls}>Amount (Rp — utuh)*</label>
                 <input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 150000000" />
                 {form.amount && <p className="text-[9px] text-muted-foreground mt-0.5">= {formatIDR(parseFloat(form.amount) || 0)}</p>}
               </div>
               <div className="sm:col-span-3"><label className={labelCls}>Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} className={inputCls} placeholder="Termin dari client / Bayar vendor XYZ / …" /></div>
             </div>
-            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Input dalam Rupiah utuh (mis. 150.000.000). Ditampilkan singkat (Jt/M/T) di dashboard proyek.</p>
+            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Periode weekly di-lock ke S-Curve Baseline (sama seperti Weekly Report). Amount dalam Rupiah utuh.</p>
+            {periods.length === 0 && <p className="text-[10px] text-destructive mt-1">Belum ada periode baseline — buat S-Curve dulu di tab S-Curve.</p>}
             <div className="flex gap-2 mt-2">
-              <button onClick={handleAdd} disabled={saving || !form.amount} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50"><Save className="h-3 w-3 inline mr-1" />{saving ? "..." : "Save"}</button>
+              <button onClick={handleAdd} disabled={saving || !form.amount || !form.period_id} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50"><Save className="h-3 w-3 inline mr-1" />{saving ? "..." : "Save"}</button>
               <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 bg-muted rounded text-xs border border-border">Cancel</button>
             </div>
           </div>
@@ -224,7 +249,7 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
           <div className="overflow-auto max-h-[520px] border border-border rounded-md">
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
-                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Date</th>
+                <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Type</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan/Act</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Category</th>
@@ -235,7 +260,12 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
               <tbody>
                 {filtered.map(e => editingId === e.id ? (
                   <tr key={e.id} className="border-b border-border/30 bg-muted/20">
-                    <td className="py-1 px-1"><input type="date" value={edit.period_date} onChange={ev => setEdit({...edit, period_date: ev.target.value})} className={inputCls} /></td>
+                    <td className="py-1 px-1">
+                      <select value={edit.period_id || ""} onChange={ev => setEdit({...edit, period_id: ev.target.value})} className={inputCls}>
+                        {!edit.period_id && <option value="">— pilih —</option>}
+                        {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
+                      </select>
+                    </td>
                     <td className="py-1 px-1"><select value={edit.direction} onChange={ev => setEdit({...edit, direction: ev.target.value})} className={inputCls}><option value="in">In</option><option value="out">Out</option></select></td>
                     <td className="py-1 px-1"><select value={edit.entry_kind} onChange={ev => setEdit({...edit, entry_kind: ev.target.value})} className={inputCls}><option value="rap">Plan</option><option value="actual">Actual</option></select></td>
                     <td className="py-1 px-1">{edit.direction === "out" ? (<select value={edit.category || ""} onChange={ev => setEdit({...edit, category: ev.target.value})} className={inputCls}>{FINANCE_CATEGORIES.filter(c => c.value !== "other").map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select>) : "—"}</td>
@@ -245,13 +275,16 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
                   </tr>
                 ) : (
                   <tr key={e.id} className="border-b border-border/30 hover:bg-muted/20">
-                    <td className="py-1.5 px-2 font-medium text-foreground">{new Date(e.period_date).toLocaleDateString('id-ID')}</td>
+                    <td className="py-1.5 px-2">
+                      <div className="font-medium text-foreground">{e.period_label}</div>
+                      <div className="text-[9px] text-muted-foreground">{fmtDMY(e.period_date)}</div>
+                    </td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.direction === "in" ? "bg-success/15 text-success border-success/30" : "bg-destructive/15 text-destructive border-destructive/30"}`}>{e.direction === "in" ? "IN" : "OUT"}</span></td>
                     <td className="py-1.5 px-2"><span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${e.entry_kind === "rap" ? "bg-warning/15 text-warning border-warning/30" : "bg-primary/15 text-primary border-primary/30"}`}>{e.entry_kind === "rap" ? "PLAN" : "ACTUAL"}</span></td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground">{e.category ? (FINANCE_CATEGORIES.find(c => c.value === e.category)?.label || e.category) : "—"}</td>
                     <td className={`py-1.5 px-2 text-right font-mono-data font-medium ${e.direction === "in" ? "text-success" : "text-destructive"}`}>{formatIDR(jutaToRupiah(Number(e.amount)))}</td>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground truncate max-w-[240px]">{e.description || "—"}</td>
-                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); setEdit({...e, amount: jutaToRupiah(Number(e.amount))}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
+                    <td className="py-1.5 px-2 flex gap-1"><button onClick={() => { setEditingId(e.id); const matched = findPeriodByDate(e.period_date); setEdit({...e, period_id: matched?.id ?? "", amount: jutaToRupiah(Number(e.amount))}); }} className="p-1 hover:bg-primary/10 rounded"><Edit3 className="h-3 w-3 text-primary" /></button><button onClick={() => handleDelete(e)} className="p-1 hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3 text-destructive" /></button></td>
                   </tr>
 
                 ))}
