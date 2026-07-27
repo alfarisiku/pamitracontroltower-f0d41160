@@ -90,7 +90,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       addendum_code: a.addendum_code || "",
       description: a.description || "",
       addendum_date: a.addendum_date || "",
-      cost_impact: String(a.cost_impact ?? 0),
+      cost_impact: jutaToRupiah(a.cost_impact ?? 0),
       schedule_impact_days: String(a.schedule_impact_days ?? 0),
     });
   };
