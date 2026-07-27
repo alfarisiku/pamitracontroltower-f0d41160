@@ -222,6 +222,7 @@ export type DbAddendum = {
   addendum_code: string;
   description: string;
   scope_change: string;
+  addendum_date: string | null;
   cost_impact: number;
   schedule_impact_days: number;
   approval_status: string;

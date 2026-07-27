@@ -14,7 +14,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   const [saving, setSaving] = useState(false);
   const [addendumCode, setAddendumCode] = useState("");
   const [addendumDesc, setAddendumDesc] = useState("");
-  const [addendumScope, setAddendumScope] = useState("");
+  const [addendumDate, setAddendumDate] = useState("");
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
 
@@ -24,7 +24,8 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
     try {
       const { error } = await supabase.from("addendums").insert({
         project_id: projectId, addendum_code: addendumCode,
-        description: addendumDesc, scope_change: addendumScope,
+        description: addendumDesc,
+        addendum_date: addendumDate || null,
         cost_impact: parseInt(addendumCost) || 0, schedule_impact_days: parseInt(addendumDays) || 0,
       });
       if (error) throw error;
@@ -32,7 +33,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Addendum ditambahkan" });
-      setAddendumCode(""); setAddendumDesc(""); setAddendumScope(""); setAddendumCost(""); setAddendumDays("");
+      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays("");
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -75,7 +76,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div><label className={labelCls}>Addendum ID</label><input value={addendumCode} onChange={e => setAddendumCode(e.target.value)} className={inputCls} placeholder="ADD-001" /></div>
           <div><label className={labelCls}>Description</label><input value={addendumDesc} onChange={e => setAddendumDesc(e.target.value)} className={inputCls} placeholder="Perubahan scope" /></div>
-          <div><label className={labelCls}>Scope Change</label><input value={addendumScope} onChange={e => setAddendumScope(e.target.value)} className={inputCls} placeholder="Penambahan tangki" /></div>
+          <div><label className={labelCls}>Addendum Date</label><input type="date" value={addendumDate} onChange={e => setAddendumDate(e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Cost Impact (Juta)</label><input type="number" value={addendumCost} onChange={e => setAddendumCost(e.target.value)} className={inputCls} placeholder="50000" /></div>
           <div><label className={labelCls}>Schedule Impact (Days)</label><input type="number" value={addendumDays} onChange={e => setAddendumDays(e.target.value)} className={inputCls} placeholder="30" /></div>
         </div>

@@ -1,0 +1,1 @@
+ALTER TABLE public.addendums ADD COLUMN IF NOT EXISTS addendum_date date;

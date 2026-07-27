@@ -55,6 +55,7 @@ export type Database = {
       addendums: {
         Row: {
           addendum_code: string
+          addendum_date: string | null
           approval_status: string
           approved_at: string | null
           approved_by: string | null
@@ -69,6 +70,7 @@ export type Database = {
         }
         Insert: {
           addendum_code: string
+          addendum_date?: string | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
@@ -83,6 +85,7 @@ export type Database = {
         }
         Update: {
           addendum_code?: string
+          addendum_date?: string | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null

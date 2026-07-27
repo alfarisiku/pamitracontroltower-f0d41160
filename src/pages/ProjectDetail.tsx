@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries } from "@/hooks/useProjects";
+import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries, useAddendums } from "@/hooks/useProjects";
 import { supabase, formatRupiah, formatIDR, FINANCE_CATEGORIES, resolveImageUrl } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
@@ -33,7 +33,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
 };
 
 type MediaTab = "weekly" | "video" | "cctv" | "model3d";
-type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report";
+type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report" | "addendum";
 
 const riskCategoryLabels: Record<string, string> = {
   technical: "Technical", schedule: "Schedule", cost: "Cost",
@@ -107,6 +107,7 @@ const ProjectDetail = () => {
   const { data: purchaseOrders = [] } = usePurchaseOrders(id);
   const { data: cashflowData = [] } = useProjectCashflow(id);
   const { data: financeEntries = [] } = useFinanceEntries(id);
+  const { data: addendums = [] } = useAddendums(id);
 
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -314,6 +315,7 @@ const ProjectDetail = () => {
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
+              { key: "addendum" as const, label: `Addendum (${addendums.length})`, icon: FileText, publicOk: true },
             ]).filter(t => !isClient || t.publicOk)).map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${
@@ -1703,6 +1705,50 @@ const ProjectDetail = () => {
               )}
             </div>
           )}
+
+          {activeTab === "addendum" && (
+            <div className="glass-card rounded-lg shadow-card overflow-hidden">
+              <div className="p-3 border-b border-border flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Contract Addendums</h3>
+                <span className="text-[10px] text-muted-foreground">{addendums.length} entri</span>
+              </div>
+              {addendums.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground">Belum ada addendum untuk proyek ini.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-muted/50 border-b border-border">
+                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">ID</th>
+                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Date</th>
+                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Description</th>
+                        <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Cost Impact</th>
+                        <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Schedule</th>
+                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
+                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Approved At</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {addendums.map((a: any) => (
+                        <tr key={a.id} className="border-b border-border/30 hover:bg-muted/30">
+                          <td className="py-2 px-3 font-mono-data text-primary whitespace-nowrap">{a.addendum_code}</td>
+                          <td className="py-2 px-3 whitespace-nowrap text-foreground">{a.addendum_date ? new Date(a.addendum_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                          <td className="py-2 px-3 text-foreground">{a.description}</td>
+                          <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.cost_impact > 0 ? "text-accent" : a.cost_impact < 0 ? "text-success" : "text-muted-foreground"}`}>{a.cost_impact > 0 ? "+" : ""}{formatRupiah(a.cost_impact)}</td>
+                          <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.schedule_impact_days > 0 ? "text-warning" : a.schedule_impact_days < 0 ? "text-success" : "text-muted-foreground"}`}>{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
+                          <td className="py-2 px-3">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
+                          </td>
+                          <td className="py-2 px-3 whitespace-nowrap text-muted-foreground">{a.approved_at ? new Date(a.approved_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
 
         </div>
       </main>
