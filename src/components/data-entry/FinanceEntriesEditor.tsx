@@ -33,7 +33,7 @@ function periodOptionLabel(p: ProjectPeriod) {
   return `${p.period_label} — ${fmtDMY(p.period_start)} → ${fmtDMY(p.period_end)}`;
 }
 
-export function FinanceEntriesEditor({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
+export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodId, onLogged }: { projectId: string; compact?: boolean; lockedPeriodId?: string; onLogged?: (msg: string) => void }) {
   const { data: entries = [], isLoading } = useFinanceEntries(projectId);
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const qc = useQueryClient();
@@ -51,8 +51,9 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
   const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
+    if (lockedPeriodId) { setForm(f => ({ ...f, period_id: lockedPeriodId })); return; }
     if (!form.period_id && nextUnfilled) setForm(f => ({ ...f, period_id: nextUnfilled.id }));
-  }, [nextUnfilled, form.period_id]);
+  }, [nextUnfilled, form.period_id, lockedPeriodId]);
 
   const periodById = useMemo(() => {
     const m = new Map<string, ProjectPeriod>();
@@ -113,11 +114,12 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
       });
       if (error) throw error;
       await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} · ${period.period_label}`, projectId);
+      onLogged?.(`Finance ${form.direction === "in" ? "Cash In" : `Cash Out (${form.category})`} ${form.entry_kind === "rap" ? "PLAN" : "ACTUAL"} ${formatIDR(rp)} — ${period.period_label}`);
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
       toast({ title: "✅ Saved" });
-      setForm({ ...emptyForm(), period_id: nextUnfilled?.id ?? "" }); setShowAdd(false);
+      setForm({ ...emptyForm(), period_id: lockedPeriodId ?? nextUnfilled?.id ?? "" }); setShowAdd(false);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -196,12 +198,20 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
                   </select>
                 </div>
               )}
-              <div><label className={labelCls}>Periode Weekly*</label>
-                <select value={form.period_id} onChange={e => setForm({...form, period_id: e.target.value})} className={inputCls} disabled={periods.length === 0}>
-                  {periods.length === 0 && <option value="">— Belum ada baseline S-Curve —</option>}
-                  {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
-                </select>
-              </div>
+              {lockedPeriodId ? (
+                <div><label className={labelCls}>Periode Weekly (terkunci)</label>
+                  <div className="px-2 py-1.5 text-xs bg-muted/40 border border-border rounded text-foreground">
+                    {(() => { const p = periodById.get(lockedPeriodId); return p ? periodOptionLabel(p) : "—"; })()}
+                  </div>
+                </div>
+              ) : (
+                <div><label className={labelCls}>Periode Weekly*</label>
+                  <select value={form.period_id} onChange={e => setForm({...form, period_id: e.target.value})} className={inputCls} disabled={periods.length === 0}>
+                    {periods.length === 0 && <option value="">— Belum ada baseline S-Curve —</option>}
+                    {periods.map(p => <option key={p.id} value={p.id}>{periodOptionLabel(p)}</option>)}
+                  </select>
+                </div>
+              )}
               <div><label className={labelCls}>Amount (Rp — utuh)*</label>
                 <input type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className={inputCls} placeholder="mis. 150000000" />
                 {form.amount && <p className="text-[9px] text-muted-foreground mt-0.5">= {formatIDR(parseFloat(form.amount) || 0)}</p>}

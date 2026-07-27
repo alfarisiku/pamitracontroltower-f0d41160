@@ -10,12 +10,13 @@ import { useProjectPeriods } from "@/hooks/useProjectPeriods";
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
-export function PhotoUploader({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
+export function PhotoUploader({ projectId, compact = false, lockedPeriodId, onLogged }: { projectId: string; compact?: boolean; lockedPeriodId?: string; onLogged?: (msg: string) => void }) {
   const qc = useQueryClient();
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const [files, setFiles] = useState<FileList | null>(null);
   const [periodOrder, setPeriodOrder] = useState<string>("");
-  const selectedPeriod = periods.find(p => String(p.period_order) === periodOrder);
+  const lockedPeriod = periods.find(p => p.id === lockedPeriodId);
+  const selectedPeriod = lockedPeriod ?? periods.find(p => String(p.period_order) === periodOrder);
   const weekStart = selectedPeriod?.period_start ?? "";
   const weekEnd = selectedPeriod?.period_end ?? "";
   const weekLabel = selectedPeriod ? `${selectedPeriod.period_label} · ${new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} – ${new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")}` : "";
@@ -37,8 +38,9 @@ export function PhotoUploader({ projectId, compact = false }: { projectId: strin
   };
   useEffect(() => { if (projectId) load(); }, [projectId]);
   useEffect(() => {
+    if (lockedPeriod) return;
     if (!periodOrder && nextUnfilled) setPeriodOrder(String(nextUnfilled.period_order));
-  }, [nextUnfilled?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nextUnfilled?.id, lockedPeriod?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const handleUpload = async () => {
@@ -63,6 +65,7 @@ export function PhotoUploader({ projectId, compact = false }: { projectId: strin
       const { error } = await supabase.from("project_photos").insert(rows as any);
       if (error) throw error;
       await logActivity(supabase, "photo", "create", `Uploaded ${rows.length} photo(s) for ${weekLabel}`, projectId);
+      onLogged?.(`Foto Weekly: ${rows.length} file diupload — ${weekLabel}${title ? ` (“${title}”)` : ""}`);
       qc.invalidateQueries({ queryKey: ["project_photos"] });
       toast({ title: "✅ Uploaded", description: `${rows.length} foto berhasil diupload` });
       setFiles(null); setTitle(""); setDescription(""); setLocation("");
@@ -115,12 +118,20 @@ export function PhotoUploader({ projectId, compact = false }: { projectId: strin
           {/* Left: metadata fields */}
           <div className="lg:col-span-3 grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className={labelCls}>Periode Weekly (dari S-Curve) *</label>
-              <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
-              {selectedPeriod && (
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")} · Label otomatis: <span className="font-mono-data">{weekLabel}</span>
-                </p>
+              <label className={labelCls}>Periode Weekly {lockedPeriod ? "(terkunci dari Step 1)" : "(dari S-Curve)"} *</label>
+              {lockedPeriod ? (
+                <div className="px-2 py-1.5 text-xs bg-muted/40 border border-border rounded text-foreground">
+                  {weekLabel}
+                </div>
+              ) : (
+                <>
+                  <PeriodSelect projectId={projectId} value={periodOrder} onChange={(p) => setPeriodOrder(p ? String(p.period_order) : "")} />
+                  {selectedPeriod && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(selectedPeriod.period_start).toLocaleDateString("id-ID")} → {new Date(selectedPeriod.period_end).toLocaleDateString("id-ID")} · Label otomatis: <span className="font-mono-data">{weekLabel}</span>
+                    </p>
+                  )}
+                </>
               )}
             </div>
             <div className="col-span-2">

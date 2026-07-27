@@ -38,7 +38,7 @@ const DATE_PAIRS: { key: string; label: string; planField: string; actualField: 
   { key: "onsite",   label: "Onsite",   planField: "onsite_plan_date",   actualField: "onsite_actual_date" },
 ];
 
-export function ProcurementPanel({ projectId }: { projectId: string }) {
+export function ProcurementPanel({ projectId, onLogged }: { projectId: string; onLogged?: (msg: string) => void }) {
   const { data: items = [], isLoading } = useProcurementItems(projectId);
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -78,6 +78,7 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
     };
     await (supabase as any).from("procurement_items").update(patch).eq("id", item.id);
     await logActivity(supabase, "procurement", "update", `Procurement "${edit.item_name}" edited`, projectId, item.id);
+    onLogged?.(`Procurement “${edit.item_name}” diedit (amount ${formatIDR(parseInt(edit.amount)||0)})`);
     queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
     queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
     setEditingId(null);
@@ -100,6 +101,7 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
       const { error } = await (supabase as any).from("procurement_items").insert(payload);
       if (error) throw error;
       await logActivity(supabase, "procurement", "create", `Added procurement: ${form.item_name}`, projectId);
+      onLogged?.(`Procurement item baru: ${form.item_name} · ${formatIDR(parseInt(form.amount)||0)} · status ${form.status.toUpperCase()}`);
       queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Procurement item ditambahkan" });
@@ -132,6 +134,7 @@ export function ProcurementPanel({ projectId }: { projectId: string }) {
     if (actualField[newStatus]) updates[actualField[newStatus]] = new Date().toISOString().slice(0, 10);
     await (supabase as any).from("procurement_items").update(updates).eq("id", id);
     await logActivity(supabase, "procurement", "update", `Procurement "${name}" status → ${newStatus}`, projectId, id);
+    onLogged?.(`Procurement “${name}” status → ${newStatus.toUpperCase()}`);
     queryClient.invalidateQueries({ queryKey: ["procurement_items"] });
     queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
   };

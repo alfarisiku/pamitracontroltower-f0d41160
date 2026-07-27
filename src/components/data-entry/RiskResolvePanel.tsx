@@ -9,7 +9,7 @@ const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
 const RISK_CATEGORIES = ["technical","schedule","cost","procurement","contractual","operational","hsse"];
 
-export function RiskResolvePanel({ projectId }: { projectId: string }) {
+export function RiskResolvePanel({ projectId, onLogged }: { projectId: string; onLogged?: (msg: string) => void }) {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showResolved, setShowResolved] = useState(false);
@@ -39,6 +39,7 @@ export function RiskResolvePanel({ projectId }: { projectId: string }) {
     }] as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "risk", "create", `New risk: ${newRisk.title} [${newRisk.priority}]`, projectId);
+    onLogged?.(`Risk baru: “${newRisk.title}” · priority ${newRisk.priority} · ${newRisk.current_status}`);
     qc.invalidateQueries({ queryKey: ["alerts"] });
     qc.invalidateQueries({ queryKey: ["all_alerts"] });
     setNewOpen(false);
@@ -57,6 +58,7 @@ export function RiskResolvePanel({ projectId }: { projectId: string }) {
     const { error } = await supabase.from("project_alerts").update(patch as any).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "risk", "update", `Risk updated: ${edit.title} (${patch.completion_percentage}%)`, projectId, id);
+    onLogged?.(`Risk “${edit.title}” diupdate — status ${patch.current_status}, ${patch.completion_percentage}%`);
     setEditingId(null); load(); qc.invalidateQueries({ queryKey: ["alerts"] });
     toast({ title: "✅ Saved" });
   };
@@ -65,6 +67,7 @@ export function RiskResolvePanel({ projectId }: { projectId: string }) {
     const nowIso = new Date().toISOString();
     await supabase.from("project_alerts").update({ is_resolved: true, resolved_at: nowIso, closed_at: nowIso, current_status: "closed", completion_percentage: 100 } as any).eq("id", id);
     await logActivity(supabase, "risk", "resolve", `Risk closed: ${title}`, projectId, id);
+    onLogged?.(`Risk “${title}” di-close`);
     qc.invalidateQueries({ queryKey: ["alerts"] });
     load(); toast({ title: "✅ Resolved" });
   };
