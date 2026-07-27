@@ -321,7 +321,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <p className="text-[10px] text-muted-foreground mb-3">
               Tambah transaksi baru (cash in / cash out) untuk periode <b>{selectedPeriod.period_label}</b>.
             </p>
-            <FinanceEntriesEditor projectId={projectId} />
+            <FinanceEntriesEditor projectId={projectId} compact />
           </div>
 
           {/* === STEP 8: Weekly Report === */}
