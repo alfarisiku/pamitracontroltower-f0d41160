@@ -10,7 +10,7 @@ import { useProjectPeriods } from "@/hooks/useProjectPeriods";
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
-export function PhotoUploader({ projectId }: { projectId: string }) {
+export function PhotoUploader({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
   const qc = useQueryClient();
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const [files, setFiles] = useState<FileList | null>(null);
@@ -161,6 +161,7 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
         </div>
       </div>
 
+      {!compact && (
       <div className="bg-muted/20 border border-border/50 rounded-lg p-3 mb-3">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <div className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground font-semibold"><Camera className="h-3 w-3" /> Filter & Search</div>
@@ -184,12 +185,12 @@ export function PhotoUploader({ projectId }: { projectId: string }) {
           </div>
         </div>
       </div>
+      )}
 
 
+      {!compact && Object.keys(grouped).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada foto yang cocok filter.</p>}
 
-      {Object.keys(grouped).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada foto yang cocok filter.</p>}
-
-      {Object.keys(grouped).length > 0 && (
+      {!compact && Object.keys(grouped).length > 0 && (
         <div className="max-h-[560px] overflow-y-auto pr-1 space-y-3 rounded-md border border-border/60 bg-muted/10 p-2">
           {(Object.entries(grouped) as [string, any[]][]).map(([week, list]) => (
             <div key={week} className="rounded-md bg-card border border-border/60 p-2">

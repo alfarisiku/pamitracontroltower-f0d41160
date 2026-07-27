@@ -39,17 +39,29 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
 
   useEffect(() => { setPeriodOrder(""); }, [projectId]);
 
-  // === STEP 1: Weekly Progress % ===
+  // === STEP 2: Weekly Progress % (DRAFT → CONFIRM) ===
   const [actualPct, setActualPct] = useState("");
+  const [draftPct, setDraftPct] = useState<number | null>(null);
   useEffect(() => {
     setActualPct(selectedPeriod?.actual_progress != null ? String(selectedPeriod.actual_progress) : "");
+    setDraftPct(null);
   }, [selectedPeriod?.id]);
 
-  const [savingProgress, setSavingProgress] = useState(false);
-  const handleSaveProgress = async () => {
-    if (!selectedPeriod || !projectId) return;
+  const stageDraft = () => {
     const val = parseFloat(actualPct);
     if (isNaN(val) || val < 0 || val > 100) { toast({ title: "Progress harus 0–100", variant: "destructive" }); return; }
+    setDraftPct(val);
+    toast({ title: "📝 Draft disimpan", description: "Konfirmasi di bawah untuk publish." });
+  };
+  const discardDraft = () => {
+    setDraftPct(null);
+    setActualPct(selectedPeriod?.actual_progress != null ? String(selectedPeriod.actual_progress) : "");
+  };
+
+  const [savingProgress, setSavingProgress] = useState(false);
+  const handleConfirmDraft = async () => {
+    if (!selectedPeriod || !projectId || draftPct == null) return;
+    const val = draftPct;
     setSavingProgress(true);
     try {
       const { error: sErr } = await supabase.from("s_curve_data")
@@ -66,7 +78,8 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
       qc.invalidateQueries({ queryKey: ["s_curve_data"] });
       qc.invalidateQueries({ queryKey: ["projects"] });
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Progress tersimpan", description: `${selectedPeriod.period_label} → ${val}%` });
+      toast({ title: "✅ Terkonfirmasi", description: `${selectedPeriod.period_label} → ${val}%` });
+      setDraftPct(null);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSavingProgress(false); }
@@ -141,10 +154,11 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
         </div>
       ) : (
         <>
-          {/* === STEP 2: Weekly Progress % === */}
-          <div className="glass-card rounded-lg shadow-card p-4">
+          {/* === STEP 2: Weekly Progress % (Draft → Confirm) === */}
+          <div className={`glass-card rounded-lg shadow-card p-4 ${draftPct != null ? "border-warning/60 border-2" : ""}`}>
             <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Save className="h-4 w-4 text-primary" /> Step 2 · Weekly Progress %
+              {draftPct != null && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning border border-warning/40 font-semibold uppercase tracking-wide">Draft</span>}
             </h3>
             <div className="flex items-end gap-3 flex-wrap">
               <div className="flex-1 min-w-[160px]">
@@ -157,16 +171,44 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
                 />
               </div>
               <button
-                onClick={handleSaveProgress}
-                disabled={savingProgress || actualPct === ""}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
+                onClick={stageDraft}
+                disabled={actualPct === ""}
+                className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground border border-border rounded-lg text-xs font-medium hover:bg-muted/80 disabled:opacity-50"
               >
-                <Save className="h-3.5 w-3.5" /> {savingProgress ? "Saving..." : "Save Progress"}
+                <Save className="h-3.5 w-3.5" /> Simpan Draft
               </button>
             </div>
             <p className="text-[10px] text-muted-foreground mt-2 italic">
-              Nilai ini disimpan sebagai <b>actual</b> di S-Curve baseline periode ini + progress header proyek.
+              Nilai disimpan sebagai <b>draft</b> dulu. Konfirmasi di bawah untuk publish ke S-Curve baseline + header proyek.
             </p>
+
+            {draftPct != null && (
+              <div className="mt-3 p-3 rounded-lg bg-warning/10 border border-warning/40">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="text-[11px]">
+                    <p className="text-foreground font-semibold mb-1">📋 Review Draft — {selectedPeriod.period_label}</p>
+                    <p className="text-muted-foreground">
+                      Plan: <b className="text-foreground">{selectedPeriod.planned_progress}%</b>
+                      {" · "}Actual saat ini: <b className="text-foreground">{selectedPeriod.actual_progress ?? "—"}%</b>
+                      {" → "}Draft baru: <b className="text-warning">{draftPct}%</b>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={discardDraft}
+                      className="px-3 py-1.5 bg-card border border-border rounded-lg text-[11px] font-medium hover:bg-muted"
+                    >Discard</button>
+                    <button
+                      onClick={handleConfirmDraft}
+                      disabled={savingProgress}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-[11px] font-semibold hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" /> {savingProgress ? "Publishing..." : "Konfirmasi & Publish"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* === STEP 3: Milestones (status + actual date) === */}
@@ -279,7 +321,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <p className="text-[10px] text-muted-foreground mb-3">
               Tambah transaksi baru (cash in / cash out) untuk periode <b>{selectedPeriod.period_label}</b>.
             </p>
-            <FinanceEntriesEditor projectId={projectId} />
+            <FinanceEntriesEditor projectId={projectId} compact />
           </div>
 
           {/* === STEP 8: Weekly Report === */}
@@ -290,7 +332,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <p className="text-[10px] text-muted-foreground mb-3">
               Buat report baru untuk periode <b>{selectedPeriod.period_label}</b>.
             </p>
-            <WeeklyReportEditor projectId={projectId} />
+            <WeeklyReportEditor projectId={projectId} compact />
           </div>
 
           {/* === STEP 9: Weekly Photos === */}
@@ -301,7 +343,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <p className="text-[10px] text-muted-foreground mb-3">
               Upload foto lapangan untuk periode <b>{selectedPeriod.period_label}</b>.
             </p>
-            <PhotoUploader projectId={projectId} />
+            <PhotoUploader projectId={projectId} compact />
           </div>
 
           <div className="text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-2">

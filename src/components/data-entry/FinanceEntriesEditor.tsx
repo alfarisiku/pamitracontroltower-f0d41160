@@ -33,7 +33,7 @@ function periodOptionLabel(p: ProjectPeriod) {
   return `${p.period_label} — ${fmtDMY(p.period_start)} → ${fmtDMY(p.period_end)}`;
 }
 
-export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
+export function FinanceEntriesEditor({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
   const { data: entries = [], isLoading } = useFinanceEntries(projectId);
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const qc = useQueryClient();
@@ -169,9 +169,9 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
 
       <div className="glass-card rounded-lg shadow-card p-4">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cash Flow Transactions ({filtered.length}/{visible.length})</h3>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cash Flow Transactions{compact ? "" : ` (${filtered.length}/${visible.length})`}</h3>
           <div className="flex gap-1">
-            <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Download className="h-3 w-3" /> CSV</button>
+            {!compact && <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Download className="h-3 w-3" /> CSV</button>}
             <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px]"><Plus className="h-3 w-3" /> Add</button>
           </div>
         </div>
@@ -218,6 +218,7 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
         )}
 
         {/* Filters — reorganized: labeled grid */}
+        {!compact && (
         <div className="bg-muted/20 border border-border/50 rounded-lg p-3 mb-3">
           <div className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground font-semibold mb-2"><Filter className="h-3 w-3" /> Filter & Search</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -241,9 +242,9 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
             </div>
           </div>
         </div>
+        )}
 
-
-        {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : filtered.length === 0 ? (
+        {!compact && (isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">Belum ada transaksi yang cocok.</p>
         ) : (
           <div className="overflow-auto max-h-[520px] border border-border rounded-md">
@@ -291,7 +292,7 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
               </tbody>
             </table>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
