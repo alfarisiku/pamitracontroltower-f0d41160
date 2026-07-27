@@ -1,45 +1,33 @@
 ## Tujuan
-Integrasikan data S-Curve dengan Finance (Cash In/Out) melalui **tanggal periode** eksplisit di setiap baris S-Curve, sehingga cut-off, agregasi bulanan, dan overlay grafik selalu sinkron.
+Ubah input Cash In / Cash Out di Finance supaya pakai **periode weekly** (sama dengan Weekly Report), bukan tanggal transaksi bebas. Periodenya di-lock ke S-Curve Baseline lewat `useProjectPeriods` — konsisten dengan Weekly Report, Weekly Photos, dan Quick Weekly Update.
 
-## Perubahan Skema (Backend)
-Tambah kolom tanggal di tabel `s_curve_data`:
-- `period_start` (date) — tanggal mulai periode
-- `period_end` (date) — tanggal akhir periode (cut-off)
+## Perubahan UI — `FinanceEntriesEditor.tsx`
 
-Kolom nullable dulu supaya data lama tidak rusak; index `(project_id, curve_type, period_end)` untuk join cepat.
+1. **Form Add** (dan edit inline):
+   - Ganti field "Transaction Date" (`<input type="date">`) menjadi dropdown **"Periode Weekly"** yang isinya list dari `useProjectPeriods(projectId)`.
+   - Label opsi: `W{order} — {period_start} → {period_end}` (contoh: `W7 — 12 Aug → 18 Aug 2025`).
+   - Default value = `nextUnfilled` (sama seperti flow Weekly Report).
+   - Kalau proyek belum punya baseline S-Curve, tampilkan pesan "Belum ada periode baseline — buat S-Curve dulu di tab S-Curve" dan disable tombol Add.
 
-## Perubahan Data Entry (S-Curve Editor)
-Di `src/components/data-entry/SCurveEditor.tsx`:
-- Tambah 2 kolom input tanggal di setiap row: **Period Start** dan **Period End** (pakai shadcn DatePicker).
-- Tombol utilitas **"Auto-Generate Weekly"** dan **"Auto-Generate Monthly"**: isi otomatis start/end berdasarkan tanggal mulai project + step 7 hari atau akhir bulan.
-- Saat menambah kurva baru (KSO), tanggal ikut disalin dari baseline supaya periode label + tanggal sinkron.
-- Validasi: `period_end` harus > `period_start`, tidak overlap dengan periode lain di kurva sama.
+2. **Simpan ke DB**:
+   - `period_date` = `period_end` dari periode terpilih (dipakai sebagai cut-off, konsisten dengan konvensi S-Curve ↔ Finance yang sudah ada di `.lovable/plan.md`).
+   - `period_label` = `period_label` periode (mis. `W7`), bukan lagi `monthLabel`. Ini bikin agregasi weekly di chart lebih akurat.
+   - `frequency` tetap `"monthly"` (kolom lama, tak dipakai UI) — atau ganti `"weekly"`; saya pilih **`"weekly"`** supaya jujur.
 
-## Perubahan Chart (Frontend)
-Di `src/components/dashboard/SCurveChart.tsx`:
-- Ganti logika `periodLabelToMonthKey` (parse label string) → gunakan `period_end` sebagai sumber kebenaran untuk agregasi Weekly/Monthly.
-- Cut-off "Today" pindah ke row dengan `period_end` terbesar yang punya `actual_progress`.
+3. **Edit inline row**: sel kolom Date jadi dropdown periode yang sama.
 
-Di `src/pages/ProjectDetail.tsx` (Health tab "Progress vs Cashflow per Periode" + Finance tab):
-- Join S-Curve ↔ Finance memakai `period_end` (bucket bulanan). Ganti mapping via `period_label` yang selama ini rapuh.
-- Tabel ringkasan periode ikut menampilkan kolom tanggal cut-off.
-
-## Migrasi Data Lama
-One-shot backfill: untuk baris S-Curve existing, hitung `period_end` dari `projects.start_date + (period_order * 7 hari)` (weekly) atau end-of-month untuk yang berlabel bulanan. Sisanya biarkan null dan tampil warning "belum ada tanggal — silakan set di Data Entry".
-
-## Bagian Teknis (ringkas)
-- Migration: `ALTER TABLE s_curve_data ADD COLUMN period_start date, period_end date; CREATE INDEX ...`
-- Regenerasi `src/integrations/supabase/types.ts` otomatis setelah migrasi.
-- Update `useSCurveData` hook — tidak perlu perubahan query, cuma tipe.
-- Auto-fill logic di editor pakai `date-fns` (`addDays`, `endOfMonth`, `startOfMonth`).
+4. **Tampilan tabel transaksi**: kolom "Date" berubah jadi **"Periode"** menampilkan `period_label` + tanggal `period_end` kecil di bawahnya, biar cepat dibaca.
 
 ## Yang TIDAK diubah
-- UI selain S-Curve editor dan chart.
-- Skema finance / procurement / WBS.
-- Format tampilan Rupiah.
+- Skema `finance_entries` (kolom `period_date` + `period_label` sudah cukup).
+- Halaman `/finance` (agregasi weekly/monthly di `Finance.tsx` sudah pakai `period_date`, otomatis ikut).
+- Chart & tabel Cashflow di Project Detail (sudah pakai `period_date`).
+- Filter Date Range di editor — tetap ada, karena filter berdasarkan `period_date` tetap valid.
+
+## Bagian Teknis
+- Import `useProjectPeriods` dari `@/hooks/useProjects` … sebenarnya dari `@/hooks/useProjectPeriods`.
+- Hapus helper `periodLabels()` (tak dipakai lagi setelah ganti sumber label).
+- Tipe `Form.period_date` diganti jadi `period_id: string` (id row S-Curve); saat submit di-resolve ke `period_end` + `period_label`.
 
 ## Pertanyaan konfirmasi
-1. Apakah default granularity periode = **weekly** (Senin–Minggu) atau **monthly** (1–akhir bulan)? Saya asumsikan **weekly** dengan opsi generator monthly.
-2. Apakah cukup kolom `period_end` saja (cukup untuk join & cut-off) atau perlu `period_start` juga untuk tampilan range? Saya asumsikan **dua-duanya** untuk fleksibilitas.
-
-Kalau setuju, saya lanjut migrasi + update editor + chart.
+Kalau ada transaksi lama yang `period_label`-nya masih format bulanan (mis. `Aug 2025`), biarkan apa adanya (tidak di-backfill) — hanya entry baru/edit yang pakai label weekly. OK?
