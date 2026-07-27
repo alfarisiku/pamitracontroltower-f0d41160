@@ -155,8 +155,9 @@ export function WeeklyReportEditor({ projectId, compact = false }: { projectId: 
         </div>
       )}
 
-      {reports.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada weekly report untuk proyek ini.</p>}
+      {!compact && reports.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Belum ada weekly report untuk proyek ini.</p>}
 
+      {!compact && (
       <div className="space-y-2">
         {reports.map(r => {
           const isOpen = openId === r.id;
@@ -248,6 +249,7 @@ export function WeeklyReportEditor({ projectId, compact = false }: { projectId: 
           );
         })}
       </div>
+      )}
     </div>
   );
 }
