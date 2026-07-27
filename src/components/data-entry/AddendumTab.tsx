@@ -14,7 +14,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   const [saving, setSaving] = useState(false);
   const [addendumCode, setAddendumCode] = useState("");
   const [addendumDesc, setAddendumDesc] = useState("");
-  const [addendumScope, setAddendumScope] = useState("");
+  const [addendumDate, setAddendumDate] = useState("");
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
 
