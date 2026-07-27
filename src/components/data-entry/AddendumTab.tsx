@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileBarChart, Plus } from "lucide-react";
+import { FileBarChart, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import { supabase, formatRupiah, logActivity, DbProject } from "@/lib/supabase";
 import { useAddendums } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
