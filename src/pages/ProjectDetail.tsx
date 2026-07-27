@@ -153,6 +153,34 @@ const ProjectDetail = () => {
     );
   }
 
+  // Bucket helper: weekly keeps period_label as-is; monthly groups by calendar month of period_date
+  const bucketFor = (fe: { period_label?: string | null; period_date: string }, gran: "monthly" | "weekly") => {
+    if (gran === "weekly") {
+      const key = fe.period_label || fe.period_date;
+      return { key, label: key, order: new Date(fe.period_date).getTime() };
+    }
+    const d = new Date(fe.period_date);
+    const y = d.getUTCFullYear(); const m = d.getUTCMonth();
+    const key = `${y}-${String(m + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
+    return { key, label, order: Date.UTC(y, m, 1) };
+  };
+
+  // Small Monthly/Weekly toggle
+  const GranularityToggle = ({ value, onChange }: { value: "monthly" | "weekly"; onChange: (g: "monthly" | "weekly") => void }) => (
+    <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+      {(["monthly", "weekly"] as const).map(g => (
+        <button
+          key={g}
+          onClick={() => onChange(g)}
+          className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${value === g ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          {g === "monthly" ? "Monthly" : "Weekly"}
+        </button>
+      ))}
+    </div>
+  );
+
   const st = getStatusMeta(project.status);
   const contractValue = project.contract_value || project.budget;
   const poCommitted = purchaseOrders.reduce((s, po) => s + po.amount, 0);
