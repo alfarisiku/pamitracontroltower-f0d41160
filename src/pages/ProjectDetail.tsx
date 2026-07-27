@@ -46,22 +46,22 @@ const procStatusLabels: Record<string, string> = {
   fabrication: "PO", installed: "On Site",
 };
 
-// Distinct highlighted text color per procurement pipeline stage — instantly readable.
+// Procurement pipeline stage badges — semantic tokens only, aligned to dashboard theme.
 const procStatusColors: Record<string, string> = {
-  ded:        "bg-slate-100 text-slate-700 border border-slate-300",
-  bq:         "bg-zinc-100 text-zinc-700 border border-zinc-300",
-  pr:         "bg-sky-100 text-sky-700 border border-sky-300",
-  rfq:        "bg-amber-100 text-amber-800 border border-amber-300",
-  po:         "bg-indigo-100 text-indigo-700 border border-indigo-300",
-  delivery:   "bg-orange-100 text-orange-700 border border-orange-300",
-  onsite:     "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  ded:        "bg-muted text-muted-foreground border border-border",
+  bq:         "bg-muted text-muted-foreground border border-border",
+  pr:         "bg-info/10 text-info border border-info/30",
+  rfq:        "bg-warning/10 text-warning-foreground border border-warning/30",
+  po:         "bg-primary/10 text-primary border border-primary/30",
+  delivery:   "bg-accent/10 text-accent border border-accent/30",
+  onsite:     "bg-success/10 text-success border border-success/30",
   // legacy aliases
-  planned:    "bg-slate-100 text-slate-700 border border-slate-300",
-  "rfq-sent": "bg-sky-100 text-sky-700 border border-sky-300",
-  approval:   "bg-amber-100 text-amber-800 border border-amber-300",
-  "po-issued":"bg-indigo-100 text-indigo-700 border border-indigo-300",
-  fabrication:"bg-purple-100 text-purple-700 border border-purple-300",
-  installed:  "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  planned:    "bg-muted text-muted-foreground border border-border",
+  "rfq-sent": "bg-info/10 text-info border border-info/30",
+  approval:   "bg-warning/10 text-warning-foreground border border-warning/30",
+  "po-issued":"bg-primary/10 text-primary border border-primary/30",
+  fabrication:"bg-primary/10 text-primary border border-primary/30",
+  installed:  "bg-success/10 text-success border border-success/30",
 };
 
 
