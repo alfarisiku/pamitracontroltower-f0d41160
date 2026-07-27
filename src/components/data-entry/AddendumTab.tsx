@@ -70,7 +70,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
           queryClient.invalidateQueries({ queryKey: ["projects"] });
         }
       }
-      await logActivity(supabase, "addendum", "approve", `Addendum approved (cost: ${formatRupiah(costImpact)}, schedule: +${scheduleDays}d)`, projectId, id);
+      await logActivity(supabase, "addendum", "approve", `Addendum approved (cost: ${formatIDR((costImpact || 0) * 1_000_000)}, schedule: +${scheduleDays}d)`, projectId, id);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Approved", description: "Addendum disetujui & proyek diupdate" });
