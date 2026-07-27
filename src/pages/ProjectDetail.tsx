@@ -664,12 +664,18 @@ const ProjectDetail = () => {
                   if (hasAct) { hasAnyActual = true; cumAct += (r.actIn - r.actOut); }
                   return {
                     label: r.label,
+                    planIn: r.planIn,
+                    actIn: r.actIn,
+                    planOut: r.planOut,
+                    actOut: r.actOut,
                     "Plan Cash In": r.planIn,
                     "Actual Cash In": r.actIn,
                     "Plan Cash Out": -r.planOut,
                     "Actual Cash Out": -r.actOut,
                     "Cum. Plan Net": cumPlan,
                     "Cum. Actual Net": hasAnyActual && hasAct ? cumAct : null,
+                    _cumPlan: cumPlan,
+                    _cumAct: hasAnyActual && hasAct ? cumAct : null,
                   };
                 });
                 // Breakeven marker (first period where cumulative actual net turns >= 0)
@@ -687,9 +693,9 @@ const ProjectDetail = () => {
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow &amp; Progress — Plan vs Actual
+                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow — Plan vs Actual
                     </h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis <span className="font-semibold" style={{ color: "hsl(215, 80%, 48%)" }}>Kumulatif Planning (Plan Cash In − Plan Cash Out)</span> &amp; <span className="font-semibold" style={{ color: "hsl(340, 75%, 45%)" }}>Kumulatif Actual (Actual Cash In − Actual Cash Out)</span>. Titik potong garis Actual ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-success">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-success">{breakevenLabel}</span></>}.</p>
                     <div className="h-[340px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
@@ -704,19 +710,88 @@ const ProjectDetail = () => {
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
                           {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--success))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--success))", fontSize: 10, position: "top" }} />}
-                          <Bar dataKey="Plan Cash In" fill="hsl(var(--success) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Actual Cash In" fill="hsl(var(--success))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
-                          <Line type="monotone" dataKey="Cum. Plan Net" name="Kumulatif Planning (Net)" stroke="hsl(215, 80%, 48%)" strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 3, fill: "hsl(215, 80%, 48%)" }} connectNulls />
-                          <Line type="monotone" dataKey="Cum. Actual Net" name="Kumulatif Actual (Net)" stroke="hsl(340, 75%, 45%)" strokeWidth={3} dot={{ r: 3.5, fill: "hsl(340, 75%, 45%)" }} connectNulls />
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.3)" radius={[3,3,0,0]} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--muted-foreground) / 0.3)" radius={[0,0,3,3]} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--muted-foreground))" radius={[0,0,3,3]} />
+                          <Line type="monotone" dataKey="Cum. Plan Net" name="Kumulatif Plan (Net)" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 2.5, fill: "hsl(var(--primary))" }} connectNulls />
+                          <Line type="monotone" dataKey="Cum. Actual Net" name="Kumulatif Actual (Net)" stroke="hsl(var(--foreground))" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--foreground))" }} connectNulls />
 
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
+
+                    {/* === Detailed Cashflow Table === */}
+                    <div className="mt-4 border border-border rounded-md overflow-hidden">
+                      <div className="overflow-auto max-h-[360px]">
+                        <table className="w-full text-xs">
+                          <thead className="sticky top-0 z-10">
+                            <tr className="bg-muted border-b border-border">
+                              <th rowSpan={2} className="text-left py-2 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
+                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
+                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
+                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Net Periode</th>
+                              <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Kumulatif Net</th>
+                            </tr>
+                            <tr className="bg-muted/70 border-b border-border">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bipolar.map((r, idx) => {
+                              const netPlan = r.planIn - r.planOut;
+                              const hasAct = r.actIn !== 0 || r.actOut !== 0;
+                              const netAct = hasAct ? r.actIn - r.actOut : null;
+                              return (
+                                <tr key={idx} className="border-b border-border/30 hover:bg-muted/20">
+                                  <td className="py-1.5 px-2 font-medium">{r.label}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{hasAct ? formatRupiah(r.actIn) : "—"}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{hasAct ? formatRupiah(r.actOut) : "—"}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data border-l border-border/40 ${netPlan >= 0 ? "text-success/80" : "text-destructive/80"}`}>{formatRupiah(netPlan)}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${netAct == null ? "text-muted-foreground" : netAct >= 0 ? "text-success" : "text-destructive"}`}>{netAct == null ? "—" : formatRupiah(netAct)}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data border-l border-border/40 ${r._cumPlan >= 0 ? "text-success/80" : "text-destructive/80"}`}>{formatRupiah(r._cumPlan)}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${r._cumAct == null ? "text-muted-foreground" : r._cumAct >= 0 ? "text-success" : "text-destructive"}`}>{r._cumAct == null ? "—" : formatRupiah(r._cumAct)}</td>
+                                </tr>
+                              );
+                            })}
+                            {(() => {
+                              const tPlanIn = bipolar.reduce((s, r) => s + r.planIn, 0);
+                              const tActIn = bipolar.reduce((s, r) => s + r.actIn, 0);
+                              const tPlanOut = bipolar.reduce((s, r) => s + r.planOut, 0);
+                              const tActOut = bipolar.reduce((s, r) => s + r.actOut, 0);
+                              const tNetPlan = tPlanIn - tPlanOut;
+                              const tNetAct = tActIn - tActOut;
+                              return (
+                                <tr className="bg-primary/5 font-bold border-t-2 border-primary/30">
+                                  <td className="py-2 px-2 text-foreground text-[11px]">TOTAL</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(tPlanIn)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-primary">{formatRupiah(tActIn)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(tPlanOut)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(tActOut)}</td>
+                                  <td className={`py-2 px-2 text-right font-mono-data border-l border-border/40 ${tNetPlan >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(tNetPlan)}</td>
+                                  <td className={`py-2 px-2 text-right font-mono-data ${tNetAct >= 0 ? "text-success" : "text-destructive"}`}>{formatRupiah(tNetAct)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">—</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground">—</td>
+                                </tr>
+                              );
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
+
 
               {/* === Cost Breakdown by Category — Below === */}
               {(() => {
