@@ -46,22 +46,22 @@ const procStatusLabels: Record<string, string> = {
   fabrication: "PO", installed: "On Site",
 };
 
-// Distinct highlighted text color per procurement pipeline stage — instantly readable.
+// Procurement pipeline stage badges — semantic tokens only, aligned to dashboard theme.
 const procStatusColors: Record<string, string> = {
-  ded:        "bg-slate-100 text-slate-700 border border-slate-300",
-  bq:         "bg-zinc-100 text-zinc-700 border border-zinc-300",
-  pr:         "bg-sky-100 text-sky-700 border border-sky-300",
-  rfq:        "bg-amber-100 text-amber-800 border border-amber-300",
-  po:         "bg-indigo-100 text-indigo-700 border border-indigo-300",
-  delivery:   "bg-orange-100 text-orange-700 border border-orange-300",
-  onsite:     "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  ded:        "bg-muted text-muted-foreground border border-border",
+  bq:         "bg-muted text-muted-foreground border border-border",
+  pr:         "bg-info/10 text-info border border-info/30",
+  rfq:        "bg-warning/10 text-warning-foreground border border-warning/30",
+  po:         "bg-primary/10 text-primary border border-primary/30",
+  delivery:   "bg-accent/10 text-accent border border-accent/30",
+  onsite:     "bg-success/10 text-success border border-success/30",
   // legacy aliases
-  planned:    "bg-slate-100 text-slate-700 border border-slate-300",
-  "rfq-sent": "bg-sky-100 text-sky-700 border border-sky-300",
-  approval:   "bg-amber-100 text-amber-800 border border-amber-300",
-  "po-issued":"bg-indigo-100 text-indigo-700 border border-indigo-300",
-  fabrication:"bg-purple-100 text-purple-700 border border-purple-300",
-  installed:  "bg-emerald-100 text-emerald-700 border border-emerald-300",
+  planned:    "bg-muted text-muted-foreground border border-border",
+  "rfq-sent": "bg-info/10 text-info border border-info/30",
+  approval:   "bg-warning/10 text-warning-foreground border border-warning/30",
+  "po-issued":"bg-primary/10 text-primary border border-primary/30",
+  fabrication:"bg-primary/10 text-primary border border-primary/30",
+  installed:  "bg-success/10 text-success border border-success/30",
 };
 
 
@@ -767,20 +767,20 @@ const ProjectDetail = () => {
                               <th colSpan={4} className="text-center py-1 px-2 text-[9px] uppercase text-foreground border-l-2 border-border">Actual</th>
                             </tr>
                             <tr className="bg-muted/70 border-b border-border">
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-primary/70 border-l border-border">Cash In</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-accent/70">Cash Out</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-info">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Net<FormulaTooltip {...FORMULAS.netPeriode} /></span>
                               </th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-info">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Kumulatif<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
                               </th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l-2 border-border">Cash In</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-primary border-l-2 border-border">Cash In</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-accent">Cash Out</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-success">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Net<FormulaTooltip {...FORMULAS.netPeriode} /></span>
                               </th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-success">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Kumulatif<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
                               </th>
                             </tr>
@@ -792,15 +792,15 @@ const ProjectDetail = () => {
                               const netAct = hasAct ? r.actIn - r.actOut : null;
                               return (
                                 <tr key={idx} className="border-b border-border/30 hover:bg-muted/20">
-                                  <td className="py-1.5 px-2 font-medium">{r.label}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70">{formatRupiah(r.planOut)}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground/80">{formatRupiah(netPlan)}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{formatRupiah(r._cumPlan)}</td>
+                                  <td className="py-1.5 px-2 font-medium text-foreground">{r.label}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-accent/70">{formatRupiah(r.planOut)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-info">{formatRupiah(netPlan)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-info font-semibold">{formatRupiah(r._cumPlan)}</td>
                                   <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold border-l-2 border-border/60">{hasAct ? formatRupiah(r.actIn) : "—"}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{hasAct ? formatRupiah(r.actOut) : "—"}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${netAct == null ? "text-muted-foreground" : "text-foreground"}`}>{netAct == null ? "—" : formatRupiah(netAct)}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${r._cumAct == null ? "text-muted-foreground" : "text-foreground"}`}>{r._cumAct == null ? "—" : formatRupiah(r._cumAct)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{hasAct ? formatRupiah(r.actOut) : "—"}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${netAct == null ? "text-muted-foreground" : "text-success"}`}>{netAct == null ? "—" : formatRupiah(netAct)}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${r._cumAct == null ? "text-muted-foreground" : "text-success"}`}>{r._cumAct == null ? "—" : formatRupiah(r._cumAct)}</td>
                                 </tr>
                               );
                             })}
@@ -816,14 +816,14 @@ const ProjectDetail = () => {
                               return (
                                 <tr className="bg-primary/5 font-bold border-t-2 border-primary/30">
                                   <td className="py-2 px-2 text-foreground text-[11px]">TOTAL</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(tPlanIn)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground/70">{formatRupiah(tPlanOut)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground/80">{formatRupiah(tNetPlan)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(lastCumPlan)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(tPlanIn)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-accent/70">{formatRupiah(tPlanOut)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-info">{formatRupiah(tNetPlan)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-info">{formatRupiah(lastCumPlan)}</td>
                                   <td className="py-2 px-2 text-right font-mono-data text-primary border-l-2 border-border/60">{formatRupiah(tActIn)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(tActOut)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(tNetAct)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{lastCumAct == null ? "—" : formatRupiah(lastCumAct)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(tActOut)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-success">{formatRupiah(tNetAct)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-success">{lastCumAct == null ? "—" : formatRupiah(lastCumAct)}</td>
                                 </tr>
                               );
                             })()}
@@ -1401,24 +1401,23 @@ const ProjectDetail = () => {
                     {(() => {
                       const countBy = (keys: string[]) => procurementItems.filter(i => keys.includes(i.status)).length;
                       const cards = [
-                        { label: "Total",     value: procurementItems.length,                     tone: "text-primary",     bg: "bg-primary/5 border-primary/20" },
-                        { label: "DED",       value: countBy(["ded","planned","bq"]),             tone: "text-slate-700",   bg: "bg-slate-100/60 border-slate-200" },
-                        { label: "PR",        value: countBy(["pr","rfq-sent"]),                  tone: "text-sky-700",     bg: "bg-sky-50 border-sky-200" },
-                        { label: "PO",        value: countBy(["po","po-issued","rfq","approval","fabrication"]), tone: "text-indigo-700", bg: "bg-indigo-50 border-indigo-200" },
-                        { label: "Delivery",  value: countBy(["delivery"]),                       tone: "text-orange-700",  bg: "bg-orange-50 border-orange-200" },
-                        { label: "On Site",   value: countBy(["onsite","installed"]),             tone: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+                        { label: "Total",     value: procurementItems.length,                                     tone: "text-foreground", bg: "bg-muted/40 border-border" },
+                        { label: "PR",        value: countBy(["pr","rfq-sent","ded","bq","planned"]),             tone: "text-info",       bg: "bg-info/5 border-info/30" },
+                        { label: "PO",        value: countBy(["po","po-issued","rfq","approval","fabrication"]), tone: "text-primary",    bg: "bg-primary/5 border-primary/30" },
+                        { label: "Delivery",  value: countBy(["delivery"]),                                       tone: "text-accent",     bg: "bg-accent/5 border-accent/30" },
+                        { label: "On Site",   value: countBy(["onsite","installed"]),                             tone: "text-success",    bg: "bg-success/5 border-success/30" },
                       ];
                       const totalCost = procurementItems.reduce((s, i) => s + i.amount, 0);
                       return (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                           {cards.map(c => (
                             <div key={c.label} className={`rounded-lg p-3 border text-center ${c.bg}`}>
-                              <p className="text-[9px] text-muted-foreground uppercase">{c.label}</p>
+                              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{c.label}</p>
                               <p className={`text-lg font-bold font-mono-data ${c.tone}`}>{c.value}</p>
                             </div>
                           ))}
-                          <div className="rounded-lg p-3 border border-border bg-muted/40 text-center col-span-2 sm:col-span-4 lg:col-span-1">
-                            <p className="text-[9px] text-muted-foreground uppercase">Total Cost</p>
+                          <div className="rounded-lg p-3 border border-border bg-muted/40 text-center col-span-2 sm:col-span-3 lg:col-span-1">
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Total Cost</p>
                             <p className="text-lg font-bold font-mono-data text-foreground">{formatIDR(totalCost)}</p>
                           </div>
                         </div>
