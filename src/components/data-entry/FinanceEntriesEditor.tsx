@@ -292,7 +292,7 @@ export function FinanceEntriesEditor({ projectId, compact = false }: { projectId
               </tbody>
             </table>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
