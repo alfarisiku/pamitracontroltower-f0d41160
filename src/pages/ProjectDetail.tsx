@@ -115,6 +115,9 @@ const ProjectDetail = () => {
   const [activeTab, setActiveTab] = useState<MainTab>("health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
+  const [cashflowGranularity, setCashflowGranularity] = useState<"monthly" | "weekly">("monthly");
+  const [financeGranularity, setFinanceGranularity] = useState<"monthly" | "weekly">("monthly");
+  const [scurveGranularity, setScurveGranularity] = useState<"monthly" | "weekly">("monthly");
   const [descExpanded, setDescExpanded] = useState(false);
   // Gantt hover — cursor-following tooltip state (client x/y + payload)
   const [ganttHover, setGanttHover] = useState<null | { x: number; y: number; code: string; name: string; startMs: number; endMs: number; durationDays: number; remainingDays: number; progressPct: number; qty?: string; unit?: string; level: 1 | 2 }>(null);
