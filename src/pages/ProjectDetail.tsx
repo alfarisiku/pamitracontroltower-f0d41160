@@ -1725,7 +1725,7 @@ const ProjectDetail = () => {
                         <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Cost Impact</th>
                         <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Schedule</th>
                         <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
-                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Approved At</th>
+                        
                       </tr>
                     </thead>
                     <tbody>
