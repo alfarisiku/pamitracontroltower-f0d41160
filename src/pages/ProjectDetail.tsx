@@ -1401,24 +1401,23 @@ const ProjectDetail = () => {
                     {(() => {
                       const countBy = (keys: string[]) => procurementItems.filter(i => keys.includes(i.status)).length;
                       const cards = [
-                        { label: "Total",     value: procurementItems.length,                     tone: "text-primary",     bg: "bg-primary/5 border-primary/20" },
-                        { label: "DED",       value: countBy(["ded","planned","bq"]),             tone: "text-slate-700",   bg: "bg-slate-100/60 border-slate-200" },
-                        { label: "PR",        value: countBy(["pr","rfq-sent"]),                  tone: "text-sky-700",     bg: "bg-sky-50 border-sky-200" },
-                        { label: "PO",        value: countBy(["po","po-issued","rfq","approval","fabrication"]), tone: "text-indigo-700", bg: "bg-indigo-50 border-indigo-200" },
-                        { label: "Delivery",  value: countBy(["delivery"]),                       tone: "text-orange-700",  bg: "bg-orange-50 border-orange-200" },
-                        { label: "On Site",   value: countBy(["onsite","installed"]),             tone: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+                        { label: "Total",     value: procurementItems.length,                                     tone: "text-foreground", bg: "bg-muted/40 border-border" },
+                        { label: "PR",        value: countBy(["pr","rfq-sent","ded","bq","planned"]),             tone: "text-info",       bg: "bg-info/5 border-info/30" },
+                        { label: "PO",        value: countBy(["po","po-issued","rfq","approval","fabrication"]), tone: "text-primary",    bg: "bg-primary/5 border-primary/30" },
+                        { label: "Delivery",  value: countBy(["delivery"]),                                       tone: "text-accent",     bg: "bg-accent/5 border-accent/30" },
+                        { label: "On Site",   value: countBy(["onsite","installed"]),                             tone: "text-success",    bg: "bg-success/5 border-success/30" },
                       ];
                       const totalCost = procurementItems.reduce((s, i) => s + i.amount, 0);
                       return (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                           {cards.map(c => (
                             <div key={c.label} className={`rounded-lg p-3 border text-center ${c.bg}`}>
-                              <p className="text-[9px] text-muted-foreground uppercase">{c.label}</p>
+                              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{c.label}</p>
                               <p className={`text-lg font-bold font-mono-data ${c.tone}`}>{c.value}</p>
                             </div>
                           ))}
-                          <div className="rounded-lg p-3 border border-border bg-muted/40 text-center col-span-2 sm:col-span-4 lg:col-span-1">
-                            <p className="text-[9px] text-muted-foreground uppercase">Total Cost</p>
+                          <div className="rounded-lg p-3 border border-border bg-muted/40 text-center col-span-2 sm:col-span-3 lg:col-span-1">
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Total Cost</p>
                             <p className="text-lg font-bold font-mono-data text-foreground">{formatIDR(totalCost)}</p>
                           </div>
                         </div>
