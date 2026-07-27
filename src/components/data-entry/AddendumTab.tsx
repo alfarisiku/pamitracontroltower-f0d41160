@@ -76,7 +76,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div><label className={labelCls}>Addendum ID</label><input value={addendumCode} onChange={e => setAddendumCode(e.target.value)} className={inputCls} placeholder="ADD-001" /></div>
           <div><label className={labelCls}>Description</label><input value={addendumDesc} onChange={e => setAddendumDesc(e.target.value)} className={inputCls} placeholder="Perubahan scope" /></div>
-          <div><label className={labelCls}>Scope Change</label><input value={addendumScope} onChange={e => setAddendumScope(e.target.value)} className={inputCls} placeholder="Penambahan tangki" /></div>
+          <div><label className={labelCls}>Addendum Date</label><input type="date" value={addendumDate} onChange={e => setAddendumDate(e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Cost Impact (Juta)</label><input type="number" value={addendumCost} onChange={e => setAddendumCost(e.target.value)} className={inputCls} placeholder="50000" /></div>
           <div><label className={labelCls}>Schedule Impact (Days)</label><input type="number" value={addendumDays} onChange={e => setAddendumDays(e.target.value)} className={inputCls} placeholder="30" /></div>
         </div>
