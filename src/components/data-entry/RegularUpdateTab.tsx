@@ -332,7 +332,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <p className="text-[10px] text-muted-foreground mb-3">
               Buat report baru untuk periode <b>{selectedPeriod.period_label}</b>.
             </p>
-            <WeeklyReportEditor projectId={projectId} />
+            <WeeklyReportEditor projectId={projectId} compact />
           </div>
 
           {/* === STEP 9: Weekly Photos === */}
