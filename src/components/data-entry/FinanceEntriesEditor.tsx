@@ -33,7 +33,7 @@ function periodOptionLabel(p: ProjectPeriod) {
   return `${p.period_label} — ${fmtDMY(p.period_start)} → ${fmtDMY(p.period_end)}`;
 }
 
-export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
+export function FinanceEntriesEditor({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
   const { data: entries = [], isLoading } = useFinanceEntries(projectId);
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const qc = useQueryClient();
