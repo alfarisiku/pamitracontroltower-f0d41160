@@ -208,9 +208,10 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
               </div>
               <div className="sm:col-span-3"><label className={labelCls}>Description</label><input value={form.description} onChange={e => setForm({...form, description: e.target.value})} className={inputCls} placeholder="Termin dari client / Bayar vendor XYZ / …" /></div>
             </div>
-            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Input dalam Rupiah utuh (mis. 150.000.000). Ditampilkan singkat (Jt/M/T) di dashboard proyek.</p>
+            <p className="text-[9px] text-muted-foreground mt-1 italic">💡 Periode weekly di-lock ke S-Curve Baseline (sama seperti Weekly Report). Amount dalam Rupiah utuh.</p>
+            {periods.length === 0 && <p className="text-[10px] text-destructive mt-1">Belum ada periode baseline — buat S-Curve dulu di tab S-Curve.</p>}
             <div className="flex gap-2 mt-2">
-              <button onClick={handleAdd} disabled={saving || !form.amount} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50"><Save className="h-3 w-3 inline mr-1" />{saving ? "..." : "Save"}</button>
+              <button onClick={handleAdd} disabled={saving || !form.amount || !form.period_id} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50"><Save className="h-3 w-3 inline mr-1" />{saving ? "..." : "Save"}</button>
               <button onClick={() => setShowAdd(false)} className="px-3 py-1.5 bg-muted rounded text-xs border border-border">Cancel</button>
             </div>
           </div>
