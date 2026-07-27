@@ -115,6 +115,9 @@ const ProjectDetail = () => {
   const [activeTab, setActiveTab] = useState<MainTab>("health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
+  const [cashflowGranularity, setCashflowGranularity] = useState<"monthly" | "weekly">("monthly");
+  const [financeGranularity, setFinanceGranularity] = useState<"monthly" | "weekly">("monthly");
+  const [scurveGranularity, setScurveGranularity] = useState<"monthly" | "weekly">("monthly");
   const [descExpanded, setDescExpanded] = useState(false);
   // Gantt hover — cursor-following tooltip state (client x/y + payload)
   const [ganttHover, setGanttHover] = useState<null | { x: number; y: number; code: string; name: string; startMs: number; endMs: number; durationDays: number; remainingDays: number; progressPct: number; qty?: string; unit?: string; level: 1 | 2 }>(null);
@@ -149,6 +152,34 @@ const ProjectDetail = () => {
       </div>
     );
   }
+
+  // Bucket helper: weekly keeps period_label as-is; monthly groups by calendar month of period_date
+  const bucketFor = (fe: { period_label?: string | null; period_date: string }, gran: "monthly" | "weekly") => {
+    if (gran === "weekly") {
+      const key = fe.period_label || fe.period_date;
+      return { key, label: key, order: new Date(fe.period_date).getTime() };
+    }
+    const d = new Date(fe.period_date);
+    const y = d.getUTCFullYear(); const m = d.getUTCMonth();
+    const key = `${y}-${String(m + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
+    return { key, label, order: Date.UTC(y, m, 1) };
+  };
+
+  // Small Monthly/Weekly toggle
+  const GranularityToggle = ({ value, onChange }: { value: "monthly" | "weekly"; onChange: (g: "monthly" | "weekly") => void }) => (
+    <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+      {(["monthly", "weekly"] as const).map(g => (
+        <button
+          key={g}
+          onClick={() => onChange(g)}
+          className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${value === g ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          {g === "monthly" ? "Monthly" : "Weekly"}
+        </button>
+      ))}
+    </div>
+  );
 
   const st = getStatusMeta(project.status);
   const contractValue = project.contract_value || project.budget;
@@ -400,16 +431,16 @@ const ProjectDetail = () => {
               {(() => {
                 const periodMap: Record<string, { label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number }> = {};
                 financeEntries.forEach(fe => {
-                  const key = fe.period_label || fe.period_date;
-                  if (!periodMap[key]) periodMap[key] = { label: key, order: new Date(fe.period_date).getTime(), cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
+                  const b = bucketFor(fe, cashflowGranularity);
+                  if (!periodMap[b.key]) periodMap[b.key] = { label: b.label, order: b.order, cashIn: 0, cashOut: 0, planIn: 0, planOut: 0 };
                   const amt = Number(fe.amount) || 0;
                   const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
                   if (fe.entry_kind === "actual") {
-                    if (fe.direction === "in") periodMap[key].cashIn += amt;
-                    else periodMap[key].cashOut += amt;
+                    if (fe.direction === "in") periodMap[b.key].cashIn += amt;
+                    else periodMap[b.key].cashOut += amt;
                   } else if (isPlan) {
-                    if (fe.direction === "in") periodMap[key].planIn += amt;
-                    else periodMap[key].planOut += amt;
+                    if (fe.direction === "in") periodMap[b.key].planIn += amt;
+                    else periodMap[b.key].planOut += amt;
                   }
                 });
                 const periodList = Object.values(periodMap).sort((a, b) => a.order - b.order);
@@ -488,19 +519,22 @@ const ProjectDetail = () => {
                   <div className="glass-card rounded-lg p-4 shadow-card">
                     <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
                       <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
-                      {availableCurves.length > 1 && (
-                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
-                          {availableCurves.map(ct => (
-                            <button
-                              key={ct}
-                              onClick={() => setCashflowCurve(ct)}
-                              className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                            >
-                              {ct === "baseline" ? "Baseline" : ct}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <GranularityToggle value={cashflowGranularity} onChange={setCashflowGranularity} />
+                        {availableCurves.length > 1 && (
+                          <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+                            {availableCurves.map(ct => (
+                              <button
+                                key={ct}
+                                onClick={() => setCashflowCurve(ct)}
+                                className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded transition-colors ${activeCurve === ct ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                              >
+                                {ct === "baseline" ? "Baseline" : ct}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti data Cashflow hingga proyek selesai.</p>
                     <div className="h-[280px] mb-3">
@@ -649,15 +683,15 @@ const ProjectDetail = () => {
               {(() => {
                 const map: Record<string, { label: string; order: number; planIn: number; actIn: number; planOut: number; actOut: number }> = {};
                 financeEntries.forEach(fe => {
-                  const key = fe.period_label || fe.period_date;
-                  if (!map[key]) map[key] = { label: key, order: new Date(fe.period_date).getTime(), planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
+                  const b = bucketFor(fe, financeGranularity);
+                  if (!map[b.key]) map[b.key] = { label: b.label, order: b.order, planIn: 0, actIn: 0, planOut: 0, actOut: 0 };
                   const isPlan = fe.entry_kind === "rap" || fe.entry_kind === "forecast";
                   const isAct = fe.entry_kind === "actual";
                   const amt = Number(fe.amount) || 0;
-                  if (fe.direction === "in" && isPlan) map[key].planIn += amt;
-                  if (fe.direction === "in" && isAct) map[key].actIn += amt;
-                  if (fe.direction === "out" && isPlan) map[key].planOut += amt;
-                  if (fe.direction === "out" && isAct) map[key].actOut += amt;
+                  if (fe.direction === "in" && isPlan) map[b.key].planIn += amt;
+                  if (fe.direction === "in" && isAct) map[b.key].actIn += amt;
+                  if (fe.direction === "out" && isPlan) map[b.key].planOut += amt;
+                  if (fe.direction === "out" && isAct) map[b.key].actOut += amt;
                 });
                 const sorted = Object.values(map).sort((a, b) => a.order - b.order);
                 let cumPlan = 0, cumAct = 0;
@@ -696,9 +730,12 @@ const ProjectDetail = () => {
                 if (bipolar.length === 0) return null;
                 return (
                   <div className="glass-card rounded-lg p-4 shadow-card">
-                    <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" /> Cashflow — Plan vs Actual
-                    </h3>
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" /> Cashflow — Plan vs Actual
+                      </h3>
+                      <GranularityToggle value={financeGranularity} onChange={setFinanceGranularity} />
+                    </div>
                     <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-primary">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-primary">{breakevenLabel}</span></>}.</p>
                     <div className="h-[340px]">
                       <ResponsiveContainer width="100%" height="100%">
@@ -965,15 +1002,42 @@ const ProjectDetail = () => {
             return (
             <div className="space-y-4">
               <div className="glass-card rounded-lg shadow-card p-4">
-                <h3 className="text-sm font-bold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+                  <h3 className="text-sm font-bold text-foreground">S-Curve — Planned vs Actual Progress</h3>
+                  <GranularityToggle value={scurveGranularity} onChange={setScurveGranularity} />
+                </div>
                 <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor. {curveTypes.length > 1 && <span className="text-primary font-medium">Termasuk kurva tambahan: {curveTypes.filter(c => c !== "baseline").join(", ")}.</span>}</p>
-                <SCurveChart
-                  startDate={project.start_date}
-                  endDate={project.end_date}
-                  progress={project.progress}
-                  milestones={milestones}
-                  customData={scurveData.length > 0 ? scurveData : undefined}
-                />
+                {(() => {
+                  let chartRows: any[] = scurveData;
+                  if (scurveGranularity === "monthly" && scurveData.length > 0) {
+                    // For each curve_type + calendar-month bucket keep the LAST row (highest cumulative %)
+                    const groups: Record<string, any> = {};
+                    for (const s of scurveData) {
+                      const dstr = (s as any).period_end || (s as any).period_date;
+                      if (!dstr) continue;
+                      const d = new Date(dstr);
+                      const bkt = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+                      const key = `${s.curve_type}|${bkt}`;
+                      const existing = groups[key];
+                      if (!existing || s.period_order > existing.period_order) groups[key] = { ...s, _monthLabel: d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" }) };
+                    }
+                    const arr = Object.values(groups).sort((a: any, b: any) => (a.curve_type as string).localeCompare(b.curve_type) || a.period_order - b.period_order);
+                    const seq: Record<string, number> = {};
+                    chartRows = arr.map((s: any) => {
+                      seq[s.curve_type] = (seq[s.curve_type] ?? -1) + 1;
+                      return { ...s, period_order: seq[s.curve_type], period_label: s._monthLabel };
+                    });
+                  }
+                  return (
+                    <SCurveChart
+                      startDate={project.start_date}
+                      endDate={project.end_date}
+                      progress={project.progress}
+                      milestones={milestones}
+                      customData={chartRows.length > 0 ? chartRows : undefined}
+                    />
+                  );
+                })()}
 
                 {/* Per-curve KPI row (SPI + Deviasi) — compact single-row layout */}
                 <div className="mt-4 space-y-2">
