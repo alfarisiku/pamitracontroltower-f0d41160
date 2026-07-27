@@ -10,7 +10,7 @@ import { useProjectPeriods } from "@/hooks/useProjectPeriods";
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
-export function PhotoUploader({ projectId }: { projectId: string }) {
+export function PhotoUploader({ projectId, compact = false }: { projectId: string; compact?: boolean }) {
   const qc = useQueryClient();
   const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const [files, setFiles] = useState<FileList | null>(null);
