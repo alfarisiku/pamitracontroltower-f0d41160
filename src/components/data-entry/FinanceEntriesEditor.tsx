@@ -114,11 +114,12 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
       });
       if (error) throw error;
       await logActivity(supabase, "finance", "create", `${form.entry_kind === "rap" ? "Plan" : "Actual"} ${form.direction === "in" ? "In" : `Out (${form.category})`} ${formatIDR(rp)} · ${period.period_label}`, projectId);
+      onLogged?.(`Finance ${form.direction === "in" ? "Cash In" : `Cash Out (${form.category})`} ${form.entry_kind === "rap" ? "PLAN" : "ACTUAL"} ${formatIDR(rp)} — ${period.period_label}`);
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
       toast({ title: "✅ Saved" });
-      setForm({ ...emptyForm(), period_id: nextUnfilled?.id ?? "" }); setShowAdd(false);
+      setForm({ ...emptyForm(), period_id: lockedPeriodId ?? nextUnfilled?.id ?? "" }); setShowAdd(false);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
