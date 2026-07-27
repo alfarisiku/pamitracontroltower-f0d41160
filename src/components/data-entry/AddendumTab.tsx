@@ -18,15 +18,25 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
 
+  // Cost impact is stored in JUTA in DB (aligned with projects.budget unit).
+  // UI accepts raw Rupiah for easier data entry; we convert on save/load.
+  const rupiahToJuta = (rp: string) => Math.round((parseInt(rp || "0", 10) || 0) / 1_000_000);
+  const jutaToRupiah = (jt: number) => String(Math.round((Number(jt) || 0) * 1_000_000));
+  const previewRp = (rp: string) => {
+    const n = parseInt(rp || "0", 10) || 0;
+    return n === 0 ? "" : formatIDR(n);
+  };
+
   const handleAddAddendum = async () => {
     if (!projectId || !addendumCode) return;
     setSaving(true);
     try {
+      const costJuta = rupiahToJuta(addendumCost);
       const { error } = await supabase.from("addendums").insert({
         project_id: projectId, addendum_code: addendumCode,
         description: addendumDesc,
         addendum_date: addendumDate || null,
-        cost_impact: parseInt(addendumCost) || 0, schedule_impact_days: parseInt(addendumDays) || 0,
+        cost_impact: costJuta, schedule_impact_days: parseInt(addendumDays) || 0,
       });
       if (error) throw error;
       await logActivity(supabase, "addendum", "create", `Addendum ${addendumCode} created`, projectId);
