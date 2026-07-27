@@ -39,17 +39,29 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
 
   useEffect(() => { setPeriodOrder(""); }, [projectId]);
 
-  // === STEP 1: Weekly Progress % ===
+  // === STEP 2: Weekly Progress % (DRAFT → CONFIRM) ===
   const [actualPct, setActualPct] = useState("");
+  const [draftPct, setDraftPct] = useState<number | null>(null);
   useEffect(() => {
     setActualPct(selectedPeriod?.actual_progress != null ? String(selectedPeriod.actual_progress) : "");
+    setDraftPct(null);
   }, [selectedPeriod?.id]);
 
-  const [savingProgress, setSavingProgress] = useState(false);
-  const handleSaveProgress = async () => {
-    if (!selectedPeriod || !projectId) return;
+  const stageDraft = () => {
     const val = parseFloat(actualPct);
     if (isNaN(val) || val < 0 || val > 100) { toast({ title: "Progress harus 0–100", variant: "destructive" }); return; }
+    setDraftPct(val);
+    toast({ title: "📝 Draft disimpan", description: "Konfirmasi di bawah untuk publish." });
+  };
+  const discardDraft = () => {
+    setDraftPct(null);
+    setActualPct(selectedPeriod?.actual_progress != null ? String(selectedPeriod.actual_progress) : "");
+  };
+
+  const [savingProgress, setSavingProgress] = useState(false);
+  const handleConfirmDraft = async () => {
+    if (!selectedPeriod || !projectId || draftPct == null) return;
+    const val = draftPct;
     setSavingProgress(true);
     try {
       const { error: sErr } = await supabase.from("s_curve_data")
@@ -66,7 +78,8 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
       qc.invalidateQueries({ queryKey: ["s_curve_data"] });
       qc.invalidateQueries({ queryKey: ["projects"] });
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Progress tersimpan", description: `${selectedPeriod.period_label} → ${val}%` });
+      toast({ title: "✅ Terkonfirmasi", description: `${selectedPeriod.period_label} → ${val}%` });
+      setDraftPct(null);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSavingProgress(false); }
