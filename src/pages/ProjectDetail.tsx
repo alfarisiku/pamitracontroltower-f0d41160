@@ -1002,15 +1002,42 @@ const ProjectDetail = () => {
             return (
             <div className="space-y-4">
               <div className="glass-card rounded-lg shadow-card p-4">
-                <h3 className="text-sm font-bold text-foreground mb-1">S-Curve — Planned vs Actual Progress</h3>
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+                  <h3 className="text-sm font-bold text-foreground">S-Curve — Planned vs Actual Progress</h3>
+                  <GranularityToggle value={scurveGranularity} onChange={setScurveGranularity} />
+                </div>
                 <p className="text-[10px] text-muted-foreground mb-3">Data S-Curve dapat diedit melalui Data Entry → S-Curve Editor. {curveTypes.length > 1 && <span className="text-primary font-medium">Termasuk kurva tambahan: {curveTypes.filter(c => c !== "baseline").join(", ")}.</span>}</p>
-                <SCurveChart
-                  startDate={project.start_date}
-                  endDate={project.end_date}
-                  progress={project.progress}
-                  milestones={milestones}
-                  customData={scurveData.length > 0 ? scurveData : undefined}
-                />
+                {(() => {
+                  let chartRows: any[] = scurveData;
+                  if (scurveGranularity === "monthly" && scurveData.length > 0) {
+                    // For each curve_type + calendar-month bucket keep the LAST row (highest cumulative %)
+                    const groups: Record<string, any> = {};
+                    for (const s of scurveData) {
+                      const dstr = (s as any).period_end || (s as any).period_date;
+                      if (!dstr) continue;
+                      const d = new Date(dstr);
+                      const bkt = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+                      const key = `${s.curve_type}|${bkt}`;
+                      const existing = groups[key];
+                      if (!existing || s.period_order > existing.period_order) groups[key] = { ...s, _monthLabel: d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" }) };
+                    }
+                    const arr = Object.values(groups).sort((a: any, b: any) => (a.curve_type as string).localeCompare(b.curve_type) || a.period_order - b.period_order);
+                    const seq: Record<string, number> = {};
+                    chartRows = arr.map((s: any) => {
+                      seq[s.curve_type] = (seq[s.curve_type] ?? -1) + 1;
+                      return { ...s, period_order: seq[s.curve_type], period_label: s._monthLabel };
+                    });
+                  }
+                  return (
+                    <SCurveChart
+                      startDate={project.start_date}
+                      endDate={project.end_date}
+                      progress={project.progress}
+                      milestones={milestones}
+                      customData={chartRows.length > 0 ? chartRows : undefined}
+                    />
+                  );
+                })()}
 
                 {/* Per-curve KPI row (SPI + Deviasi) — compact single-row layout */}
                 <div className="mt-4 space-y-2">
