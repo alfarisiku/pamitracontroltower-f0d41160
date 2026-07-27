@@ -33,7 +33,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
 };
 
 type MediaTab = "weekly" | "video" | "cctv" | "model3d";
-type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report";
+type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report" | "addendum";
 
 const riskCategoryLabels: Record<string, string> = {
   technical: "Technical", schedule: "Schedule", cost: "Cost",
