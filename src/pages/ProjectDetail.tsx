@@ -1725,7 +1725,7 @@ const ProjectDetail = () => {
                         <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Cost Impact</th>
                         <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Schedule</th>
                         <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
-                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Approved At</th>
+                        
                       </tr>
                     </thead>
                     <tbody>
@@ -1739,7 +1739,7 @@ const ProjectDetail = () => {
                           <td className="py-2 px-3">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
                           </td>
-                          <td className="py-2 px-3 whitespace-nowrap text-muted-foreground">{a.approved_at ? new Date(a.approved_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                          
                         </tr>
                       ))}
                     </tbody>
