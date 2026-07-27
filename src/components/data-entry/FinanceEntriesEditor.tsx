@@ -1,42 +1,41 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2, Wallet, Filter, Search, Edit3, X, Download } from "lucide-react";
 import { supabase, formatRupiah, formatIDR, jutaToRupiah, rupiahToJuta, logActivity, FINANCE_CATEGORIES, DbFinanceEntry, FinanceCategory, FinanceDirection } from "@/lib/supabase";
 import { DateRangeInput } from "@/components/ui/date-range-input";
 import { useFinanceEntries } from "@/hooks/useProjects";
+import { useProjectPeriods, ProjectPeriod } from "@/hooks/useProjectPeriods";
 import { toast } from "@/hooks/use-toast";
 
 const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
-// Simplified: only planning | actual
 type PlanKind = "rap" | "actual"; // rap = planning
 type Form = {
   direction: FinanceDirection;
   category: FinanceCategory;
   entry_kind: PlanKind;
-  period_date: string;
+  period_id: string; // id of s_curve baseline row
   amount: string;
   description: string;
 };
 
 const emptyForm = (): Form => ({
   direction: "out", category: "material", entry_kind: "actual",
-  period_date: new Date().toISOString().slice(0,10),
+  period_id: "",
   amount: "", description: "",
 });
 
-function periodLabels(dateStr: string) {
-  const d = new Date(dateStr);
-  const monthLabel = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  const day = d.getDay();
-  const monday = new Date(d); monday.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
-  const weekLabel = `Wk ${monday.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-  return { weekLabel, monthLabel };
+function fmtDMY(iso: string) {
+  return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+}
+function periodOptionLabel(p: ProjectPeriod) {
+  return `${p.period_label} — ${fmtDMY(p.period_start)} → ${fmtDMY(p.period_end)}`;
 }
 
 export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const { data: entries = [], isLoading } = useFinanceEntries(projectId);
+  const { periods, nextUnfilled } = useProjectPeriods(projectId);
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,10 +45,27 @@ export function FinanceEntriesEditor({ projectId }: { projectId: string }) {
   const [fDir, setFDir] = useState<"all"|FinanceDirection>("all");
   const [fKind, setFKind] = useState<"all"|PlanKind>("all");
   const [fCat, setFCat] = useState<"all"|FinanceCategory>("all");
-  const [fFreq, setFFreq] = useState<"all"|"weekly"|"monthly">("all"); // visualisation filter
+  const [fFreq, setFFreq] = useState<"all"|"weekly"|"monthly">("all");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  useEffect(() => {
+    if (!form.period_id && nextUnfilled) setForm(f => ({ ...f, period_id: nextUnfilled.id }));
+  }, [nextUnfilled, form.period_id]);
+
+  const periodById = useMemo(() => {
+    const m = new Map<string, ProjectPeriod>();
+    periods.forEach(p => m.set(p.id, p));
+    return m;
+  }, [periods]);
+
+  // Match a raw period_date (ISO) to a baseline period whose range contains it.
+  const findPeriodByDate = (iso: string): ProjectPeriod | undefined => {
+    if (!iso) return undefined;
+    return periods.find(p => iso >= p.period_start && iso <= p.period_end)
+      ?? periods.find(p => p.period_end === iso);
+  };
 
   // Filter entries: only show plan (rap) & actual entries (drop legacy po/forecast)
   const visible = useMemo(() => entries.filter(e => e.entry_kind === "rap" || e.entry_kind === "actual"), [entries]);
