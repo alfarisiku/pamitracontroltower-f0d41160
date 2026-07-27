@@ -767,20 +767,20 @@ const ProjectDetail = () => {
                               <th colSpan={4} className="text-center py-1 px-2 text-[9px] uppercase text-foreground border-l-2 border-border">Actual</th>
                             </tr>
                             <tr className="bg-muted/70 border-b border-border">
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-primary/70 border-l border-border">Cash In</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-accent/70">Cash Out</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-info">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Net<FormulaTooltip {...FORMULAS.netPeriode} /></span>
                               </th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-info">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Kumulatif<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
                               </th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l-2 border-border">Cash In</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Cash Out</th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-primary border-l-2 border-border">Cash In</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-accent">Cash Out</th>
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-success">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Net<FormulaTooltip {...FORMULAS.netPeriode} /></span>
                               </th>
-                              <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                              <th className="text-right py-1 px-2 text-[9px] uppercase text-success">
                                 <span className="inline-flex items-center gap-0.5 justify-end w-full">Kumulatif<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
                               </th>
                             </tr>
@@ -792,15 +792,15 @@ const ProjectDetail = () => {
                               const netAct = hasAct ? r.actIn - r.actOut : null;
                               return (
                                 <tr key={idx} className="border-b border-border/30 hover:bg-muted/20">
-                                  <td className="py-1.5 px-2 font-medium">{r.label}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70">{formatRupiah(r.planOut)}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground/80">{formatRupiah(netPlan)}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{formatRupiah(r._cumPlan)}</td>
+                                  <td className="py-1.5 px-2 font-medium text-foreground">{r.label}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-accent/70">{formatRupiah(r.planOut)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-info">{formatRupiah(netPlan)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-info font-semibold">{formatRupiah(r._cumPlan)}</td>
                                   <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold border-l-2 border-border/60">{hasAct ? formatRupiah(r.actIn) : "—"}</td>
-                                  <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{hasAct ? formatRupiah(r.actOut) : "—"}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${netAct == null ? "text-muted-foreground" : "text-foreground"}`}>{netAct == null ? "—" : formatRupiah(netAct)}</td>
-                                  <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${r._cumAct == null ? "text-muted-foreground" : "text-foreground"}`}>{r._cumAct == null ? "—" : formatRupiah(r._cumAct)}</td>
+                                  <td className="py-1.5 px-2 text-right font-mono-data text-accent font-semibold">{hasAct ? formatRupiah(r.actOut) : "—"}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${netAct == null ? "text-muted-foreground" : "text-success"}`}>{netAct == null ? "—" : formatRupiah(netAct)}</td>
+                                  <td className={`py-1.5 px-2 text-right font-mono-data font-bold ${r._cumAct == null ? "text-muted-foreground" : "text-success"}`}>{r._cumAct == null ? "—" : formatRupiah(r._cumAct)}</td>
                                 </tr>
                               );
                             })}
@@ -816,14 +816,14 @@ const ProjectDetail = () => {
                               return (
                                 <tr className="bg-primary/5 font-bold border-t-2 border-primary/30">
                                   <td className="py-2 px-2 text-foreground text-[11px]">TOTAL</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(tPlanIn)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-muted-foreground/70">{formatRupiah(tPlanOut)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground/80">{formatRupiah(tNetPlan)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(lastCumPlan)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-primary/70 border-l border-border/40">{formatRupiah(tPlanIn)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-accent/70">{formatRupiah(tPlanOut)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-info">{formatRupiah(tNetPlan)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-info">{formatRupiah(lastCumPlan)}</td>
                                   <td className="py-2 px-2 text-right font-mono-data text-primary border-l-2 border-border/60">{formatRupiah(tActIn)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(tActOut)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{formatRupiah(tNetAct)}</td>
-                                  <td className="py-2 px-2 text-right font-mono-data text-foreground">{lastCumAct == null ? "—" : formatRupiah(lastCumAct)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-accent">{formatRupiah(tActOut)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-success">{formatRupiah(tNetAct)}</td>
+                                  <td className="py-2 px-2 text-right font-mono-data text-success">{lastCumAct == null ? "—" : formatRupiah(lastCumAct)}</td>
                                 </tr>
                               );
                             })()}
