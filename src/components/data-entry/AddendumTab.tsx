@@ -69,6 +69,59 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
     } finally { setSaving(false); }
   };
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<{ addendum_code: string; description: string; addendum_date: string; cost_impact: string; schedule_impact_days: string }>({
+    addendum_code: "", description: "", addendum_date: "", cost_impact: "", schedule_impact_days: "",
+  });
+
+  const startEdit = (a: any) => {
+    setEditingId(a.id);
+    setEdit({
+      addendum_code: a.addendum_code || "",
+      description: a.description || "",
+      addendum_date: a.addendum_date || "",
+      cost_impact: String(a.cost_impact ?? 0),
+      schedule_impact_days: String(a.schedule_impact_days ?? 0),
+    });
+  };
+  const cancelEdit = () => { setEditingId(null); };
+
+  const handleSaveEdit = async (id: string) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("addendums").update({
+        addendum_code: edit.addendum_code,
+        description: edit.description,
+        addendum_date: edit.addendum_date || null,
+        cost_impact: parseInt(edit.cost_impact) || 0,
+        schedule_impact_days: parseInt(edit.schedule_impact_days) || 0,
+      }).eq("id", id);
+      if (error) throw error;
+      await logActivity(supabase, "addendum", "update", `Addendum ${edit.addendum_code} updated`, projectId, id);
+      queryClient.invalidateQueries({ queryKey: ["addendums"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "✅ Berhasil", description: "Addendum diupdate" });
+      setEditingId(null);
+    } catch (e: any) {
+      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id: string, code: string) => {
+    if (!confirm(`Hapus addendum ${code}?`)) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("addendums").delete().eq("id", id);
+      if (error) throw error;
+      await logActivity(supabase, "addendum", "delete", `Addendum ${code} deleted`, projectId, id);
+      queryClient.invalidateQueries({ queryKey: ["addendums"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "🗑️ Dihapus", description: `Addendum ${code} dihapus` });
+    } catch (e: any) {
+      toast({ title: "❌ Error", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
   return (
     <div className="space-y-5 mb-5">
       <div className="glass-card rounded-lg shadow-card p-4">
