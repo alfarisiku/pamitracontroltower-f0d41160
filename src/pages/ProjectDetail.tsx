@@ -740,11 +740,12 @@ const ProjectDetail = () => {
                       <GranularityToggle value={financeGranularity} onChange={setFinanceGranularity} />
                     </div>
                     <p className="text-[10px] text-muted-foreground mb-3">Bar = Cash In (↑) / Cash Out (↓) per periode · Garis kumulatif Plan (dashed) &amp; Actual (solid) menunjukkan posisi net cashflow. Titik potong Actual ke atas nol = <span className="font-semibold text-primary">breakeven / titik balik profit</span>{breakevenLabel && <> — proyek breakeven pada <span className="font-bold text-primary">{breakevenLabel}</span></>}.</p>
-                    <div className="h-[340px]">
+                    <div className="h-[340px] overflow-x-auto">
+                      <div style={{ minWidth: financeGranularity === "weekly" ? Math.max(700, bipolar.length * 42) : "100%", height: "100%" }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={bipolar} stackOffset="sign" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
-                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} interval={0} angle={financeGranularity === "weekly" ? -35 : 0} textAnchor={financeGranularity === "weekly" ? "end" : "middle"} height={financeGranularity === "weekly" ? 60 : 30} />
                           <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatRupiah(Math.abs(v))} />
                           <RTooltip
                             contentStyle={chartTooltip}
@@ -785,15 +786,16 @@ const ProjectDetail = () => {
                           <Legend iconSize={10} wrapperStyle={{ fontSize: "11px" }} />
                           <ReferenceLine y={0} stroke="hsl(215, 15%, 30%)" strokeWidth={1.5} />
                           {breakevenLabel && <ReferenceLine x={breakevenLabel} stroke="hsl(var(--primary))" strokeDasharray="4 3" label={{ value: "Breakeven", fill: "hsl(var(--primary))", fontSize: 10, position: "top" }} />}
-                          <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} />
-                          <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} />
-                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} />
-                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} />
+                          <Bar dataKey="Plan Cash In" fill="hsl(var(--primary) / 0.35)" radius={[3,3,0,0]} minPointSize={2} />
+                          <Bar dataKey="Actual Cash In" fill="hsl(var(--primary))" radius={[3,3,0,0]} minPointSize={2} />
+                          <Bar dataKey="Plan Cash Out" fill="hsl(var(--accent) / 0.35)" radius={[0,0,3,3]} minPointSize={2} />
+                          <Bar dataKey="Actual Cash Out" fill="hsl(var(--accent))" radius={[0,0,3,3]} minPointSize={2} />
                           <Line type="monotone" dataKey="Cum. Plan Net" name="Kumulatif Plan (Net)" stroke="hsl(var(--info))" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 2.5, fill: "hsl(var(--info))" }} connectNulls />
                           <Line type="monotone" dataKey="Cum. Actual Net" name="Kumulatif Actual (Net)" stroke="hsl(var(--success))" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--success))" }} connectNulls />
 
                         </ComposedChart>
                       </ResponsiveContainer>
+                      </div>
                     </div>
 
                     {/* === Detailed Cashflow Table === */}
