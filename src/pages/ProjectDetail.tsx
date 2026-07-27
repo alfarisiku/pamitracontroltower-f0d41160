@@ -646,16 +646,16 @@ const ProjectDetail = () => {
                             let cum = 0;
                             let hasAnyActual = false;
                             return rows.map(r => {
-                              const dev = (r.actPct ?? 0) - r.planPct;
+                              const dev = r.planPct != null && r.actPct != null ? r.actPct - r.planPct : null;
                               const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
                               if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
                               const showNet = hasAnyActual && r.actPct != null;
                               return (
                               <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                                 <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct.toFixed(1)}%</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct == null ? "—" : `${r.planPct.toFixed(1)}%`}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
-                                <td className={`py-1.5 px-2 text-right font-mono-data ${r.actPct == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{r.actPct == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{dev == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{formatRupiah(r.cashIn)}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
