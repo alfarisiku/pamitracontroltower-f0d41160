@@ -172,7 +172,10 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                         <td className="py-1.5 px-2"><input value={edit.addendum_code} onChange={e => setEdit(s => ({ ...s, addendum_code: e.target.value }))} className={inputCls} /></td>
                         <td className="py-1.5 px-2"><input type="date" value={edit.addendum_date} onChange={e => setEdit(s => ({ ...s, addendum_date: e.target.value }))} className={inputCls} /></td>
                         <td className="py-1.5 px-2"><input value={edit.description} onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} className={inputCls} /></td>
-                        <td className="py-1.5 px-2"><input type="number" value={edit.cost_impact} onChange={e => setEdit(s => ({ ...s, cost_impact: e.target.value }))} className={`${inputCls} text-right`} /></td>
+                        <td className="py-1.5 px-2">
+                          <input type="number" value={edit.cost_impact} onChange={e => setEdit(s => ({ ...s, cost_impact: e.target.value }))} className={`${inputCls} text-right`} placeholder="Rupiah utuh" />
+                          {edit.cost_impact && <p className="text-[9px] text-muted-foreground mt-0.5 text-right">≈ {previewRp(edit.cost_impact)}</p>}
+                        </td>
                         <td className="py-1.5 px-2"><input type="number" value={edit.schedule_impact_days} onChange={e => setEdit(s => ({ ...s, schedule_impact_days: e.target.value }))} className={`${inputCls} text-right`} /></td>
                         <td className="py-2 px-3">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
