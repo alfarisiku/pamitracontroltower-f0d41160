@@ -996,7 +996,21 @@ const ProjectDetail = () => {
           )}
 
           {/* S-Curve Tab */}
-          {activeTab === "scurve" && (() => {
+          {activeTab === "scurve" && L3 && (
+            <div className="glass-card rounded-lg shadow-card p-4">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Progress Actual</h3>
+              <p className="text-[11px] text-muted-foreground mb-3">Realisasi progress pekerjaan</p>
+              <SCurveChart
+                startDate={project.start_date}
+                endDate={project.end_date}
+                progress={project.progress}
+                customData={scurveData as any}
+                actualOnly
+              />
+            </div>
+          )}
+          {activeTab === "scurve" && !L3 && (() => {
+
             // Group curves by type (baseline + KSO / joint ops etc.)
             const curveTypes = Array.from(new Set(scurveData.map(s => s.curve_type)));
             if (!curveTypes.includes("baseline")) curveTypes.unshift("baseline");
