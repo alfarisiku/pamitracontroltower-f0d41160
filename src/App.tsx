@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import PendingApproval from "./pages/PendingApproval";
 import Index from "./pages/Index";
+import ExecutiveOverview from "./pages/ExecutiveOverview";
+
 import ProjectSummary from "./pages/ProjectSummary";
 import ProjectDetail from "./pages/ProjectDetail";
 import Schedule from "./pages/Schedule";
@@ -34,7 +36,9 @@ function AppRoutes() {
       <Route path="/pending" element={<PendingApproval />} />
 
       <Route path="/" element={<Index />} />
+      <Route path="/overview-eksekutif" element={<ExecutiveOverview />} />
       <Route path="/projects" element={<ProjectSummary />} />
+
       <Route path="/project/:id" element={<ProjectDetail />} />
       <Route path="/schedule" element={<Schedule />} />
       <Route path="/cost" element={<CostPerformance />} />
