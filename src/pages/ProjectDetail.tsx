@@ -319,15 +319,16 @@ const ProjectDetail = () => {
             {(([
               { key: "health" as const, label: "Health", icon: Activity, publicOk: true },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp, publicOk: true },
-              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
-              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
+              { key: "milestones" as const, label: L3 ? "Milestones" : `Milestones (${milestones.length})`, icon: Target, publicOk: true },
+              { key: "wbs" as const, label: L3 ? "WBS" : `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
               { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
               { key: "addendum" as const, label: `Addendum (${addendums.length})`, icon: FileText, publicOk: true },
-            ]).filter(t => !isClient || t.publicOk)).map(tab => (
+            ]).filter(t => (L3 ? L3_TABS.includes(t.key) : (!isClient || t.publicOk)))).map(tab => (
+
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
