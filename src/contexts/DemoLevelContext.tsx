@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, useEffect, ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 
 export type DemoLevel = 1 | 2 | 3;
@@ -27,12 +27,20 @@ const Ctx = createContext<DemoLevelCtx>({
 
 export function DemoLevelProvider({ children }: { children: ReactNode }) {
   const [params, setParams] = useSearchParams();
-  const raw = Number(params.get("level"));
-  const level: DemoLevel = raw === 2 || raw === 3 ? (raw as DemoLevel) : 1;
+  const urlRaw = Number(params.get("level"));
+  const urlLevel: DemoLevel | null = urlRaw === 2 || urlRaw === 3 ? (urlRaw as DemoLevel) : urlRaw === 1 ? 1 : null;
+  // Level disimpan di state React (persist saat pindah halaman), URL hanya sinkronisasi awal/manual.
+  const [level, setLevelState] = useState<DemoLevel>(urlLevel ?? 1);
+
+  useEffect(() => {
+    if (urlLevel && urlLevel !== level) setLevelState(urlLevel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlLevel]);
 
   const value = useMemo<DemoLevelCtx>(() => ({
     level,
     setLevel: (l: DemoLevel) => {
+      setLevelState(l);
       const next = new URLSearchParams(params);
       next.set("level", String(l));
       setParams(next, { replace: false });
