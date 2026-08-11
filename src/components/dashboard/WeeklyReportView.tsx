@@ -41,10 +41,13 @@ export function WeeklyReportView({ projectId, achievementsOnly = false }: { proj
               </div>
               <div className="flex items-center gap-3 text-[10px]">
                 <span className="text-success">{r.achievements.length} ✓</span>
-                <span className="text-warning">{r.outstanding_items.length} ⚠</span>
-                <span className="text-primary">{r.next_week_targets.length} →</span>
-                <span className="text-destructive">{r.escalations.length} !</span>
+                {!achievementsOnly && <>
+                  <span className="text-warning">{r.outstanding_items.length} ⚠</span>
+                  <span className="text-primary">{r.next_week_targets.length} →</span>
+                  <span className="text-destructive">{r.escalations.length} !</span>
+                </>}
               </div>
+
             </button>
             {isOpen && (
               <div className="p-4 border-t border-border space-y-4 text-xs bg-muted/10">
