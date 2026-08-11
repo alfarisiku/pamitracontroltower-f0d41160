@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase, DbWeeklyReport } from "@/lib/supabase";
 import { FileText, Calendar, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Target, Zap } from "lucide-react";
 
-export function WeeklyReportView({ projectId }: { projectId: string }) {
+export function WeeklyReportView({ projectId, achievementsOnly = false }: { projectId: string; achievementsOnly?: boolean }) {
   const [reports, setReports] = useState<DbWeeklyReport[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
 
