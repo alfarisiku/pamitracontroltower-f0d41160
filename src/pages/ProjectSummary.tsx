@@ -7,6 +7,7 @@ import { DbProject, formatRupiah, resolveImageUrl } from "@/lib/supabase";
 import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModal";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDemoLevel } from "@/contexts/DemoLevelContext";
 import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv, ExternalLink } from "lucide-react";
 
 type ProjectStatus = string;
@@ -27,7 +28,10 @@ const FALLBACK_STATUS = { label: "—", className: "bg-muted text-muted-foregrou
 const ProjectSummary = () => {
   const navigate = useNavigate();
   const { data: allProjects = [], isLoading } = useProjects();
-  const { role, assignedProjectIds, isTeam, isClient, isAdmin } = useAuth();
+  const { role, assignedProjectIds, isTeam, isClient: authIsClient, isAdmin } = useAuth();
+  const { level: demoLevel } = useDemoLevel();
+  const L3 = demoLevel === 3;
+  const isClient = authIsClient || L3;
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
@@ -130,7 +134,7 @@ const ProjectSummary = () => {
                     <div className="absolute top-3 right-3 flex items-center gap-1.5">
                       {project.video_url && <div className="p-1 rounded bg-card/80 backdrop-blur-sm"><Video className="h-3 w-3 text-primary" /></div>}
                       {project.cctv_url && <div className="p-1 rounded bg-card/80 backdrop-blur-sm"><Cctv className="h-3 w-3 text-destructive" /></div>}
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${L3 ? "bg-success/15 text-success border-success/30" : st.className}`}>{L3 ? "On Progress" : st.label}</span>
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate(`/project/${project.id}`); }}
