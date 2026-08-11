@@ -1653,7 +1653,7 @@ const ProjectDetail = () => {
           )}
 
           {/* Weekly Report Tab */}
-          {activeTab === "weekly-report" && id && <WeeklyReportView projectId={id} />}
+          {activeTab === "weekly-report" && id && <WeeklyReportView projectId={id} achievementsOnly={L3} />}
 
           {/* Media Tab */}
           {activeTab === "media" && (
