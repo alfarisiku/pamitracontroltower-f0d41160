@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 
 import { getStatusMeta } from "@/lib/supabase";
+import { useDemoLevel } from "@/contexts/DemoLevelContext";
+
 
 const taskStatusConfig: Record<string, { label: string; className: string; icon: typeof CheckCircle2 }> = {
   "completed": { label: "Selesai", className: "text-success", icon: CheckCircle2 },
@@ -92,7 +94,11 @@ const EPC_PHASES = ["Production I", "Production II", "Production III", "Producti
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { isClient } = useAuth();
+  const { isClient: authIsClient } = useAuth();
+  const { level: demoLevel } = useDemoLevel();
+  const L3 = demoLevel === 3;
+  const isClient = authIsClient || L3;
+
   const { data: project, isLoading } = useProject(id);
   const { data: workAreas = [] } = useWorkAreas(id);
   const workAreaIds = workAreas.map(wa => wa.id);
@@ -113,7 +119,12 @@ const ProjectDetail = () => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [expandedTimeline, setExpandedTimeline] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
-  const [activeTab, setActiveTab] = useState<MainTab>("health");
+  const [activeTab, setActiveTab] = useState<MainTab>(L3 ? "scurve" : "health");
+  const L3_TABS: MainTab[] = ["scurve", "milestones", "wbs", "weekly-report", "media"];
+  useEffect(() => {
+    if (L3 && !L3_TABS.includes(activeTab)) setActiveTab("scurve");
+  }, [L3, activeTab]);
+
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
   const [cashflowGranularity, setCashflowGranularity] = useState<"monthly" | "weekly">("monthly");
@@ -267,7 +278,7 @@ const ProjectDetail = () => {
               <div className="absolute bottom-3 left-4 right-4">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-mono-data text-primary bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.project_code}</span>
-                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${L3 ? "border-success/30 bg-success/10 text-success" : st.className}`}>{L3 ? "On Progress" : st.label}</span>
                   <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.phase}</span>
                   {project.margin_locked && <span className="text-[10px] text-warning bg-card/80 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Margin Locked</span>}
                 </div>
@@ -298,7 +309,7 @@ const ProjectDetail = () => {
                 <InfoItem icon={Briefcase} label="Klien" value={project.client} />
                 <InfoItem icon={Calendar} label="Mulai" value={new Date(project.start_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} />
                 <InfoItem icon={Calendar} label="Target" value={endDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} />
-                <InfoItem icon={Clock} label="Sisa" value={daysRemaining > 0 ? `${daysRemaining}d` : "Overdue"} valueClassName={daysRemaining <= 0 ? "text-destructive" : daysRemaining < 90 ? "text-warning" : ""} />
+                {!L3 && <InfoItem icon={Clock} label="Sisa" value={daysRemaining > 0 ? `${daysRemaining}d` : "Overdue"} valueClassName={daysRemaining <= 0 ? "text-destructive" : daysRemaining < 90 ? "text-warning" : ""} />}
               </div>
             </div>
           </div>
@@ -308,15 +319,16 @@ const ProjectDetail = () => {
             {(([
               { key: "health" as const, label: "Health", icon: Activity, publicOk: true },
               { key: "scurve" as const, label: "S-Curve", icon: TrendingUp, publicOk: true },
-              { key: "milestones" as const, label: `Milestones (${milestones.length})`, icon: Target, publicOk: true },
-              { key: "wbs" as const, label: `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
+              { key: "milestones" as const, label: L3 ? "Milestones" : `Milestones (${milestones.length})`, icon: Target, publicOk: true },
+              { key: "wbs" as const, label: L3 ? "WBS" : `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
               { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
               { key: "addendum" as const, label: `Addendum (${addendums.length})`, icon: FileText, publicOk: true },
-            ]).filter(t => !isClient || t.publicOk)).map(tab => (
+            ]).filter(t => (L3 ? L3_TABS.includes(t.key) : (!isClient || t.publicOk)))).map(tab => (
+
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-t-md text-xs font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -984,7 +996,21 @@ const ProjectDetail = () => {
           )}
 
           {/* S-Curve Tab */}
-          {activeTab === "scurve" && (() => {
+          {activeTab === "scurve" && L3 && (
+            <div className="glass-card rounded-lg shadow-card p-4">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Progress Actual</h3>
+              <p className="text-[11px] text-muted-foreground mb-3">Realisasi progress pekerjaan</p>
+              <SCurveChart
+                startDate={project.start_date}
+                endDate={project.end_date}
+                progress={project.progress}
+                customData={scurveData as any}
+                actualOnly
+              />
+            </div>
+          )}
+          {activeTab === "scurve" && !L3 && (() => {
+
             // Group curves by type (baseline + KSO / joint ops etc.)
             const curveTypes = Array.from(new Set(scurveData.map(s => s.curve_type)));
             if (!curveTypes.includes("baseline")) curveTypes.unshift("baseline");
@@ -1174,7 +1200,22 @@ const ProjectDetail = () => {
 
 
           {/* WBS Tab */}
-          {activeTab === "wbs" && (
+          {activeTab === "wbs" && L3 && (
+            <div className="glass-card rounded-lg shadow-card p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Progress per Work Area</h3>
+              {workAreas.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Belum ada data WBS.</p>
+              ) : workAreas.map(area => (
+                <div key={area.id} className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-foreground flex-1 truncate">{area.name}</span>
+                  <div className="w-32 hidden sm:block"><Progress value={area.progress} className="h-1.5" /></div>
+                  <span className="text-xs font-mono-data font-bold text-primary w-10 text-right">{area.progress}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {activeTab === "wbs" && !L3 && (
+
             <div className="space-y-3">
               {workAreas.length === 0 ? (
                 <div className="glass-card rounded-lg p-8 text-center shadow-card">
@@ -1462,12 +1503,17 @@ const ProjectDetail = () => {
                                   <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">{ms.phase}</span>
                                   <span className="text-sm font-medium text-foreground">{ms.name}</span>
                                 </div>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${cfg.className}`}>{isLate ? "! Terlambat" : cfg.label}</span>
+                                {L3 ? (
+                                  ms.status === "completed" && <span className="text-[10px] px-2 py-0.5 rounded-full border font-medium border-success/30 bg-success/10 text-success">Selesai</span>
+                                ) : (
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${cfg.className}`}>{isLate ? "! Terlambat" : cfg.label}</span>
+                                )}
                               </div>
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
-                                <span>Target: <span className="font-mono-data text-foreground">{new Date(ms.target_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span></span>
+                                {!L3 && <span>Target: <span className="font-mono-data text-foreground">{new Date(ms.target_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span></span>}
                                 {ms.actual_date && <span>Aktual: <span className="font-mono-data text-foreground">{new Date(ms.actual_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span></span>}
-                                {ms.weight > 0 && <span>Bobot: <span className="font-mono-data text-foreground">{ms.weight}%</span></span>}
+                                {!L3 && ms.weight > 0 && <span>Bobot: <span className="font-mono-data text-foreground">{ms.weight}%</span></span>}
+
                               </div>
                             </div>
                           </div>
@@ -1641,7 +1687,7 @@ const ProjectDetail = () => {
           )}
 
           {/* Weekly Report Tab */}
-          {activeTab === "weekly-report" && id && <WeeklyReportView projectId={id} />}
+          {activeTab === "weekly-report" && id && <WeeklyReportView projectId={id} achievementsOnly={L3} />}
 
           {/* Media Tab */}
           {activeTab === "media" && (

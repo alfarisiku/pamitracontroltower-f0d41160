@@ -17,7 +17,10 @@ interface SCurveProps {
   progress: number;
   milestones?: { target_date: string; status: string; weight: number; name: string }[];
   customData?: SCurveDataPoint[];
+  /** Level 3 demo: tampilkan hanya garis actual (tanpa plan/baseline) */
+  actualOnly?: boolean;
 }
+
 
 function generateSCurveData(startDate: string, endDate: string, progress: number) {
   const start = new Date(startDate);
@@ -49,7 +52,7 @@ function generateSCurveData(startDate: string, endDate: string, progress: number
   return data;
 }
 
-export function SCurveChart({ startDate, endDate, progress, milestones = [], customData }: SCurveProps) {
+export function SCurveChart({ startDate, endDate, progress, milestones = [], customData, actualOnly = false }: SCurveProps) {
   // If custom data exists, use it
   const hasCustom = customData && customData.length > 0;
 
@@ -132,9 +135,9 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
             {currentLabel && (
               <ReferenceLine x={currentLabel} stroke="hsl(0, 72%, 50%)" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Today", position: "top", fontSize: 9, fill: "hsl(0, 72%, 50%)" }} />
             )}
-            <Area type="monotone" dataKey="planned" stroke={BASELINE_HUE} fill="url(#scPlanned)" strokeWidth={2} strokeDasharray="6 4" name="Baseline Plan" dot={false} />
-            <Area type="monotone" dataKey="actual" stroke={BASELINE_HUE} fill="url(#scActual)" strokeWidth={2.5} name="Baseline Actual" dot={false} connectNulls={false} />
-            {additionalTypes.map((type, i) => (
+            {!actualOnly && <Area type="monotone" dataKey="planned" stroke={BASELINE_HUE} fill="url(#scPlanned)" strokeWidth={2} strokeDasharray="6 4" name="Baseline Plan" dot={false} />}
+            <Area type="monotone" dataKey="actual" stroke={BASELINE_HUE} fill="url(#scActual)" strokeWidth={2.5} name={actualOnly ? "Progress Actual" : "Baseline Actual"} dot={false} connectNulls={false} />
+            {!actualOnly && additionalTypes.map((type, i) => (
               <Area key={type} type="monotone" dataKey={`planned_${type}`} stroke={KSO_HUES[i % KSO_HUES.length]} fill="none" strokeWidth={1.5} strokeDasharray="6 4" name={`${type} Plan`} dot={false} />
             ))}
             {additionalTypes.map((type, i) => (
@@ -144,25 +147,32 @@ export function SCurveChart({ startDate, endDate, progress, milestones = [], cus
         </ResponsiveContainer>
       </div>
       <div className="flex items-center justify-center gap-4 mt-2 flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={BASELINE_HUE} strokeWidth="2" strokeDasharray="4 3" /></svg>
-          <span className="text-[10px]" style={{ color: BASELINE_HUE }}>Baseline Plan (dashed)</span>
-        </div>
+        {!actualOnly && (
+          <div className="flex items-center gap-1.5">
+            <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={BASELINE_HUE} strokeWidth="2" strokeDasharray="4 3" /></svg>
+            <span className="text-[10px]" style={{ color: BASELINE_HUE }}>Baseline Plan (dashed)</span>
+          </div>
+        )}
         <div className="flex items-center gap-1.5">
           <div className="w-5 h-[2px] rounded" style={{ background: BASELINE_HUE }} />
-          <span className="text-[10px] font-semibold" style={{ color: BASELINE_HUE }}>Baseline Actual (solid)</span>
+          <span className="text-[10px] font-semibold" style={{ color: BASELINE_HUE }}>{actualOnly ? "Progress Actual" : "Baseline Actual (solid)"}</span>
         </div>
         {additionalTypes.map((type, i) => {
           const hue = KSO_HUES[i % KSO_HUES.length];
           return (
             <div key={type} className="flex items-center gap-2">
-              <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={hue} strokeWidth="2" strokeDasharray="4 3" /></svg>
-              <span className="text-[10px]" style={{ color: hue }}>{type} Plan (dashed)</span>
+              {!actualOnly && (
+                <>
+                  <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={hue} strokeWidth="2" strokeDasharray="4 3" /></svg>
+                  <span className="text-[10px]" style={{ color: hue }}>{type} Plan (dashed)</span>
+                </>
+              )}
               <div className="w-5 h-[2px] rounded" style={{ background: hue }} />
-              <span className="text-[10px] font-semibold" style={{ color: hue }}>{type} Actual (solid)</span>
+              <span className="text-[10px] font-semibold" style={{ color: hue }}>{type} Actual{actualOnly ? "" : " (solid)"}</span>
             </div>
           );
         })}
+
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-0.5 rounded border-dashed border-t-2" style={{ borderColor: "hsl(0, 72%, 50%)" }} />
           <span className="text-[10px] text-muted-foreground">Today</span>

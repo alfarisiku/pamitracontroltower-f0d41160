@@ -1,4 +1,6 @@
 import { NotificationDropdown } from "./NotificationDropdown";
+import { LevelSwitcher } from "./LevelSwitcher";
+
 
 export function DashboardHeader() {
   const now = new Date();
@@ -14,13 +16,16 @@ export function DashboardHeader() {
           <p className="text-xs text-muted-foreground">PT Pamitra Jaya Konstruksi</p>
         </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 flex-wrap justify-end">
+
+        <LevelSwitcher />
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border">
           <span className="text-xs text-muted-foreground">{dateStr}</span>
           <span className="text-xs text-primary font-mono-data font-medium">{timeStr}</span>
         </div>
         <NotificationDropdown />
       </div>
+
     </header>
   );
 }

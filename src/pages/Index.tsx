@@ -10,11 +10,14 @@ import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModa
 import { Progress } from "@/components/ui/progress";
 import { useProjects } from "@/hooks/useProjects";
 import { DbProject, getStatusMeta } from "@/lib/supabase";
+import { useDemoLevel } from "@/contexts/DemoLevelContext";
 
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const { data: projects = [], isLoading } = useProjects();
   const navigate = useNavigate();
+  const { level: demoLevel } = useDemoLevel();
+  const L3 = demoLevel === 3;
 
   const active = projects.filter((p) => p.status !== "completed" && p.status !== "closed").length;
   const completed = projects.filter((p) => p.status === "completed" || p.status === "closed").length;
@@ -54,7 +57,7 @@ const Index = () => {
           {/* Map + Distribusi Production */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-5">
             <div className="lg:col-span-3">
-              <IndonesiaMap projects={projects} onSelectProject={setSelectedProject} />
+              <IndonesiaMap projects={projects} onSelectProject={setSelectedProject} hideMoney={L3} neutralStatus={L3} />
             </div>
             <div>
               <PhaseChart projects={projects} />
@@ -97,7 +100,7 @@ const Index = () => {
                         <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
                         <td className="py-2 px-3 text-muted-foreground">{p.phase || "—"}</td>
                         <td className="py-2 px-3">
-                          <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${st.className} bg-card`}>{st.label}</span>
+                          <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${L3 ? "border-success/30 text-success" : st.className} bg-card`}>{L3 ? "On Progress" : st.label}</span>
                         </td>
                         <td className="py-2 px-3 text-muted-foreground">{new Date(p.start_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
                         <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>

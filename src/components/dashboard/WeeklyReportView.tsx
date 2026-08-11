@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase, DbWeeklyReport } from "@/lib/supabase";
 import { FileText, Calendar, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Target, Zap } from "lucide-react";
 
-export function WeeklyReportView({ projectId }: { projectId: string }) {
+export function WeeklyReportView({ projectId, achievementsOnly = false }: { projectId: string; achievementsOnly?: boolean }) {
   const [reports, setReports] = useState<DbWeeklyReport[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -41,25 +41,31 @@ export function WeeklyReportView({ projectId }: { projectId: string }) {
               </div>
               <div className="flex items-center gap-3 text-[10px]">
                 <span className="text-success">{r.achievements.length} ✓</span>
-                <span className="text-warning">{r.outstanding_items.length} ⚠</span>
-                <span className="text-primary">{r.next_week_targets.length} →</span>
-                <span className="text-destructive">{r.escalations.length} !</span>
+                {!achievementsOnly && <>
+                  <span className="text-warning">{r.outstanding_items.length} ⚠</span>
+                  <span className="text-primary">{r.next_week_targets.length} →</span>
+                  <span className="text-destructive">{r.escalations.length} !</span>
+                </>}
               </div>
+
             </button>
             {isOpen && (
               <div className="p-4 border-t border-border space-y-4 text-xs bg-muted/10">
-                {r.summary && (
+                {r.summary && !achievementsOnly && (
                   <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
                     <p className="text-[10px] uppercase font-semibold text-primary mb-1">Executive Summary</p>
                     <p className="text-foreground whitespace-pre-wrap">{r.summary}</p>
                   </div>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className={achievementsOnly ? "" : "grid grid-cols-1 md:grid-cols-2 gap-3"}>
                   <Section title="Achievements This Week" color="success" icon={CheckCircle2} items={r.achievements.map(a => `[${a.category.toUpperCase()}] ${a.description}`)} />
-                  <Section title="Outstanding Items" color="warning" icon={AlertCircle} items={r.outstanding_items.map(o => `${o.item}${o.note ? ` — ${o.note}` : ''}`)} />
-                  <Section title="Next Week Targets" color="primary" icon={Target} items={r.next_week_targets.map(t => `${t.target}${t.owner ? ` (${t.owner})` : ''}`)} />
-                  <Section title="Management Escalations" color="destructive" icon={Zap} items={r.escalations.map(es => `${es.issue}${es.decision_needed ? ` → ${es.decision_needed}` : ''}`)} />
+                  {!achievementsOnly && <>
+                    <Section title="Outstanding Items" color="warning" icon={AlertCircle} items={r.outstanding_items.map(o => `${o.item}${o.note ? ` — ${o.note}` : ''}`)} />
+                    <Section title="Next Week Targets" color="primary" icon={Target} items={r.next_week_targets.map(t => `${t.target}${t.owner ? ` (${t.owner})` : ''}`)} />
+                    <Section title="Management Escalations" color="destructive" icon={Zap} items={r.escalations.map(es => `${es.issue}${es.decision_needed ? ` → ${es.decision_needed}` : ''}`)} />
+                  </>}
                 </div>
+
               </div>
             )}
           </div>

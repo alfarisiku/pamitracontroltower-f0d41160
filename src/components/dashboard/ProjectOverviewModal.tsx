@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { getStatusMeta } from "@/lib/supabase";
+import { useDemoLevel } from "@/contexts/DemoLevelContext";
 
 type MediaTab = "weekly" | "video" | "cctv";
 
@@ -14,6 +15,8 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
   const { isClient } = useAuth();
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
+  const { level: demoLevel } = useDemoLevel();
+  const L3 = demoLevel === 3;
   const st = getStatusMeta(project.status);
   const budgetPct = project.budget > 0 ? Math.round((project.spent / project.budget) * 100) : 0;
   const contractValue = project.contract_value || project.budget;
@@ -100,7 +103,7 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
 
           {/* Enterprise Data: TKDN, Margin, Budget */}
           {/* Financial block — hidden for Public role (client) */}
-          {!isClient && (
+          {!isClient && !L3 && (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/20 text-center">
