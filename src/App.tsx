@@ -36,7 +36,9 @@ function AppRoutes() {
       <Route path="/pending" element={<PendingApproval />} />
 
       <Route path="/" element={<Index />} />
+      <Route path="/overview-eksekutif" element={<ExecutiveOverview />} />
       <Route path="/projects" element={<ProjectSummary />} />
+
       <Route path="/project/:id" element={<ProjectDetail />} />
       <Route path="/schedule" element={<Schedule />} />
       <Route path="/cost" element={<CostPerformance />} />
