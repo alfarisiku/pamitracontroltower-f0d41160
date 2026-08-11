@@ -157,7 +157,7 @@ export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neu
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MarkerClusterGroup projects={projects} onSelectProject={onSelectProject} navigate={navigate} />
+          <MarkerClusterGroup projects={projects} onSelectProject={onSelectProject} navigate={navigate} hideMoney={hideMoney} neutralStatus={neutralStatus} />
         </MapContainer>
       </div>
     </div>
