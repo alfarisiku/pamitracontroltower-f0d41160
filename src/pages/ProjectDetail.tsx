@@ -1200,7 +1200,22 @@ const ProjectDetail = () => {
 
 
           {/* WBS Tab */}
-          {activeTab === "wbs" && (
+          {activeTab === "wbs" && L3 && (
+            <div className="glass-card rounded-lg shadow-card p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Progress per Work Area</h3>
+              {workAreas.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Belum ada data WBS.</p>
+              ) : workAreas.map(area => (
+                <div key={area.id} className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-foreground flex-1 truncate">{area.name}</span>
+                  <div className="w-32 hidden sm:block"><Progress value={area.progress} className="h-1.5" /></div>
+                  <span className="text-xs font-mono-data font-bold text-primary w-10 text-right">{area.progress}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {activeTab === "wbs" && !L3 && (
+
             <div className="space-y-3">
               {workAreas.length === 0 ? (
                 <div className="glass-card rounded-lg p-8 text-center shadow-card">
