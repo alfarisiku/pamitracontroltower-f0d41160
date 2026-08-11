@@ -17,7 +17,10 @@ interface SCurveProps {
   progress: number;
   milestones?: { target_date: string; status: string; weight: number; name: string }[];
   customData?: SCurveDataPoint[];
+  /** Level 3 demo: tampilkan hanya garis actual (tanpa plan/baseline) */
+  actualOnly?: boolean;
 }
+
 
 function generateSCurveData(startDate: string, endDate: string, progress: number) {
   const start = new Date(startDate);
