@@ -278,7 +278,7 @@ const ProjectDetail = () => {
               <div className="absolute bottom-3 left-4 right-4">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-mono-data text-primary bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.project_code}</span>
-                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.className}`}>{st.label}</span>
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${L3 ? "border-success/30 bg-success/10 text-success" : st.className}`}>{L3 ? "On Progress" : st.label}</span>
                   <span className="text-[10px] text-muted-foreground bg-card/80 backdrop-blur px-2 py-0.5 rounded">{project.phase}</span>
                   {project.margin_locked && <span className="text-[10px] text-warning bg-card/80 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Margin Locked</span>}
                 </div>
