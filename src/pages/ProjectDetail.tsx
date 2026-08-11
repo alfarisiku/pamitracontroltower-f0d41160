@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 
 import { getStatusMeta } from "@/lib/supabase";
+import { useDemoLevel } from "@/contexts/DemoLevelContext";
+
 
 const taskStatusConfig: Record<string, { label: string; className: string; icon: typeof CheckCircle2 }> = {
   "completed": { label: "Selesai", className: "text-success", icon: CheckCircle2 },
