@@ -1503,12 +1503,17 @@ const ProjectDetail = () => {
                                   <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">{ms.phase}</span>
                                   <span className="text-sm font-medium text-foreground">{ms.name}</span>
                                 </div>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${cfg.className}`}>{isLate ? "! Terlambat" : cfg.label}</span>
+                                {L3 ? (
+                                  ms.status === "completed" && <span className="text-[10px] px-2 py-0.5 rounded-full border font-medium border-success/30 bg-success/10 text-success">Selesai</span>
+                                ) : (
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${cfg.className}`}>{isLate ? "! Terlambat" : cfg.label}</span>
+                                )}
                               </div>
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
-                                <span>Target: <span className="font-mono-data text-foreground">{new Date(ms.target_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span></span>
+                                {!L3 && <span>Target: <span className="font-mono-data text-foreground">{new Date(ms.target_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span></span>}
                                 {ms.actual_date && <span>Aktual: <span className="font-mono-data text-foreground">{new Date(ms.actual_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span></span>}
-                                {ms.weight > 0 && <span>Bobot: <span className="font-mono-data text-foreground">{ms.weight}%</span></span>}
+                                {!L3 && ms.weight > 0 && <span>Bobot: <span className="font-mono-data text-foreground">{ms.weight}%</span></span>}
+
                               </div>
                             </div>
                           </div>
