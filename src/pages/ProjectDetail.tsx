@@ -119,7 +119,7 @@ const ProjectDetail = () => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [expandedTimeline, setExpandedTimeline] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
-  const [activeTab, setActiveTab] = useState<MainTab>("health");
+  const [activeTab, setActiveTab] = useState<MainTab>(L3 ? "scurve" : "health");
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
   const [cashflowGranularity, setCashflowGranularity] = useState<"monthly" | "weekly">("monthly");
