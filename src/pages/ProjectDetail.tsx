@@ -120,6 +120,11 @@ const ProjectDetail = () => {
   const [expandedTimeline, setExpandedTimeline] = useState<Set<string>>(new Set());
   const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
   const [activeTab, setActiveTab] = useState<MainTab>(L3 ? "scurve" : "health");
+  const L3_TABS: MainTab[] = ["scurve", "milestones", "wbs", "weekly-report", "media"];
+  useEffect(() => {
+    if (L3 && !L3_TABS.includes(activeTab)) setActiveTab("scurve");
+  }, [L3, activeTab]);
+
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
   const [cashflowGranularity, setCashflowGranularity] = useState<"monthly" | "weekly">("monthly");
