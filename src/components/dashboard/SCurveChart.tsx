@@ -52,7 +52,7 @@ function generateSCurveData(startDate: string, endDate: string, progress: number
   return data;
 }
 
-export function SCurveChart({ startDate, endDate, progress, milestones = [], customData }: SCurveProps) {
+export function SCurveChart({ startDate, endDate, progress, milestones = [], customData, actualOnly = false }: SCurveProps) {
   // If custom data exists, use it
   const hasCustom = customData && customData.length > 0;
 
