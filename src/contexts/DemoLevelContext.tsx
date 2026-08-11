@@ -25,21 +25,25 @@ const Ctx = createContext<DemoLevelCtx>({
   hideOperationalDetail: false,
 });
 
+let lastLevel: DemoLevel = 1;
+
 export function DemoLevelProvider({ children }: { children: ReactNode }) {
   const [params, setParams] = useSearchParams();
   const urlRaw = Number(params.get("level"));
   const urlLevel: DemoLevel | null = urlRaw === 2 || urlRaw === 3 ? (urlRaw as DemoLevel) : urlRaw === 1 ? 1 : null;
   // Level disimpan di state React (persist saat pindah halaman), URL hanya sinkronisasi awal/manual.
-  const [level, setLevelState] = useState<DemoLevel>(urlLevel ?? 1);
+  const [level, setLevelState] = useState<DemoLevel>(urlLevel ?? lastLevel);
 
   useEffect(() => {
     if (urlLevel && urlLevel !== level) setLevelState(urlLevel);
+    lastLevel = urlLevel ?? level;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlLevel]);
 
   const value = useMemo<DemoLevelCtx>(() => ({
     level,
     setLevel: (l: DemoLevel) => {
+      lastLevel = l;
       setLevelState(l);
       const next = new URLSearchParams(params);
       next.set("level", String(l));
