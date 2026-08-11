@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet, LogOut, BarChart3 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +9,9 @@ import { BookOpen } from "lucide-react";
 
 const allMenuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/" },
+  { icon: BarChart3, label: "Overview Eksekutif", path: "/overview-eksekutif" },
   { icon: FolderKanban, label: "Project Summary", path: "/projects" },
+
   { icon: CalendarClock, label: "Schedule", path: "/schedule" },
   { icon: DollarSign, label: "Cost Performance", path: "/cost" },
   { icon: Wallet, label: "Finance", path: "/finance" },

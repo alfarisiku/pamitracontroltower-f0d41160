@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import PendingApproval from "./pages/PendingApproval";
 import Index from "./pages/Index";
+import ExecutiveOverview from "./pages/ExecutiveOverview";
+
 import ProjectSummary from "./pages/ProjectSummary";
 import ProjectDetail from "./pages/ProjectDetail";
 import Schedule from "./pages/Schedule";
