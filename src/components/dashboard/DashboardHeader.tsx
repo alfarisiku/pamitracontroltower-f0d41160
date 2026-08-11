@@ -1,4 +1,6 @@
 import { NotificationDropdown } from "./NotificationDropdown";
+import { LevelSwitcher } from "./LevelSwitcher";
+
 
 export function DashboardHeader() {
   const now = new Date();
