@@ -30,7 +30,7 @@ function createIcon(status: ProjectStatus) {
   });
 }
 
-function MarkerClusterGroup({ projects, onSelectProject, navigate }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; navigate: (path: string) => void }) {
+function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = false, neutralStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; navigate: (path: string) => void; hideMoney?: boolean; neutralStatus?: boolean }) {
   const map = useMap();
 
   useEffect(() => {
