@@ -92,7 +92,11 @@ const EPC_PHASES = ["Production I", "Production II", "Production III", "Producti
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { isClient } = useAuth();
+  const { isClient: authIsClient } = useAuth();
+  const { level: demoLevel } = useDemoLevel();
+  const L3 = demoLevel === 3;
+  const isClient = authIsClient || L3;
+
   const { data: project, isLoading } = useProject(id);
   const { data: workAreas = [] } = useWorkAreas(id);
   const workAreaIds = workAreas.map(wa => wa.id);
