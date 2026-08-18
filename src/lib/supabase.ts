@@ -278,6 +278,37 @@ export type DbPurchaseOrder = {
   updated_at: string;
 };
 
+export type DbBilling = {
+  id: string;
+  project_id: string;
+  termin_code: string;
+  description: string | null;
+  status: string;
+  sort_order: number;
+  plan_progress_pct: number;
+  plan_amount: number;
+  plan_po_date: string | null;
+  plan_invoice_date: string | null;
+  plan_cash_in_date: string | null;
+  actual_progress_pct: number;
+  actual_amount: number;
+  paid_amount: number;
+  actual_po_date: string | null;
+  actual_invoice_date: string | null;
+  actual_cash_in_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export const BILLING_STATUSES = [
+  { value: "plan", label: "Plan" },
+  { value: "po", label: "PO Terbit" },
+  { value: "invoiced", label: "Invoice Terkirim" },
+  { value: "partial", label: "Dibayar Sebagian" },
+  { value: "paid", label: "Lunas" },
+];
+
 export type DbManpowerLog = {
   id: string;
   project_id: string;
