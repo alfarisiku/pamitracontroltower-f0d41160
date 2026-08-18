@@ -8,6 +8,19 @@ import { toast } from "@/hooks/use-toast";
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
+export const ADDENDUM_STATUSES = [
+  { value: "potential", label: "Potensial" },
+  { value: "pending", label: "Pending" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+];
+const statusLabel = (v: string) => ADDENDUM_STATUSES.find(s => s.value === v)?.label || v;
+const statusCls = (v: string) =>
+  v === "approved" ? "bg-success/15 text-success border-success/30"
+  : v === "rejected" ? "bg-destructive/15 text-destructive border-destructive/30"
+  : v === "potential" ? "bg-primary/10 text-primary border-primary/30"
+  : "bg-warning/15 text-warning border-warning/30";
+
 export function AddendumTab({ projectId, projects }: { projectId: string; projects: DbProject[] }) {
   const queryClient = useQueryClient();
   const { data: addendums = [] } = useAddendums(projectId || undefined);
@@ -17,6 +30,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   const [addendumDate, setAddendumDate] = useState("");
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
+  const [addendumStatus, setAddendumStatus] = useState("potential");
 
   // Cost impact is stored in JUTA in DB (aligned with projects.budget unit).
   // UI accepts raw Rupiah for easier data entry; we convert on save/load.
@@ -37,13 +51,14 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         description: addendumDesc,
         addendum_date: addendumDate || null,
         cost_impact: costJuta, schedule_impact_days: parseInt(addendumDays) || 0,
+        approval_status: addendumStatus,
       });
       if (error) throw error;
       await logActivity(supabase, "addendum", "create", `Addendum ${addendumCode} created`, projectId);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Addendum ditambahkan" });
-      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays("");
+      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays(""); setAddendumStatus("potential");
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -80,8 +95,8 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   };
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [edit, setEdit] = useState<{ addendum_code: string; description: string; addendum_date: string; cost_impact: string; schedule_impact_days: string }>({
-    addendum_code: "", description: "", addendum_date: "", cost_impact: "", schedule_impact_days: "",
+  const [edit, setEdit] = useState<{ addendum_code: string; description: string; addendum_date: string; cost_impact: string; schedule_impact_days: string; approval_status: string }>({
+    addendum_code: "", description: "", addendum_date: "", cost_impact: "", schedule_impact_days: "", approval_status: "potential",
   });
 
   const startEdit = (a: any) => {
@@ -92,6 +107,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       addendum_date: a.addendum_date || "",
       cost_impact: jutaToRupiah(a.cost_impact ?? 0),
       schedule_impact_days: String(a.schedule_impact_days ?? 0),
+      approval_status: a.approval_status || "potential",
     });
   };
   const cancelEdit = () => { setEditingId(null); };
@@ -105,6 +121,8 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         addendum_date: edit.addendum_date || null,
         cost_impact: rupiahToJuta(edit.cost_impact),
         schedule_impact_days: parseInt(edit.schedule_impact_days) || 0,
+        approval_status: edit.approval_status,
+        approved_at: edit.approval_status === "approved" ? new Date().toISOString() : null,
       }).eq("id", id);
       if (error) throw error;
       await logActivity(supabase, "addendum", "update", `Addendum ${edit.addendum_code} updated`, projectId, id);
@@ -136,7 +154,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
     <div className="space-y-5 mb-5">
       <div className="glass-card rounded-lg shadow-card p-4">
         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><FileBarChart className="h-4 w-4 text-primary" /> New Contract Addendum</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <div><label className={labelCls}>Addendum ID</label><input value={addendumCode} onChange={e => setAddendumCode(e.target.value)} className={inputCls} placeholder="ADD-001" /></div>
           <div><label className={labelCls}>Description</label><input value={addendumDesc} onChange={e => setAddendumDesc(e.target.value)} className={inputCls} placeholder="Perubahan scope" /></div>
           <div><label className={labelCls}>Addendum Date</label><input type="date" value={addendumDate} onChange={e => setAddendumDate(e.target.value)} className={inputCls} /></div>
@@ -146,6 +164,11 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
             {addendumCost && <p className="text-[10px] text-muted-foreground mt-0.5">≈ {previewRp(addendumCost)}</p>}
           </div>
           <div><label className={labelCls}>Schedule Impact (Days)</label><input type="number" value={addendumDays} onChange={e => setAddendumDays(e.target.value)} className={inputCls} placeholder="30" /></div>
+          <div><label className={labelCls}>Status</label>
+            <select value={addendumStatus} onChange={e => setAddendumStatus(e.target.value)} className={inputCls}>
+              {ADDENDUM_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
         </div>
         <button onClick={handleAddAddendum} disabled={saving || !addendumCode} className="mt-3 flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Addendum"}</button>
       </div>
@@ -177,8 +200,10 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                           {edit.cost_impact && <p className="text-[9px] text-muted-foreground mt-0.5 text-right">≈ {previewRp(edit.cost_impact)}</p>}
                         </td>
                         <td className="py-1.5 px-2"><input type="number" value={edit.schedule_impact_days} onChange={e => setEdit(s => ({ ...s, schedule_impact_days: e.target.value }))} className={`${inputCls} text-right`} /></td>
-                        <td className="py-2 px-3">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
+                        <td className="py-1.5 px-2">
+                          <select value={edit.approval_status} onChange={e => setEdit(s => ({ ...s, approval_status: e.target.value }))} className={inputCls}>
+                            {ADDENDUM_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </select>
                         </td>
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-1">
@@ -195,11 +220,11 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                         <td className="py-2 px-3 text-right font-mono-data text-accent whitespace-nowrap">{a.cost_impact > 0 ? "+" : ""}{formatIDR((a.cost_impact || 0) * 1_000_000)}</td>
                         <td className="py-2 px-3 text-right font-mono-data whitespace-nowrap">{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
                         <td className="py-2 px-3">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${statusCls(a.approval_status)}`}>{statusLabel(a.approval_status)}</span>
                         </td>
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-1 flex-wrap">
-                            {a.approval_status === "pending" && (
+                            {a.approval_status !== "approved" && (
                               <button onClick={() => handleApproveAddendum(a.id, a.cost_impact, a.schedule_impact_days)} disabled={saving} className="text-[10px] px-2 py-1 bg-success text-success-foreground rounded hover:bg-success/90 disabled:opacity-50">Approve</button>
                             )}
                             <button onClick={() => startEdit(a)} disabled={saving} className="text-[10px] p-1 bg-primary/10 text-primary rounded hover:bg-primary/20 border border-primary/30" title="Edit"><Pencil className="h-3 w-3" /></button>

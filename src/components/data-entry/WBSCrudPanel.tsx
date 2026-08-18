@@ -8,6 +8,27 @@ import { toast } from "@/hooks/use-toast";
 const inputCls = "px-2 py-1 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const fmtD = (d?: string | null) => d ? new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
+const r1 = (n: number) => Math.round((Number(n) || 0) * 10) / 10;
+
+/** Bar ringkas: total bobot terpakai vs 100% + tombol bagi rata */
+function WeightMeter({ total, count, onEven, label }: { total: number; count: number; onEven: () => void; label: string }) {
+  const remain = r1(100 - total);
+  const ok = Math.abs(remain) < 0.05;
+  return (
+    <div className="flex items-center gap-2 flex-wrap text-[10px]">
+      <span className="text-muted-foreground">{label}</span>
+      <div className="h-1.5 w-28 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full ${ok ? "bg-success" : total > 100 ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min(100, Math.max(0, total))}%` }} />
+      </div>
+      <span className={`font-medium ${ok ? "text-success" : total > 100 ? "text-destructive" : "text-warning"}`}>
+        {r1(total)}% {ok ? "✓ pas" : total > 100 ? `(lebih ${r1(total - 100)}%)` : `(sisa ${remain}%)`}
+      </span>
+      {count > 0 && (
+        <button onClick={onEven} className="px-1.5 py-0.5 rounded border border-border bg-card hover:bg-muted text-muted-foreground">Bagi rata</button>
+      )}
+    </div>
+  );
+}
 
 export function WBSCrudPanel({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
@@ -19,6 +40,23 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
   const [editValues, setEditValues] = useState<Record<string, any>>({});
   const [newAreaOpen, setNewAreaOpen] = useState(false);
   const [newArea, setNewArea] = useState({ code: "", name: "", weight: 0, epcc_category: "construction" });
+  const areaTotal = areas.reduce((s2, a) => s2 + (Number(a.weight) || 0), 0);
+
+  const evenAreas = async () => {
+    if (!areas.length) return;
+    const w = r1(100 / areas.length);
+    await Promise.all(areas.map(a => supabase.from("work_areas").update({ weight: w } as any).eq("id", a.id)));
+    refresh(); toast({ title: "✅ Bobot parent dibagi rata", description: `${w}% per parent WBS` });
+  };
+
+  const evenItems = async (areaId: string) => {
+    const local = items.filter(i => i.work_area_id === areaId);
+    if (!local.length) return;
+    const w = r1(100 / local.length);
+    await Promise.all(local.map(i => supabase.from("work_items").update({ weight: w } as any).eq("id", i.id)));
+    refresh(); toast({ title: "✅ Bobot item dibagi rata", description: `${w}% per item` });
+  };
+
   const [newItemFor, setNewItemFor] = useState<string | null>(null);
   const [newItem, setNewItem] = useState({ code: "", name: "", unit: "unit", qty_total: 0, weight: 0, epcc_category: "construction", start_date: "", end_date: "" });
 
@@ -115,6 +153,8 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
     <div className="glass-card rounded-lg shadow-card p-4">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Layers className="h-4 w-4 text-primary" /> Work Breakdown Structure (WBS)</h3>
+        <p className="w-full text-[10px] text-muted-foreground -mt-1">Aturan bobot sederhana: semua <b>Parent WBS</b> total = 100% dari proyek, dan semua <b>item</b> di dalam satu parent total = 100% dari parent tersebut. Bingung? Klik "Bagi rata".</p>
+        <WeightMeter label="Total bobot parent:" total={areaTotal} count={areas.length} onEven={evenAreas} />
         <button onClick={() => setNewAreaOpen(!newAreaOpen)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><FolderPlus className="h-3 w-3" /> Add Parent WBS</button>
       </div>
 
@@ -123,7 +163,10 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <div><label className={labelCls}>Code</label><input value={newArea.code} onChange={e => setNewArea({...newArea, code: e.target.value})} className={`w-full ${inputCls}`} placeholder="WA-010" /></div>
             <div className="sm:col-span-2"><label className={labelCls}>Name</label><input value={newArea.name} onChange={e => setNewArea({...newArea, name: e.target.value})} className={`w-full ${inputCls}`} placeholder="Piping Area" /></div>
-            <div><label className={labelCls}>Weight %</label><input type="number" value={newArea.weight} onChange={e => setNewArea({...newArea, weight: Number(e.target.value)})} className={`w-full ${inputCls}`} /></div>
+            <div><label className={labelCls}>Bobot (% dari proyek)</label>
+              <input type="number" value={newArea.weight} onChange={e => setNewArea({...newArea, weight: Number(e.target.value)})} className={`w-full ${inputCls}`} placeholder={`sisa ${r1(100 - areaTotal)}`} />
+              <p className="text-[9px] text-muted-foreground mt-0.5">Sisa bobot tersedia: {r1(100 - areaTotal)}%</p>
+            </div>
             <div><label className={labelCls}>EPCC</label>
               <select value={newArea.epcc_category} onChange={e => setNewArea({...newArea, epcc_category: e.target.value})} className={`w-full ${inputCls}`}>
                 {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -155,7 +198,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                   <>
                     <input value={ev.code} onChange={e => setEditValues({...editValues, [a.id]: {...ev, code: e.target.value}})} className={`${inputCls} w-20`} />
                     <input value={ev.name} onChange={e => setEditValues({...editValues, [a.id]: {...ev, name: e.target.value}})} className={`${inputCls} flex-1 min-w-[140px]`} />
-                    <input type="number" value={ev.weight} onChange={e => setEditValues({...editValues, [a.id]: {...ev, weight: e.target.value}})} className={`${inputCls} w-16`} placeholder="w%" />
+                    <input type="number" value={ev.weight} onChange={e => setEditValues({...editValues, [a.id]: {...ev, weight: e.target.value}})} className={`${inputCls} w-16`} placeholder="bobot %" title="Bobot parent (% dari proyek)" />
                     <select value={ev.epcc_category} onChange={e => setEditValues({...editValues, [a.id]: {...ev, epcc_category: e.target.value}})} className={inputCls}>
                       {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
@@ -167,8 +210,8 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono">{a.code}</span>
                     <span className="text-xs font-semibold text-foreground flex-1">{a.name}</span>
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{(a as any).epcc_category || 'construction'}</span>
-                    <span className="text-[10px] text-muted-foreground">W: {a.weight}%</span>
-                    <span className="text-[10px] text-muted-foreground">P: {a.progress}%</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground" title="Bobot parent ini terhadap total proyek">Bobot {r1(a.weight)}%</span>
+                    <span className="text-[10px] text-muted-foreground" title="Progress">Progress {r1(a.progress)}%</span>
                     {(() => {
                       const ds = areaItems.flatMap(x => [x.start_date, x.end_date]).filter(Boolean) as string[];
                       if (!ds.length) return null;
@@ -189,6 +232,9 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                     <input value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} className={`${inputCls} sm:col-span-2`} placeholder="Child item name" />
                     <input value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})} className={inputCls} placeholder="unit" />
                     <input type="number" value={newItem.qty_total} onChange={e => setNewItem({...newItem, qty_total: Number(e.target.value)})} className={inputCls} placeholder="Qty" />
+                    <div><label className={labelCls}>Bobot (% dari parent)</label>
+                      <input type="number" value={newItem.weight} onChange={e => setNewItem({...newItem, weight: Number(e.target.value)})} className={`w-full ${inputCls}`} placeholder="mis. 25" />
+                    </div>
                     <select value={newItem.epcc_category} onChange={e => setNewItem({...newItem, epcc_category: e.target.value})} className={inputCls}>
                       {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
@@ -204,6 +250,12 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
 
               {areaItems.length > 0 && (
                 <div className="mt-2 ml-6 space-y-1">
+                  <WeightMeter
+                    label="Total bobot item di parent ini:"
+                    total={areaItems.reduce((s2, i) => s2 + (Number(i.weight) || 0), 0)}
+                    count={areaItems.length}
+                    onEven={() => evenItems(a.id)}
+                  />
                   {areaItems.map((i, iidx) => {
                     const isEditingI = editingItem === i.id;
                     const iv = editValues[i.id] || i;
@@ -220,7 +272,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                             <input value={iv.unit} onChange={e => setEditValues({...editValues, [i.id]: {...iv, unit: e.target.value}})} className={`${inputCls} w-16`} />
                             <input type="number" value={iv.qty_total} onChange={e => setEditValues({...editValues, [i.id]: {...iv, qty_total: e.target.value}})} className={`${inputCls} w-16`} placeholder="Total" />
                             <input type="number" value={iv.qty_completed} onChange={e => setEditValues({...editValues, [i.id]: {...iv, qty_completed: e.target.value}})} className={`${inputCls} w-16`} placeholder="Done" />
-                            <input type="number" value={iv.weight} onChange={e => setEditValues({...editValues, [i.id]: {...iv, weight: e.target.value}})} className={`${inputCls} w-14`} placeholder="w%" />
+                            <input type="number" value={iv.weight} onChange={e => setEditValues({...editValues, [i.id]: {...iv, weight: e.target.value}})} className={`${inputCls} w-16`} placeholder="bobot %" title="Bobot item (% dari parent)" />
                             <input type="date" value={(iv.start_date || "").slice(0,10)} onChange={e => setEditValues({...editValues, [i.id]: {...iv, start_date: e.target.value}})} className={`${inputCls} w-[120px]`} title="Target Start" />
                             <input type="date" value={(iv.end_date || "").slice(0,10)} onChange={e => setEditValues({...editValues, [i.id]: {...iv, end_date: e.target.value}})} className={`${inputCls} w-[120px]`} title="Target Finish" />
                             <select value={iv.epcc_category} onChange={e => setEditValues({...editValues, [i.id]: {...iv, epcc_category: e.target.value}})} className={inputCls}>
@@ -235,7 +287,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                             <span className="flex-1 text-foreground">{i.name}</span>
                             <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary capitalize">{(i as any).epcc_category || 'construction'}</span>
                             <span className="text-[10px] text-muted-foreground">{Number(i.qty_completed)}/{Number(i.qty_total)} {i.unit}</span>
-                            <span className="text-[10px] text-muted-foreground">W: {i.weight}%</span>
+                            <span className="text-[10px] px-1 py-0.5 rounded bg-muted text-foreground" title="Bobot item terhadap parent-nya">Bobot {r1(i.weight)}%</span>
                             <span className={`text-[10px] ${i.start_date && i.end_date ? "text-muted-foreground" : "text-destructive"}`}>
                               {i.start_date && i.end_date
                                 ? `${fmtD(i.start_date)} → ${fmtD(i.end_date)}`

@@ -5,7 +5,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Share2,
-  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet, ChevronDown, ChevronRight, TrendingUp,
+  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet, ChevronDown, ChevronRight, TrendingUp, Receipt,
 } from "lucide-react";
 
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
@@ -19,9 +19,10 @@ import { WeeklyReportEditor } from "@/components/data-entry/WeeklyReportEditor";
 import { RiskResolvePanel } from "@/components/data-entry/RiskResolvePanel";
 import { ProcurementPanel } from "@/components/data-entry/ProcurementPanel";
 import { MilestonesEditor } from "@/components/data-entry/MilestonesEditor";
+import { BillingPanel } from "@/components/data-entry/BillingPanel";
 import { ExcelSyncPanel } from "@/components/data-entry/ExcelSyncPanel";
 
-type ActiveTab = "regular" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
+type ActiveTab = "regular" | "billing" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
@@ -45,6 +46,7 @@ const DataEntry = () => {
     { key: "milestones" as const,    label: "Milestones",          icon: Target,          adminOnly: false, group: "project" as const },
     { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false, group: "project" as const },
     { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,         adminOnly: false, group: "project" as const },
+    { key: "billing" as const,       label: "Billing (Termin)",    icon: Receipt,         adminOnly: false, group: "project" as const },
     { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false, group: "project" as const },
     { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle,   adminOnly: false, group: "project" as const },
     { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false, group: "project" as const },
@@ -144,6 +146,7 @@ const DataEntry = () => {
           {activeTab === "photos" && updateProjectId && <PhotoUploader projectId={updateProjectId} />}
           {activeTab === "weekly-report" && updateProjectId && <WeeklyReportEditor projectId={updateProjectId} />}
           {activeTab === "procurement" && updateProjectId && <ProcurementPanel projectId={updateProjectId} />}
+          {activeTab === "billing" && updateProjectId && <BillingPanel projectId={updateProjectId} />}
           {activeTab === "finance" && updateProjectId && <FinanceEntriesEditor projectId={updateProjectId} />}
           {activeTab === "scurve" && updateProjectId && <SCurveEditor projectId={updateProjectId} />}
           {activeTab === "addendum" && updateProjectId && <AddendumTab projectId={updateProjectId} projects={projects} />}

@@ -1811,7 +1811,7 @@ const ProjectDetail = () => {
                           <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.cost_impact > 0 ? "text-accent" : a.cost_impact < 0 ? "text-success" : "text-muted-foreground"}`}>{a.cost_impact > 0 ? "+" : ""}{formatIDR((a.cost_impact || 0) * 1_000_000)}</td>
                           <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.schedule_impact_days > 0 ? "text-warning" : a.schedule_impact_days < 0 ? "text-success" : "text-muted-foreground"}`}>{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
                           <td className="py-2 px-3">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium capitalize ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : a.approval_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/30" : a.approval_status === "potential" ? "bg-primary/10 text-primary border-primary/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status === "potential" ? "Potensial" : a.approval_status}</span>
                           </td>
                           
                         </tr>
