@@ -153,6 +153,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
     <div className="glass-card rounded-lg shadow-card p-4">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Layers className="h-4 w-4 text-primary" /> Work Breakdown Structure (WBS)</h3>
+        <p className="w-full text-[10px] text-muted-foreground -mt-1">Aturan bobot sederhana: semua <b>Parent WBS</b> total = 100% dari proyek, dan semua <b>item</b> di dalam satu parent total = 100% dari parent tersebut. Bingung? Klik "Bagi rata".</p>
         <WeightMeter label="Total bobot parent:" total={areaTotal} count={areas.length} onEven={evenAreas} />
         <button onClick={() => setNewAreaOpen(!newAreaOpen)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><FolderPlus className="h-3 w-3" /> Add Parent WBS</button>
       </div>
