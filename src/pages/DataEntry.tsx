@@ -19,6 +19,7 @@ import { WeeklyReportEditor } from "@/components/data-entry/WeeklyReportEditor";
 import { RiskResolvePanel } from "@/components/data-entry/RiskResolvePanel";
 import { ProcurementPanel } from "@/components/data-entry/ProcurementPanel";
 import { MilestonesEditor } from "@/components/data-entry/MilestonesEditor";
+import { BillingPanel } from "@/components/data-entry/BillingPanel";
 import { ExcelSyncPanel } from "@/components/data-entry/ExcelSyncPanel";
 
 type ActiveTab = "regular" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
