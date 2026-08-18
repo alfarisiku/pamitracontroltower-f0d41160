@@ -197,7 +197,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                   <>
                     <input value={ev.code} onChange={e => setEditValues({...editValues, [a.id]: {...ev, code: e.target.value}})} className={`${inputCls} w-20`} />
                     <input value={ev.name} onChange={e => setEditValues({...editValues, [a.id]: {...ev, name: e.target.value}})} className={`${inputCls} flex-1 min-w-[140px]`} />
-                    <input type="number" value={ev.weight} onChange={e => setEditValues({...editValues, [a.id]: {...ev, weight: e.target.value}})} className={`${inputCls} w-16`} placeholder="w%" />
+                    <input type="number" value={ev.weight} onChange={e => setEditValues({...editValues, [a.id]: {...ev, weight: e.target.value}})} className={`${inputCls} w-16`} placeholder="bobot %" title="Bobot parent (% dari proyek)" />
                     <select value={ev.epcc_category} onChange={e => setEditValues({...editValues, [a.id]: {...ev, epcc_category: e.target.value}})} className={inputCls}>
                       {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
@@ -249,6 +249,12 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
 
               {areaItems.length > 0 && (
                 <div className="mt-2 ml-6 space-y-1">
+                  <WeightMeter
+                    label="Total bobot item di parent ini:"
+                    total={areaItems.reduce((s2, i) => s2 + (Number(i.weight) || 0), 0)}
+                    count={areaItems.length}
+                    onEven={() => evenItems(a.id)}
+                  />
                   {areaItems.map((i, iidx) => {
                     const isEditingI = editingItem === i.id;
                     const iv = editValues[i.id] || i;
@@ -265,7 +271,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                             <input value={iv.unit} onChange={e => setEditValues({...editValues, [i.id]: {...iv, unit: e.target.value}})} className={`${inputCls} w-16`} />
                             <input type="number" value={iv.qty_total} onChange={e => setEditValues({...editValues, [i.id]: {...iv, qty_total: e.target.value}})} className={`${inputCls} w-16`} placeholder="Total" />
                             <input type="number" value={iv.qty_completed} onChange={e => setEditValues({...editValues, [i.id]: {...iv, qty_completed: e.target.value}})} className={`${inputCls} w-16`} placeholder="Done" />
-                            <input type="number" value={iv.weight} onChange={e => setEditValues({...editValues, [i.id]: {...iv, weight: e.target.value}})} className={`${inputCls} w-14`} placeholder="w%" />
+                            <input type="number" value={iv.weight} onChange={e => setEditValues({...editValues, [i.id]: {...iv, weight: e.target.value}})} className={`${inputCls} w-16`} placeholder="bobot %" title="Bobot item (% dari parent)" />
                             <input type="date" value={(iv.start_date || "").slice(0,10)} onChange={e => setEditValues({...editValues, [i.id]: {...iv, start_date: e.target.value}})} className={`${inputCls} w-[120px]`} title="Target Start" />
                             <input type="date" value={(iv.end_date || "").slice(0,10)} onChange={e => setEditValues({...editValues, [i.id]: {...iv, end_date: e.target.value}})} className={`${inputCls} w-[120px]`} title="Target Finish" />
                             <select value={iv.epcc_category} onChange={e => setEditValues({...editValues, [i.id]: {...iv, epcc_category: e.target.value}})} className={inputCls}>
@@ -280,7 +286,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                             <span className="flex-1 text-foreground">{i.name}</span>
                             <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary capitalize">{(i as any).epcc_category || 'construction'}</span>
                             <span className="text-[10px] text-muted-foreground">{Number(i.qty_completed)}/{Number(i.qty_total)} {i.unit}</span>
-                            <span className="text-[10px] text-muted-foreground">W: {i.weight}%</span>
+                            <span className="text-[10px] px-1 py-0.5 rounded bg-muted text-foreground" title="Bobot item terhadap parent-nya">Bobot {r1(i.weight)}%</span>
                             <span className={`text-[10px] ${i.start_date && i.end_date ? "text-muted-foreground" : "text-destructive"}`}>
                               {i.start_date && i.end_date
                                 ? `${fmtD(i.start_date)} → ${fmtD(i.end_date)}`
