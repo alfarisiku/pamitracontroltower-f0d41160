@@ -527,6 +527,83 @@ export type Database = {
           },
         ]
       }
+      project_billings: {
+        Row: {
+          actual_amount: number
+          actual_cash_in_date: string | null
+          actual_invoice_date: string | null
+          actual_po_date: string | null
+          actual_progress_pct: number
+          created_at: string
+          description: string | null
+          id: string
+          notes: string | null
+          paid_amount: number
+          plan_amount: number
+          plan_cash_in_date: string | null
+          plan_invoice_date: string | null
+          plan_po_date: string | null
+          plan_progress_pct: number
+          project_id: string
+          sort_order: number
+          status: string
+          termin_code: string
+          updated_at: string
+        }
+        Insert: {
+          actual_amount?: number
+          actual_cash_in_date?: string | null
+          actual_invoice_date?: string | null
+          actual_po_date?: string | null
+          actual_progress_pct?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          plan_amount?: number
+          plan_cash_in_date?: string | null
+          plan_invoice_date?: string | null
+          plan_po_date?: string | null
+          plan_progress_pct?: number
+          project_id: string
+          sort_order?: number
+          status?: string
+          termin_code: string
+          updated_at?: string
+        }
+        Update: {
+          actual_amount?: number
+          actual_cash_in_date?: string | null
+          actual_invoice_date?: string | null
+          actual_po_date?: string | null
+          actual_progress_pct?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          plan_amount?: number
+          plan_cash_in_date?: string | null
+          plan_invoice_date?: string | null
+          plan_po_date?: string | null
+          plan_progress_pct?: number
+          project_id?: string
+          sort_order?: number
+          status?: string
+          termin_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_billings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_photos: {
         Row: {
           activity_category: string
