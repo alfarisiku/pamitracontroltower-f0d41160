@@ -6,6 +6,7 @@ import { useWorkAreas, useWorkItems } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
 
 const inputCls = "px-2 py-1 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
+const fmtD = (d?: string | null) => d ? new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-0.5 block";
 
 export function WBSCrudPanel({ projectId }: { projectId: string }) {
@@ -19,7 +20,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
   const [newAreaOpen, setNewAreaOpen] = useState(false);
   const [newArea, setNewArea] = useState({ code: "", name: "", weight: 0, epcc_category: "construction" });
   const [newItemFor, setNewItemFor] = useState<string | null>(null);
-  const [newItem, setNewItem] = useState({ code: "", name: "", unit: "unit", qty_total: 0, weight: 0, epcc_category: "construction" });
+  const [newItem, setNewItem] = useState({ code: "", name: "", unit: "unit", qty_total: 0, weight: 0, epcc_category: "construction", start_date: "", end_date: "" });
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["work_areas"] });
@@ -69,10 +70,11 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
       work_area_id: areaId, code: newItem.code, name: newItem.name, unit: newItem.unit,
       qty_total: newItem.qty_total, weight: newItem.weight,
       sort_order: areaItems.length, epcc_category: newItem.epcc_category,
+      start_date: newItem.start_date || null, end_date: newItem.end_date || null,
     } as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "work_item", "create", `Child WBS: ${newItem.code} - ${newItem.name}`, projectId);
-    setNewItem({ code: "", name: "", unit: "unit", qty_total: 0, weight: 0, epcc_category: "construction" });
+    setNewItem({ code: "", name: "", unit: "unit", qty_total: 0, weight: 0, epcc_category: "construction", start_date: "", end_date: "" });
     setNewItemFor(null); refresh(); toast({ title: "✅ Child WBS ditambahkan" });
   };
 
@@ -85,6 +87,7 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
       code: v.code, name: v.name, unit: v.unit,
       qty_total: total, qty_completed: done, weight: Number(v.weight)||0,
       epcc_category: v.epcc_category, progress,
+      start_date: v.start_date || null, end_date: v.end_date || null,
       status: progress >= 100 ? "completed" : progress > 0 ? "in-progress" : "not-started",
     } as any).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
@@ -166,6 +169,12 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{(a as any).epcc_category || 'construction'}</span>
                     <span className="text-[10px] text-muted-foreground">W: {a.weight}%</span>
                     <span className="text-[10px] text-muted-foreground">P: {a.progress}%</span>
+                    {(() => {
+                      const ds = areaItems.flatMap(x => [x.start_date, x.end_date]).filter(Boolean) as string[];
+                      if (!ds.length) return null;
+                      const sorted = ds.slice().sort();
+                      return <span className="text-[10px] text-muted-foreground">{fmtD(sorted[0])} → {fmtD(sorted[sorted.length-1])}</span>;
+                    })()}
                     <button onClick={() => { setEditingArea(a.id); setEditValues({...editValues, [a.id]: a}); }} className="p-1 hover:bg-muted rounded"><Edit3 className="h-3 w-3 text-primary" /></button>
                     <button onClick={() => setNewItemFor(newItemFor === a.id ? null : a.id)} className="p-1 hover:bg-muted rounded"><Plus className="h-3 w-3 text-success" /></button>
                     <button onClick={() => delArea(a.id, a.name)} className="p-1 hover:bg-muted rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
@@ -183,6 +192,8 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                     <select value={newItem.epcc_category} onChange={e => setNewItem({...newItem, epcc_category: e.target.value})} className={inputCls}>
                       {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
+                    <div><label className={labelCls}>Target Start</label><input type="date" value={newItem.start_date} onChange={e => setNewItem({...newItem, start_date: e.target.value})} className={`w-full ${inputCls}`} /></div>
+                    <div><label className={labelCls}>Target Finish</label><input type="date" value={newItem.end_date} onChange={e => setNewItem({...newItem, end_date: e.target.value})} className={`w-full ${inputCls}`} /></div>
                   </div>
                   <div className="flex gap-2 mt-2">
                     <button onClick={() => addItem(a.id)} className="px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Save className="h-3 w-3 inline mr-1" />Add Child</button>
@@ -210,6 +221,8 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                             <input type="number" value={iv.qty_total} onChange={e => setEditValues({...editValues, [i.id]: {...iv, qty_total: e.target.value}})} className={`${inputCls} w-16`} placeholder="Total" />
                             <input type="number" value={iv.qty_completed} onChange={e => setEditValues({...editValues, [i.id]: {...iv, qty_completed: e.target.value}})} className={`${inputCls} w-16`} placeholder="Done" />
                             <input type="number" value={iv.weight} onChange={e => setEditValues({...editValues, [i.id]: {...iv, weight: e.target.value}})} className={`${inputCls} w-14`} placeholder="w%" />
+                            <input type="date" value={(iv.start_date || "").slice(0,10)} onChange={e => setEditValues({...editValues, [i.id]: {...iv, start_date: e.target.value}})} className={`${inputCls} w-[120px]`} title="Target Start" />
+                            <input type="date" value={(iv.end_date || "").slice(0,10)} onChange={e => setEditValues({...editValues, [i.id]: {...iv, end_date: e.target.value}})} className={`${inputCls} w-[120px]`} title="Target Finish" />
                             <select value={iv.epcc_category} onChange={e => setEditValues({...editValues, [i.id]: {...iv, epcc_category: e.target.value}})} className={inputCls}>
                               {EPCC_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </select>
@@ -223,6 +236,11 @@ export function WBSCrudPanel({ projectId }: { projectId: string }) {
                             <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary capitalize">{(i as any).epcc_category || 'construction'}</span>
                             <span className="text-[10px] text-muted-foreground">{Number(i.qty_completed)}/{Number(i.qty_total)} {i.unit}</span>
                             <span className="text-[10px] text-muted-foreground">W: {i.weight}%</span>
+                            <span className={`text-[10px] ${i.start_date && i.end_date ? "text-muted-foreground" : "text-destructive"}`}>
+                              {i.start_date && i.end_date
+                                ? `${fmtD(i.start_date)} → ${fmtD(i.end_date)}`
+                                : "jadwal belum diisi"}
+                            </span>
                             <span className={`text-[10px] font-medium ${i.progress >= 100 ? "text-success" : i.progress > 0 ? "text-primary" : "text-muted-foreground"}`}>{i.progress}%</span>
                             <button onClick={() => { setEditingItem(i.id); setEditValues({...editValues, [i.id]: i}); }} className="p-1 hover:bg-muted rounded"><Edit3 className="h-3 w-3 text-primary" /></button>
                             <button onClick={() => delItem(i.id, i.name)} className="p-1 hover:bg-muted rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
