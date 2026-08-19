@@ -174,6 +174,50 @@ export type Database = {
           },
         ]
       }
+      hr_personnel: {
+        Row: {
+          category: string
+          created_at: string
+          headcount: number
+          id: string
+          notes: string | null
+          position: string
+          project_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          headcount?: number
+          id?: string
+          notes?: string | null
+          position: string
+          project_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          headcount?: number
+          id?: string
+          notes?: string | null
+          position?: string
+          project_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_personnel_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manpower_logs: {
         Row: {
           category: string

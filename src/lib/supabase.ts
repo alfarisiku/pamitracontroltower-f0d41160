@@ -303,11 +303,33 @@ export type DbBilling = {
 
 export const BILLING_STATUSES = [
   { value: "plan", label: "Plan" },
-  { value: "po", label: "PO Terbit" },
-  { value: "invoiced", label: "Invoice Terkirim" },
-  { value: "partial", label: "Dibayar Sebagian" },
-  { value: "paid", label: "Lunas" },
+  { value: "progress", label: "Di Progress" },
+  { value: "paid", label: "Terbayar" },
 ];
+
+export const BILLING_STATUS_CLASS: Record<string, string> = {
+  plan: "bg-muted text-muted-foreground border-border",
+  progress: "bg-warning/15 text-warning border-warning/30",
+  paid: "bg-success/15 text-success border-success/30",
+};
+
+export type DbHrPersonnel = {
+  id: string;
+  project_id: string | null;
+  category: string; // 'staff' | 'manpower'
+  position: string;
+  headcount: number;
+  notes: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export const HR_CATEGORIES = [
+  { value: "staff", label: "Karyawan Staff (Struktural)" },
+  { value: "manpower", label: "Manpower Lapangan (Proyek)" },
+];
+
 
 export type DbManpowerLog = {
   id: string;
