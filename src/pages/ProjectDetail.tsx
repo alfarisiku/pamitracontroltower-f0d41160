@@ -128,6 +128,7 @@ const ProjectDetail = () => {
   const [epcFilter, setEpcFilter] = useState<string>("all");
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
   const [cashflowGranularity, setCashflowGranularity] = useState<"monthly" | "weekly">("monthly");
+  const [healthChartMode, setHealthChartMode] = useState<"bar" | "curve">("bar");
   const [financeGranularity, setFinanceGranularity] = useState<"monthly" | "weekly">("monthly");
   const [scurveGranularity, setScurveGranularity] = useState<"monthly" | "weekly">("monthly");
   const [descExpanded, setDescExpanded] = useState(false);
@@ -530,19 +531,34 @@ const ProjectDetail = () => {
                   return withAct.length ? withAct[withAct.length - 1].t : -Infinity;
                 })();
 
+                let _cumPlanIn = 0, _cumPlanOut = 0, _cumIn = 0, _cumOut = 0;
+                let _prevPlanPct: number | null = null, _prevActPct: number | null = null;
                 const rows = periodList.map(p => {
                   const periodMs = p.order;
                   const planPct = valueAt(periodMs, "plan");
                   const cutoffMs = lastActualMs === -Infinity ? todayMs : lastActualMs;
                   const actPct = periodMs <= cutoffMs ? valueAt(periodMs, "actual") : null;
+                  const planPctN = planPct == null ? null : Number(planPct);
+                  const actPctN = actPct == null ? null : Number(actPct);
+                  const dPlan = planPctN == null ? null : planPctN - (_prevPlanPct ?? 0);
+                  const dAct = actPctN == null ? null : actPctN - (_prevActPct ?? 0);
+                  if (planPctN != null) _prevPlanPct = planPctN;
+                  if (actPctN != null) _prevActPct = actPctN;
+                  _cumPlanIn += p.planIn; _cumPlanOut += p.planOut; _cumIn += p.cashIn; _cumOut += p.cashOut;
                   return {
                     label: p.label,
-                    planPct: planPct == null ? null : Number(planPct),
-                    actPct: actPct == null ? null : Number(actPct),
+                    planPct: planPctN,
+                    actPct: actPctN,
+                    planPctDelta: dPlan,
+                    actPctDelta: dAct,
                     cashIn: p.cashIn,
                     cashOut: p.cashOut,
                     planIn: p.planIn,
                     planOut: p.planOut,
+                    cumPlanIn: _cumPlanIn,
+                    cumPlanOut: _cumPlanOut,
+                    cumCashIn: _cumIn,
+                    cumCashOut: _cumOut,
                   };
                 });
 
@@ -552,6 +568,17 @@ const ProjectDetail = () => {
                       <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
                       <div className="flex items-center gap-2 flex-wrap">
                         <GranularityToggle value={cashflowGranularity} onChange={setCashflowGranularity} />
+                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
+                          {([["bar", "Bar Chart"], ["curve", "Curve"]] as const).map(([m, lbl]) => (
+                            <button
+                              key={m}
+                              onClick={() => setHealthChartMode(m)}
+                              className={`px-2.5 py-1 text-[10px] font-semibold rounded transition-colors ${healthChartMode === m ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              {lbl}
+                            </button>
+                          ))}
+                        </div>
                         {availableCurves.length > 1 && (
                           <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
                             {availableCurves.map(ct => (
@@ -567,7 +594,7 @@ const ProjectDetail = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti data Cashflow hingga proyek selesai.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti data Cashflow hingga proyek selesai. Mode <span className="font-semibold text-foreground">{healthChartMode === "bar" ? "Bar Chart (kenaikan per periode)" : "Curve (kumulatif)"}</span>.</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -632,12 +659,25 @@ const ProjectDetail = () => {
                             const line = curvePalette(activeCurve, extraIdx);
                             return (
                               <>
-                                <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={cash.planIn} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={cash.actIn} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={cash.planOut} radius={[3,3,0,0]} />
-                                <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={cash.actOut} radius={[3,3,0,0]} />
-                                <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
-                                <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
+                                {healthChartMode === "bar" ? (
+                                  <>
+                                    <Bar yAxisId="left" dataKey="planIn" name="Plan Cash In" fill={cash.planIn} radius={[3,3,0,0]} />
+                                    <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={cash.actIn} radius={[3,3,0,0]} />
+                                    <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={cash.planOut} radius={[3,3,0,0]} />
+                                    <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={cash.actOut} radius={[3,3,0,0]} />
+                                    <Line yAxisId="right" type="monotone" dataKey="planPctDelta" name={`Δ Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
+                                    <Line yAxisId="right" type="monotone" dataKey="actPctDelta" name={`Δ Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
+                                  </>
+                                ) : (
+                                  <>
+                                    <Line yAxisId="left" type="monotone" dataKey="cumPlanIn" name="Kum. Plan Cash In" stroke={cash.planIn} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
+                                    <Line yAxisId="left" type="monotone" dataKey="cumCashIn" name="Kum. Actual Cash In" stroke={cash.actIn} strokeWidth={2.5} dot={false} connectNulls />
+                                    <Line yAxisId="left" type="monotone" dataKey="cumPlanOut" name="Kum. Plan Cash Out" stroke={cash.planOut} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
+                                    <Line yAxisId="left" type="monotone" dataKey="cumCashOut" name="Kum. Actual Cash Out" stroke={cash.actOut} strokeWidth={2.5} dot={false} connectNulls />
+                                    <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
+                                    <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
+                                  </>
+                                )}
                               </>
                             );
                           })()}
