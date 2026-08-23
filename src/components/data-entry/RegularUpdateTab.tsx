@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Save, Layers, TrendingUp, Target, Package, DollarSign, FileText, Camera, CheckCircle2, AlertTriangle, ClipboardCheck, ArrowRight, Trash2, Lock } from "lucide-react";
+import { Save, Layers, TrendingUp, Target, Package, DollarSign, FileText, Camera, CheckCircle2, AlertTriangle, ClipboardCheck, ArrowRight, Trash2, Lock, Receipt } from "lucide-react";
 import { supabase, logActivity, DbProject } from "@/lib/supabase";
 import { useWorkAreas, useWorkItems, useMilestones } from "@/hooks/useProjects";
 import { useProjectPeriods, type ProjectPeriod } from "@/hooks/useProjectPeriods";
