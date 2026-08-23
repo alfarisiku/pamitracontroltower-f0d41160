@@ -3,6 +3,7 @@ import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle
 import { NavLink, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDemoLevel } from "@/contexts/DemoLevelContext";
 
 
 import { BookOpen } from "lucide-react";
@@ -29,7 +30,13 @@ export function Sidebar() {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const menuItems = allMenuItems;
+  const { level } = useDemoLevel();
+  const menuItems =
+    level === 3
+      ? allMenuItems.filter(i => i.path === "/")
+      : level === 2
+      ? allMenuItems.filter(i => i.path === "/projects" || i.path === "/overview-eksekutif")
+      : allMenuItems;
 
 
 

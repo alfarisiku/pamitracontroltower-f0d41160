@@ -5,7 +5,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Database, FileText, DollarSign, ClipboardList, FileBarChart, Share2,
-  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet, ChevronDown, ChevronRight, TrendingUp, Receipt,
+  Layers, Camera, AlertTriangle, Package, Target, FileSpreadsheet, ChevronDown, ChevronRight, TrendingUp, Receipt, Users,
 } from "lucide-react";
 
 import { RegularUpdateTab } from "@/components/data-entry/RegularUpdateTab";
@@ -20,9 +20,10 @@ import { RiskResolvePanel } from "@/components/data-entry/RiskResolvePanel";
 import { ProcurementPanel } from "@/components/data-entry/ProcurementPanel";
 import { MilestonesEditor } from "@/components/data-entry/MilestonesEditor";
 import { BillingPanel } from "@/components/data-entry/BillingPanel";
+import { HrPanel } from "@/components/data-entry/HrPanel";
 import { ExcelSyncPanel } from "@/components/data-entry/ExcelSyncPanel";
 
-type ActiveTab = "regular" | "billing" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum";
+type ActiveTab = "regular" | "billing" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum" | "hr";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
@@ -52,6 +53,7 @@ const DataEntry = () => {
     { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false, group: "project" as const },
     { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,          adminOnly: false, group: "project" as const },
     { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,    adminOnly: true,  group: "project" as const },
+    { key: "hr" as const,            label: "SDM (Staff/Manpower)", icon: Users,          adminOnly: false, group: "project" as const },
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
   const quickTabs = tabs.filter(t => t.group === "quick");
@@ -150,6 +152,7 @@ const DataEntry = () => {
           {activeTab === "finance" && updateProjectId && <FinanceEntriesEditor projectId={updateProjectId} />}
           {activeTab === "scurve" && updateProjectId && <SCurveEditor projectId={updateProjectId} />}
           {activeTab === "addendum" && updateProjectId && <AddendumTab projectId={updateProjectId} projects={projects} />}
+          {activeTab === "hr" && updateProjectId && <HrPanel projectId={updateProjectId} />}
           {activeTab === "project-crud" && <ProjectCrudTab projects={projects} />}
 
           {!updateProjectId && activeTab !== "project-crud" && (

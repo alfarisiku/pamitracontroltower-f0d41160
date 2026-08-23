@@ -1,4 +1,4 @@
-import { NotificationDropdown } from "./NotificationDropdown";
+import { ActivityLogDropdown } from "./ActivityLogDropdown";
 import { LevelSwitcher } from "./LevelSwitcher";
 
 
@@ -23,7 +23,7 @@ export function DashboardHeader() {
           <span className="text-xs text-muted-foreground">{dateStr}</span>
           <span className="text-xs text-primary font-mono-data font-medium">{timeStr}</span>
         </div>
-        <NotificationDropdown />
+        <ActivityLogDropdown />
       </div>
 
     </header>

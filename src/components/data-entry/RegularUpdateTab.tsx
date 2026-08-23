@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Save, Layers, TrendingUp, Target, Package, DollarSign, FileText, Camera, CheckCircle2, AlertTriangle, ClipboardCheck, ArrowRight, Trash2, Lock } from "lucide-react";
+import { Save, Layers, TrendingUp, Target, Package, DollarSign, FileText, Camera, CheckCircle2, AlertTriangle, ClipboardCheck, ArrowRight, Trash2, Lock, Receipt } from "lucide-react";
 import { supabase, logActivity, DbProject } from "@/lib/supabase";
 import { useWorkAreas, useWorkItems, useMilestones } from "@/hooks/useProjects";
 import { useProjectPeriods, type ProjectPeriod } from "@/hooks/useProjectPeriods";
@@ -8,6 +8,7 @@ import { PeriodSelect } from "@/components/ui/period-select";
 import { toast } from "@/hooks/use-toast";
 import { RiskResolvePanel } from "./RiskResolvePanel";
 import { ProcurementPanel } from "./ProcurementPanel";
+import { BillingPanel } from "@/components/data-entry/BillingPanel";
 import { FinanceEntriesEditor } from "./FinanceEntriesEditor";
 import { WeeklyReportEditor } from "./WeeklyReportEditor";
 import { PhotoUploader } from "./PhotoUploader";
@@ -15,7 +16,7 @@ import { PhotoUploader } from "./PhotoUploader";
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
-type NavKey = "finance" | "weekly-report" | "photos" | "scurve" | "procurement" | "milestones" | "wbs" | "risk";
+type NavKey = "billing" | "finance" | "weekly-report" | "photos" | "scurve" | "procurement" | "milestones" | "wbs" | "risk";
 
 type SessionChange = { step: number; module: string; description: string; ts: number };
 
@@ -153,7 +154,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
     setWiQty("");
   };
 
-  // ---------- FINALIZE (Step 10) ----------
+  // ---------- FINALIZE (Step 11) ----------
   const [finalizing, setFinalizing] = useState(false);
   const [meetingNotes, setMeetingNotes] = useState("");
   const handleFinalize = async () => {
@@ -378,22 +379,31 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <FinanceEntriesEditor projectId={projectId} compact lockedPeriodId={selectedPeriod.id} onLogged={(m) => logChange(7, "Finance", m)} />
           </div>
 
-          {/* === STEP 8: Weekly Report === */}
+          {/* === STEP 8: Billing (Termin) === */}
           <div className="glass-card rounded-lg shadow-card p-4">
-            <StepHeader step={8} icon={FileText} title="Weekly Report" navKey="weekly-report" onNavigate={onNavigate} badge={<DraftBadge step={8} />} />
+            <StepHeader step={8} icon={Receipt} title="Billing / Termin" navKey="billing" onNavigate={onNavigate} badge={<DraftBadge step={8} />} />
+            <p className="text-[10px] text-muted-foreground mb-3">
+              Update <b>status termin</b> (Plan / Di Progress / Terbayar) dan tanggal PO, Invoice, Cash In. Tambah termin baru lewat "Kelola lengkap".
+            </p>
+            <BillingPanel projectId={projectId} mode="status" onLogged={(m) => logChange(8, "Billing", m)} />
+          </div>
+
+          {/* === STEP 9: Weekly Report === */}
+          <div className="glass-card rounded-lg shadow-card p-4">
+            <StepHeader step={9} icon={FileText} title="Weekly Report" navKey="weekly-report" onNavigate={onNavigate} badge={<DraftBadge step={9} />} />
             <p className="text-[10px] text-muted-foreground mb-3">
               Buat report baru untuk periode <b>{selectedPeriod.period_label}</b> — periode terkunci.
             </p>
-            <WeeklyReportEditor projectId={projectId} compact lockedPeriodId={selectedPeriod.id} onLogged={(m) => logChange(8, "Weekly Report", m)} />
+            <WeeklyReportEditor projectId={projectId} compact lockedPeriodId={selectedPeriod.id} onLogged={(m) => logChange(9, "Weekly Report", m)} />
           </div>
 
-          {/* === STEP 9: Weekly Photos === */}
+          {/* === STEP 10: Weekly Photos === */}
           <div className="glass-card rounded-lg shadow-card p-4">
-            <StepHeader step={9} icon={Camera} title="Weekly Photos" navKey="photos" onNavigate={onNavigate} badge={<DraftBadge step={9} />} />
+            <StepHeader step={10} icon={Camera} title="Weekly Photos" navKey="photos" onNavigate={onNavigate} badge={<DraftBadge step={10} />} />
             <p className="text-[10px] text-muted-foreground mb-3">
               Upload foto lapangan untuk periode <b>{selectedPeriod.period_label}</b> — periode terkunci.
             </p>
-            <PhotoUploader projectId={projectId} compact lockedPeriodId={selectedPeriod.id} onLogged={(m) => logChange(9, "Photos", m)} />
+            <PhotoUploader projectId={projectId} compact lockedPeriodId={selectedPeriod.id} onLogged={(m) => logChange(10, "Photos", m)} />
           </div>
 
           {/* === STEP 10: FINALIZE & REVIEW === */}
@@ -401,14 +411,14 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">10</span>
-                <ClipboardCheck className="h-4 w-4 text-primary" /> Step 10 · Finalize & Review Weekly Update
+                <ClipboardCheck className="h-4 w-4 text-primary" /> Step 11 · Finalize & Review Weekly Update
                 {finalized && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/20 text-success border border-success/40 font-semibold uppercase">Finalized</span>}
                 {!finalized && sessionChanges.length > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning border border-warning/40 font-semibold uppercase">{sessionChanges.length} pending</span>}
               </h3>
             </div>
 
             <p className="text-[10px] text-muted-foreground mb-3">
-              Semua perubahan dari Step 2–9 dicatat di bawah sebagai <b>draft session</b>. Review dulu, lalu <b>Finalize</b> untuk menutup update mingguan ini secara resmi (satu entry Activity Log konsolidasi tercipta).
+              Semua perubahan dari Step 2–10 dicatat di bawah sebagai <b>draft session</b>. Review dulu, lalu <b>Finalize</b> untuk menutup update mingguan ini secara resmi (satu entry Activity Log konsolidasi tercipta).
             </p>
 
             {sessionChanges.length === 0 ? (
