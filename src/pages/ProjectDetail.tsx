@@ -4,6 +4,9 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProject, useWorkAreas, useWorkItems, useSubTasks, useMilestones, useAlerts, useAllAlerts, useSCurveData, useProcurementItems, usePurchaseOrders, useProjectCashflow, useFinanceEntries, useAddendums } from "@/hooks/useProjects";
+import { useBillings } from "@/components/data-entry/BillingPanel";
+import { useHrPersonnel } from "@/components/data-entry/HrPanel";
+import { BILLING_STATUSES, BILLING_STATUS_CLASS } from "@/lib/supabase";
 import { supabase, formatRupiah, formatIDR, FINANCE_CATEGORIES, resolveImageUrl } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
@@ -35,7 +38,7 @@ const milestoneStatusConfig: Record<string, { label: string; className: string }
 };
 
 type MediaTab = "weekly" | "video" | "cctv" | "model3d";
-type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report" | "addendum";
+type MainTab = "health" | "finance" | "scurve" | "wbs" | "milestones" | "procurement" | "risks" | "media" | "weekly-report" | "addendum" | "billing";
 
 const riskCategoryLabels: Record<string, string> = {
   technical: "Technical", schedule: "Schedule", cost: "Cost",
@@ -126,6 +129,10 @@ const ProjectDetail = () => {
   }, [L3, activeTab]);
 
   const [epcFilter, setEpcFilter] = useState<string>("all");
+  const { data: billings = [] } = useBillings(id);
+  const { data: hrRows = [] } = useHrPersonnel(id);
+  const staffCount = hrRows.filter(h => h.category === "staff").reduce((a, h) => a + (h.headcount || 0), 0);
+  const manpowerCount = hrRows.filter(h => h.category === "manpower").reduce((a, h) => a + (h.headcount || 0), 0);
   const [cashflowCurve, setCashflowCurve] = useState<string>("baseline");
   const [cashflowGranularity, setCashflowGranularity] = useState<"monthly" | "weekly">("monthly");
   const [healthChartMode, setHealthChartMode] = useState<"bar" | "curve">("bar");
@@ -310,6 +317,7 @@ const ProjectDetail = () => {
                 <InfoItem icon={Briefcase} label="Klien" value={project.client} />
                 <InfoItem icon={Calendar} label="Mulai" value={new Date(project.start_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} />
                 <InfoItem icon={Calendar} label="Target" value={endDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} />
+                {!L3 && <InfoItem icon={User} label="Staff / Manpower" value={`${staffCount} / ${manpowerCount} org`} />}
                 {!L3 && <InfoItem icon={Clock} label="Sisa" value={daysRemaining > 0 ? `${daysRemaining}d` : "Overdue"} valueClassName={daysRemaining <= 0 ? "text-destructive" : daysRemaining < 90 ? "text-warning" : ""} />}
               </div>
             </div>
@@ -324,6 +332,7 @@ const ProjectDetail = () => {
               { key: "wbs" as const, label: L3 ? "WBS" : `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
               { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
+              { key: "billing" as const, label: `Billing (${billings.length})`, icon: Receipt, publicOk: false },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
@@ -748,6 +757,54 @@ const ProjectDetail = () => {
                   </div>
                 );
               })()}
+            </div>
+          )}
+
+          {/* Billing Tab */}
+          {activeTab === "billing" && (
+            <div className="glass-card rounded-lg p-4 shadow-card">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1"><Receipt className="h-4 w-4 text-primary" /> Billing / Termin ke Client</h3>
+              <p className="text-[10px] text-muted-foreground mb-3">Monitoring pengakuan pembayaran termin — status, nominal, % progress tertagih, serta tanggal PO / Invoice / Cash In.</p>
+              {billings.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-6 text-center">Belum ada data termin.</p>
+              ) : (
+                <div className="overflow-x-auto rounded border border-border">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-muted border-b border-border">
+                        <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Termin</th>
+                        <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Deskripsi</th>
+                        <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Status</th>
+                        <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">% Progress</th>
+                        <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Nominal</th>
+                        <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Tgl PO</th>
+                        <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Tgl Invoice</th>
+                        <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Tgl Cash In</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {billings.map(b => {
+                        const st = BILLING_STATUSES.find(x => x.value === b.status);
+                        const d = (v: string | null) => (v ? new Date(v).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "—");
+                        return (
+                          <tr key={b.id} className="border-b border-border/30 hover:bg-muted/20">
+                            <td className="py-1.5 px-2 font-semibold text-foreground">{b.termin_code}</td>
+                            <td className="py-1.5 px-2 text-muted-foreground">{b.description || "—"}</td>
+                            <td className="py-1.5 px-2 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${BILLING_STATUS_CLASS[b.status] || "bg-muted text-muted-foreground border-border"}`}>{st?.label || b.status}</span>
+                            </td>
+                            <td className="py-1.5 px-2 text-right font-mono-data">{Number(b.plan_progress_pct || 0).toFixed(1)}%</td>
+                            <td className="py-1.5 px-2 text-right font-mono-data font-semibold text-foreground">{formatRupiah(Number(b.plan_amount || 0))}</td>
+                            <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_po_date || b.plan_po_date)}</td>
+                            <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_invoice_date || b.plan_invoice_date)}</td>
+                            <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_cash_in_date || b.plan_cash_in_date)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
