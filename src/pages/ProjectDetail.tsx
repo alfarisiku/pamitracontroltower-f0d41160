@@ -692,8 +692,8 @@ const ProjectDetail = () => {
                                     <Bar yAxisId="left" dataKey="cashIn" name="Actual Cash In" fill={cash.actIn} radius={[3,3,0,0]} />
                                     <Bar yAxisId="left" dataKey="planOut" name="Plan Cash Out" fill={cash.planOut} radius={[3,3,0,0]} />
                                     <Bar yAxisId="left" dataKey="cashOut" name="Actual Cash Out" fill={cash.actOut} radius={[3,3,0,0]} />
-                                    <Line yAxisId="right" type="monotone" dataKey="planPctDelta" name={`Δ Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
-                                    <Line yAxisId="right" type="monotone" dataKey="actPctDelta" name={`Δ Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
+                                    <Bar yAxisId="right" dataKey="planPctDelta" name={`Δ Plan % (${activeCurve})`} fill={line.plan} radius={[3,3,0,0]} />
+                                    <Bar yAxisId="right" dataKey="actPctDelta" name={`Δ Actual % (${activeCurve})`} fill={line.actual} radius={[3,3,0,0]} />
                                   </>
                                 ) : (
                                   <>
@@ -704,6 +704,9 @@ const ProjectDetail = () => {
                                     <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
                                     <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
                                   </>
+                                )}
+                                {todayLabel && (
+                                  <ReferenceLine x={todayLabel} stroke="hsl(0, 72%, 50%)" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Today", position: "top", fontSize: 9, fill: "hsl(0, 72%, 50%)" }} />
                                 )}
                               </>
                             );
