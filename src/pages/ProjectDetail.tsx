@@ -9,6 +9,13 @@ import { useHrPersonnel } from "@/components/data-entry/HrPanel";
 import { BILLING_STATUSES, BILLING_STATUS_CLASS } from "@/lib/supabase";
 import { supabase, formatRupiah, formatIDR, FINANCE_CATEGORIES, resolveImageUrl } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
 import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
@@ -539,6 +546,19 @@ const ProjectDetail = () => {
                   const withAct = points.filter(p => p.actual != null);
                   return withAct.length ? withAct[withAct.length - 1].t : -Infinity;
                 })();
+                const todayLabel = (() => {
+                  const containing = activeRows.find(s => {
+                    const start = s.period_start ? new Date(s.period_start).getTime() : null;
+                    const end = s.period_end ? new Date(s.period_end).getTime() : null;
+                    return start != null && end != null && todayMs >= start && todayMs <= end;
+                  });
+                  if (containing) return containing.period_label || containing.period_end || null;
+                  if (cashflowGranularity === "monthly") {
+                    const d = new Date();
+                    return d.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
+                  }
+                  return null;
+                })();
 
                 let _cumPlanIn = 0, _cumPlanOut = 0, _cumIn = 0, _cumOut = 0;
                 let _prevPlanPct: number | null = null, _prevActPct: number | null = null;
@@ -577,17 +597,15 @@ const ProjectDetail = () => {
                       <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Progress vs Cashflow per Periode</h3>
                       <div className="flex items-center gap-2 flex-wrap">
                         <GranularityToggle value={cashflowGranularity} onChange={setCashflowGranularity} />
-                        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
-                          {([["bar", "Bar Chart"], ["curve", "Curve"]] as const).map(([m, lbl]) => (
-                            <button
-                              key={m}
-                              onClick={() => setHealthChartMode(m)}
-                              className={`px-2.5 py-1 text-[10px] font-semibold rounded transition-colors ${healthChartMode === m ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                            >
-                              {lbl}
-                            </button>
-                          ))}
-                        </div>
+                        <Select value={healthChartMode} onValueChange={(v) => setHealthChartMode(v as "bar" | "curve")}>
+                          <SelectTrigger className="h-7 w-32 text-[10px] font-semibold bg-muted/40 border-border">
+                            <SelectValue placeholder="Jenis grafik" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bar" className="text-xs">Bar Chart</SelectItem>
+                            <SelectItem value="curve" className="text-xs">Curve</SelectItem>
+                          </SelectContent>
+                        </Select>
                         {availableCurves.length > 1 && (
                           <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5 border border-border">
                             {availableCurves.map(ct => (
