@@ -628,15 +628,16 @@ const ProjectDetail = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 90%)" />
                           <XAxis dataKey="label" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} />
                           <YAxis yAxisId="left" orientation="left" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 9 }} tickFormatter={(v: number) => formatRupiah(v)} />
-                          <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} domain={healthChartMode === "bar" ? [0, "auto"] : [0, 100]} />
                           <RTooltip
                             contentStyle={chartTooltip}
                             content={({ active, payload, label }: any) => {
                               if (!active || !payload || payload.length === 0) return null;
                               const row = payload[0]?.payload || {};
                               const rowNum = (v: any) => (v == null ? null : Number(v));
-                              const planPct = rowNum(row.planPct);
-                              const actPct = rowNum(row.actPct);
+                              const isBarMode = healthChartMode === "bar";
+                              const planPct = isBarMode ? rowNum(row.planPctDelta) : rowNum(row.planPct);
+                              const actPct = isBarMode ? rowNum(row.actPctDelta) : rowNum(row.actPct);
                               const planIn = rowNum(row.planIn) ?? 0;
                               const planOut = rowNum(row.planOut) ?? 0;
                               const cashIn = rowNum(row.cashIn) ?? 0;
@@ -648,7 +649,7 @@ const ProjectDetail = () => {
                                 <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
                                   <p className="text-foreground font-bold mb-1.5">{label} <span className="ml-1 text-[9px] uppercase font-semibold" style={{ color: lc.hue }}>({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></p>
                                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Progress</span><span />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Δ Progress (kenaikan periode)" : "Progress"}</span><span />
                                     <span className="text-muted-foreground">Planning</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.plan }}>{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
                                     <span className="text-muted-foreground">Actual</span>
@@ -725,7 +726,7 @@ const ProjectDetail = () => {
                         <thead className="sticky top-0 z-10">
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
-                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Progress % <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
+                            <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Δ Progress % / Periode" : "Progress %"} <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
                             <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
                             <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
                             <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">
@@ -748,7 +749,9 @@ const ProjectDetail = () => {
                           {(() => {
                             let cum = 0;
                             let hasAnyActual = false;
-                            return rows.map(r => {
+                            const isBarTable = healthChartMode === "bar";
+                            return rows.map(r0 => {
+                              const r = isBarTable ? { ...r0, planPct: r0.planPctDelta, actPct: r0.actPctDelta } : r0;
                               const dev = r.planPct != null && r.actPct != null ? r.actPct - r.planPct : null;
                               const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
                               if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
