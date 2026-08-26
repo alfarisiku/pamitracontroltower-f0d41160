@@ -649,7 +649,7 @@ const ProjectDetail = () => {
                                 <div className="bg-card border border-border rounded-md shadow-lg px-3 py-2 text-[11px] min-w-[220px]">
                                   <p className="text-foreground font-bold mb-1.5">{label} <span className="ml-1 text-[9px] uppercase font-semibold" style={{ color: lc.hue }}>({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></p>
                                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Progress</span><span />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Δ Progress (kenaikan periode)" : "Progress"}</span><span />
                                     <span className="text-muted-foreground">Planning</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.plan }}>{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
                                     <span className="text-muted-foreground">Actual</span>
