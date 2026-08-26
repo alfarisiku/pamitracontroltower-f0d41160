@@ -638,10 +638,10 @@ const ProjectDetail = () => {
                               const isBarMode = healthChartMode === "bar";
                               const planPct = isBarMode ? rowNum(row.planPctDelta) : rowNum(row.planPct);
                               const actPct = isBarMode ? rowNum(row.actPctDelta) : rowNum(row.actPct);
-                              const planIn = rowNum(row.planIn) ?? 0;
-                              const planOut = rowNum(row.planOut) ?? 0;
-                              const cashIn = rowNum(row.cashIn) ?? 0;
-                              const cashOut = rowNum(row.cashOut) ?? 0;
+                              const planIn = rowNum(isBarMode ? row.planIn : row.cumPlanIn) ?? 0;
+                              const planOut = rowNum(isBarMode ? row.planOut : row.cumPlanOut) ?? 0;
+                              const cashIn = rowNum(isBarMode ? row.cashIn : row.cumCashIn) ?? 0;
+                              const cashOut = rowNum(isBarMode ? row.cashOut : row.cumCashOut) ?? 0;
                               const extrasList2 = availableCurves.filter(c => c !== "baseline");
                               const idx2 = activeCurve === "baseline" ? 0 : Math.max(0, extrasList2.indexOf(activeCurve));
                               const lc = curvePalette(activeCurve, idx2);
@@ -655,13 +655,13 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground">Actual</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Cash In</span><span />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash In" : "Kum. Cash In"}</span><span />
                                     <span className="text-muted-foreground">Planning</span>
                                     <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Actual</span>
                                     <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(cashIn)}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Cash Out</span><span />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash Out" : "Kum. Cash Out"}</span><span />
                                     <span className="text-muted-foreground">Planning</span>
                                     <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
                                     <span className="text-muted-foreground">Actual</span>
@@ -727,8 +727,8 @@ const ProjectDetail = () => {
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
                             <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Δ Progress % / Periode" : "Progress %"} <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Cash In" : "Kum. Cash In"}</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Cash Out" : "Kum. Cash Out"}</th>
                             <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">
                               <span className="inline-flex items-center gap-0.5">Net Kumulatif (Actual)<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
                             </th>
@@ -751,10 +751,12 @@ const ProjectDetail = () => {
                             let hasAnyActual = false;
                             const isBarTable = healthChartMode === "bar";
                             return rows.map(r0 => {
-                              const r = isBarTable ? { ...r0, planPct: r0.planPctDelta, actPct: r0.actPctDelta } : r0;
+                              const r = isBarTable
+                                ? { ...r0, planPct: r0.planPctDelta, actPct: r0.actPctDelta, planIn: r0.planIn, cashIn: r0.cashIn, planOut: r0.planOut, cashOut: r0.cashOut }
+                                : { ...r0, planPct: r0.planPct, actPct: r0.actPct, planIn: r0.cumPlanIn, cashIn: r0.cumCashIn, planOut: r0.cumPlanOut, cashOut: r0.cumCashOut };
                               const dev = r.planPct != null && r.actPct != null ? r.actPct - r.planPct : null;
-                              const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
-                              if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
+                              const hasActualHere = r.actPct != null || r0.cashIn !== 0 || r0.cashOut !== 0;
+                              if (hasActualHere) { hasAnyActual = true; cum += (r0.cashIn - r0.cashOut); }
                               const showNet = hasAnyActual && r.actPct != null;
                               return (
                               <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
