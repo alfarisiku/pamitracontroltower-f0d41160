@@ -638,10 +638,10 @@ const ProjectDetail = () => {
                               const isBarMode = healthChartMode === "bar";
                               const planPct = isBarMode ? rowNum(row.planPctDelta) : rowNum(row.planPct);
                               const actPct = isBarMode ? rowNum(row.actPctDelta) : rowNum(row.actPct);
-                              const planIn = rowNum(row.planIn) ?? 0;
-                              const planOut = rowNum(row.planOut) ?? 0;
-                              const cashIn = rowNum(row.cashIn) ?? 0;
-                              const cashOut = rowNum(row.cashOut) ?? 0;
+                              const planIn = rowNum(isBarMode ? row.planIn : row.cumPlanIn) ?? 0;
+                              const planOut = rowNum(isBarMode ? row.planOut : row.cumPlanOut) ?? 0;
+                              const cashIn = rowNum(isBarMode ? row.cashIn : row.cumCashIn) ?? 0;
+                              const cashOut = rowNum(isBarMode ? row.cashOut : row.cumCashOut) ?? 0;
                               const extrasList2 = availableCurves.filter(c => c !== "baseline");
                               const idx2 = activeCurve === "baseline" ? 0 : Math.max(0, extrasList2.indexOf(activeCurve));
                               const lc = curvePalette(activeCurve, idx2);
@@ -655,13 +655,13 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground">Actual</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Cash In</span><span />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash In" : "Kum. Cash In"}</span><span />
                                     <span className="text-muted-foreground">Planning</span>
                                     <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
                                     <span className="text-muted-foreground">Actual</span>
                                     <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(cashIn)}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">Cash Out</span><span />
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash Out" : "Kum. Cash Out"}</span><span />
                                     <span className="text-muted-foreground">Planning</span>
                                     <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
                                     <span className="text-muted-foreground">Actual</span>
