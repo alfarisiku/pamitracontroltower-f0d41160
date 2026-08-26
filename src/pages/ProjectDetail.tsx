@@ -706,7 +706,7 @@ const ProjectDetail = () => {
                                   </>
                                 )}
                                 {todayLabel && (
-                                  <ReferenceLine x={todayLabel} stroke="hsl(0, 72%, 50%)" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Today", position: "top", fontSize: 9, fill: "hsl(0, 72%, 50%)" }} />
+                                  <ReferenceLine yAxisId="left" x={todayLabel} stroke="hsl(0, 72%, 50%)" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: "Today", position: "top", fontSize: 9, fill: "hsl(0, 72%, 50%)" }} />
                                 )}
                               </>
                             );
