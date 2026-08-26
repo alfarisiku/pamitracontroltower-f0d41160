@@ -635,8 +635,9 @@ const ProjectDetail = () => {
                               if (!active || !payload || payload.length === 0) return null;
                               const row = payload[0]?.payload || {};
                               const rowNum = (v: any) => (v == null ? null : Number(v));
-                              const planPct = rowNum(row.planPct);
-                              const actPct = rowNum(row.actPct);
+                              const isBarMode = healthChartMode === "bar";
+                              const planPct = isBarMode ? rowNum(row.planPctDelta) : rowNum(row.planPct);
+                              const actPct = isBarMode ? rowNum(row.actPctDelta) : rowNum(row.actPct);
                               const planIn = rowNum(row.planIn) ?? 0;
                               const planOut = rowNum(row.planOut) ?? 0;
                               const cashIn = rowNum(row.cashIn) ?? 0;
