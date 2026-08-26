@@ -749,7 +749,9 @@ const ProjectDetail = () => {
                           {(() => {
                             let cum = 0;
                             let hasAnyActual = false;
-                            return rows.map(r => {
+                            const isBarTable = healthChartMode === "bar";
+                            return rows.map(r0 => {
+                              const r = isBarTable ? { ...r0, planPct: r0.planPctDelta, actPct: r0.actPctDelta } : r0;
                               const dev = r.planPct != null && r.actPct != null ? r.actPct - r.planPct : null;
                               const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
                               if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
