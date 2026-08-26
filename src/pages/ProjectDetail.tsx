@@ -727,8 +727,8 @@ const ProjectDetail = () => {
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
                             <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Δ Progress % / Periode" : "Progress %"} <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Cash In" : "Kum. Cash In"}</th>
+                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Cash Out" : "Kum. Cash Out"}</th>
                             <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">
                               <span className="inline-flex items-center gap-0.5">Net Kumulatif (Actual)<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
                             </th>
@@ -751,10 +751,12 @@ const ProjectDetail = () => {
                             let hasAnyActual = false;
                             const isBarTable = healthChartMode === "bar";
                             return rows.map(r0 => {
-                              const r = isBarTable ? { ...r0, planPct: r0.planPctDelta, actPct: r0.actPctDelta } : r0;
+                              const r = isBarTable
+                                ? { ...r0, planPct: r0.planPctDelta, actPct: r0.actPctDelta, planIn: r0.planIn, cashIn: r0.cashIn, planOut: r0.planOut, cashOut: r0.cashOut }
+                                : { ...r0, planPct: r0.planPct, actPct: r0.actPct, planIn: r0.cumPlanIn, cashIn: r0.cumCashIn, planOut: r0.cumPlanOut, cashOut: r0.cumCashOut };
                               const dev = r.planPct != null && r.actPct != null ? r.actPct - r.planPct : null;
-                              const hasActualHere = r.actPct != null || r.cashIn !== 0 || r.cashOut !== 0;
-                              if (hasActualHere) { hasAnyActual = true; cum += (r.cashIn - r.cashOut); }
+                              const hasActualHere = r.actPct != null || r0.cashIn !== 0 || r0.cashOut !== 0;
+                              if (hasActualHere) { hasAnyActual = true; cum += (r0.cashIn - r0.cashOut); }
                               const showNet = hasAnyActual && r.actPct != null;
                               return (
                               <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
