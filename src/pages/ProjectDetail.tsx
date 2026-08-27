@@ -588,6 +588,9 @@ const ProjectDetail = () => {
                     cumPlanOut: _cumPlanOut,
                     cumCashIn: _cumIn,
                     cumCashOut: _cumOut,
+                    cumPlanNet: _cumPlanIn - _cumPlanOut,
+                    cumActNet: _cumIn - _cumOut,
+
                   };
                 });
 
@@ -621,7 +624,7 @@ const ProjectDetail = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti data Cashflow hingga proyek selesai. Mode <span className="font-semibold text-foreground">{healthChartMode === "bar" ? "Bar Chart (kenaikan per periode)" : "Curve (kumulatif)"}</span>.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Mode <span className="font-semibold text-foreground">{healthChartMode === "bar" ? "Bar Chart (kenaikan per periode)" : "Curve (kumulatif)"}</span>. {healthChartMode === "curve" ? "Pada mode Curve, grafik dan tabel hanya menampilkan Net Kumulatif (Cash In − Cash Out) untuk Plan & Actual." : ""}</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
@@ -655,17 +658,27 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground">Actual</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash In" : "Kum. Cash In"}</span><span />
-                                    <span className="text-muted-foreground">Planning</span>
-                                    <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
-                                    <span className="text-muted-foreground">Actual</span>
-                                    <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(cashIn)}</span>
-                                    <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash Out" : "Kum. Cash Out"}</span><span />
-                                    <span className="text-muted-foreground">Planning</span>
-                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
-                                    <span className="text-muted-foreground">Actual</span>
-                                    <span className="font-mono-data text-accent font-semibold text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash In / Out" : "Net Kumulatif"}</span><span />
+                                    {isBarMode ? (
+                                      <>
+                                        <span className="text-muted-foreground">Plan Cash In</span>
+                                        <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
+                                        <span className="text-muted-foreground">Actual Cash In</span>
+                                        <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(cashIn)}</span>
+                                        <span className="text-muted-foreground">Plan Cash Out</span>
+                                        <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                        <span className="text-muted-foreground">Actual Cash Out</span>
+                                        <span className="font-mono-data text-accent font-semibold text-right">{formatRupiah(cashOut)}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="text-muted-foreground">Plan Net</span>
+                                        <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(rowNum(row.cumPlanNet) ?? 0)}</span>
+                                        <span className="text-muted-foreground">Actual Net</span>
+                                        <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(rowNum(row.cumActNet) ?? 0)}</span>
+                                      </>
+                                    )}
+
                                   </div>
                                 </div>
                               );
@@ -698,12 +711,12 @@ const ProjectDetail = () => {
                                   </>
                                 ) : (
                                   <>
-                                    <Line yAxisId="left" type="monotone" dataKey="cumPlanIn" name="Kum. Plan Cash In" stroke={cash.planIn} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
-                                    <Line yAxisId="left" type="monotone" dataKey="cumCashIn" name="Kum. Actual Cash In" stroke={cash.actIn} strokeWidth={2.5} dot={false} connectNulls />
-                                    <Line yAxisId="left" type="monotone" dataKey="cumPlanOut" name="Kum. Plan Cash Out" stroke={cash.planOut} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
-                                    <Line yAxisId="left" type="monotone" dataKey="cumCashOut" name="Kum. Actual Cash Out" stroke={cash.actOut} strokeWidth={2.5} dot={false} connectNulls />
+                                    <Area yAxisId="left" type="monotone" dataKey="cumPlanNet" name="Plan Net Kumulatif" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.12} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
+                                    <Area yAxisId="left" type="monotone" dataKey="cumActNet" name="Actual Net Kumulatif" stroke="hsl(var(--success))" fill="hsl(var(--success))" fillOpacity={0.18} strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--success))" }} connectNulls />
+                                    <ReferenceLine yAxisId="left" y={0} stroke="hsl(215, 20%, 80%)" strokeDasharray="3 3" />
                                     <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
                                     <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
+
                                   </>
                                 )}
                                 {todayLabel && (
@@ -727,11 +740,19 @@ const ProjectDetail = () => {
                           <tr className="bg-muted border-b border-border">
                             <th rowSpan={2} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground align-bottom">Periode</th>
                             <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Δ Progress % / Periode" : "Progress %"} <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span></th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Cash In" : "Kum. Cash In"}</th>
-                            <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">{healthChartMode === "bar" ? "Cash Out" : "Kum. Cash Out"}</th>
-                            <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">
-                              <span className="inline-flex items-center gap-0.5">Net Kumulatif (Actual)<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
-                            </th>
+                            {healthChartMode === "curve" ? (
+                              <th colSpan={3} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">
+                                <span className="inline-flex items-center gap-0.5">Net Kumulatif<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
+                              </th>
+                            ) : (
+                              <>
+                                <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash In</th>
+                                <th colSpan={2} className="text-center py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Cash Out</th>
+                                <th rowSpan={2} className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground border-l border-border align-bottom">
+                                  <span className="inline-flex items-center gap-0.5">Net Kumulatif (Actual)<FormulaTooltip {...FORMULAS.cumulativeNet} /></span>
+                                </th>
+                              </>
+                            )}
                           </tr>
                           <tr className="bg-muted/70 border-b border-border">
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
@@ -739,10 +760,22 @@ const ProjectDetail = () => {
                             <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
                               <span className="inline-flex items-center gap-0.5">Deviasi<FormulaTooltip {...FORMULAS.deviation} /></span>
                             </th>
-                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
-                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
-                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
-                            <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                            {healthChartMode === "curve" ? (
+                              <>
+                                <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                                <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                                <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">
+                                  <span className="inline-flex items-center gap-0.5">Deviasi<FormulaTooltip {...FORMULAS.deviation} /></span>
+                                </th>
+                              </>
+                            ) : (
+                              <>
+                                <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                                <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                                <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground border-l border-border">Plan</th>
+                                <th className="text-right py-1 px-2 text-[9px] uppercase text-muted-foreground">Actual</th>
+                              </>
+                            )}
                           </tr>
                         </thead>
                         <tbody>
@@ -750,6 +783,7 @@ const ProjectDetail = () => {
                             let cum = 0;
                             let hasAnyActual = false;
                             const isBarTable = healthChartMode === "bar";
+                            const isCurveTable = healthChartMode === "curve";
                             return rows.map(r0 => {
                               const r = isBarTable
                                 ? { ...r0, planPct: r0.planPctDelta, actPct: r0.actPctDelta, planIn: r0.planIn, cashIn: r0.cashIn, planOut: r0.planOut, cashOut: r0.cashOut }
@@ -758,17 +792,30 @@ const ProjectDetail = () => {
                               const hasActualHere = r.actPct != null || r0.cashIn !== 0 || r0.cashOut !== 0;
                               if (hasActualHere) { hasAnyActual = true; cum += (r0.cashIn - r0.cashOut); }
                               const showNet = hasAnyActual && r.actPct != null;
+                              const planNet = r0.cumPlanNet ?? 0;
+                              const actNet = r0.cumActNet ?? 0;
+                              const devNet = actNet - planNet;
                               return (
                               <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                                 <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct == null ? "—" : `${r.planPct.toFixed(1)}%`}</td>
                                 <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
                                 <td className={`py-1.5 px-2 text-right font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{dev == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{formatRupiah(r.cashIn)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{formatRupiah(r.cashOut)}</td>
-                                <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : "text-foreground"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
+                                {isCurveTable ? (
+                                  <>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(planNet)}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{formatRupiah(actNet)}</td>
+                                    <td className={`py-1.5 px-2 text-right font-mono-data ${devNet >= 0 ? "text-success" : "text-destructive"}`}>{`${devNet > 0 ? "+" : ""}${formatRupiah(devNet)}`}</td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(r.planIn)}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-primary font-semibold">{formatRupiah(r.cashIn)}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground/70 border-l border-border/40">{formatRupiah(r.planOut)}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data text-foreground font-semibold">{formatRupiah(r.cashOut)}</td>
+                                    <td className={`py-1.5 px-2 text-right font-mono-data font-bold border-l border-border/40 ${!showNet ? "text-muted-foreground" : "text-foreground"}`}>{showNet ? formatRupiah(cum) : "—"}</td>
+                                  </>
+                                )}
                               </tr>
                               );
                             });
@@ -776,6 +823,7 @@ const ProjectDetail = () => {
                         </tbody>
                       </table>
                     </div>
+
                       );
                     })()}
 
