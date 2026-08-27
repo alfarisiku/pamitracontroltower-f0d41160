@@ -711,12 +711,12 @@ const ProjectDetail = () => {
                                   </>
                                 ) : (
                                   <>
-                                    <Line yAxisId="left" type="monotone" dataKey="cumPlanIn" name="Kum. Plan Cash In" stroke={cash.planIn} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
-                                    <Line yAxisId="left" type="monotone" dataKey="cumCashIn" name="Kum. Actual Cash In" stroke={cash.actIn} strokeWidth={2.5} dot={false} connectNulls />
-                                    <Line yAxisId="left" type="monotone" dataKey="cumPlanOut" name="Kum. Plan Cash Out" stroke={cash.planOut} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
-                                    <Line yAxisId="left" type="monotone" dataKey="cumCashOut" name="Kum. Actual Cash Out" stroke={cash.actOut} strokeWidth={2.5} dot={false} connectNulls />
+                                    <Area yAxisId="left" type="monotone" dataKey="cumPlanNet" name="Plan Net Kumulatif" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.12} strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
+                                    <Area yAxisId="left" type="monotone" dataKey="cumActNet" name="Actual Net Kumulatif" stroke="hsl(var(--success))" fill="hsl(var(--success))" fillOpacity={0.18} strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--success))" }} connectNulls />
+                                    <ReferenceLine yAxisId="left" y={0} stroke="hsl(215, 20%, 80%)" strokeDasharray="3 3" />
                                     <Line yAxisId="right" type="monotone" dataKey="planPct" name={`Plan % (${activeCurve})`} stroke={line.plan} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: line.plan }} connectNulls />
                                     <Line yAxisId="right" type="monotone" dataKey="actPct" name={`Actual % (${activeCurve})`} stroke={line.actual} strokeWidth={2.5} dot={{ r: 3, fill: line.actual }} connectNulls />
+
                                   </>
                                 )}
                                 {todayLabel && (
