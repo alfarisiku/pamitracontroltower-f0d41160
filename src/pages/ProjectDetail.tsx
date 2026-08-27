@@ -624,7 +624,7 @@ const ProjectDetail = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Periode & proyeksi mengikuti data Cashflow hingga proyek selesai. Mode <span className="font-semibold text-foreground">{healthChartMode === "bar" ? "Bar Chart (kenaikan per periode)" : "Curve (kumulatif)"}</span>.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">Plan % & Actual % diambil dari S-Curve <span className="font-semibold text-foreground">({activeCurve === "baseline" ? "Baseline" : activeCurve})</span>. Mode <span className="font-semibold text-foreground">{healthChartMode === "bar" ? "Bar Chart (kenaikan per periode)" : "Curve (kumulatif)"}</span>. {healthChartMode === "curve" ? "Pada mode Curve, grafik dan tabel hanya menampilkan Net Kumulatif (Cash In − Cash Out) untuk Plan & Actual." : ""}</p>
                     <div className="h-[280px] mb-3">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
