@@ -658,17 +658,27 @@ const ProjectDetail = () => {
                                     <span className="text-muted-foreground">Actual</span>
                                     <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash In" : "Kum. Cash In"}</span><span />
-                                    <span className="text-muted-foreground">Planning</span>
-                                    <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
-                                    <span className="text-muted-foreground">Actual</span>
-                                    <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(cashIn)}</span>
-                                    <span className="col-span-2 border-t border-border/60 my-1" />
-                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash Out" : "Kum. Cash Out"}</span><span />
-                                    <span className="text-muted-foreground">Planning</span>
-                                    <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
-                                    <span className="text-muted-foreground">Actual</span>
-                                    <span className="font-mono-data text-accent font-semibold text-right">{formatRupiah(cashOut)}</span>
+                                    <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash In / Out" : "Net Kumulatif"}</span><span />
+                                    {isBarMode ? (
+                                      <>
+                                        <span className="text-muted-foreground">Plan Cash In</span>
+                                        <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(planIn)}</span>
+                                        <span className="text-muted-foreground">Actual Cash In</span>
+                                        <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(cashIn)}</span>
+                                        <span className="text-muted-foreground">Plan Cash Out</span>
+                                        <span className="font-mono-data text-muted-foreground/70 text-right">{formatRupiah(planOut)}</span>
+                                        <span className="text-muted-foreground">Actual Cash Out</span>
+                                        <span className="font-mono-data text-accent font-semibold text-right">{formatRupiah(cashOut)}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="text-muted-foreground">Plan Net</span>
+                                        <span className="font-mono-data text-muted-foreground text-right">{formatRupiah(rowNum(row.cumPlanNet) ?? 0)}</span>
+                                        <span className="text-muted-foreground">Actual Net</span>
+                                        <span className="font-mono-data text-primary font-semibold text-right">{formatRupiah(rowNum(row.cumActNet) ?? 0)}</span>
+                                      </>
+                                    )}
+
                                   </div>
                                 </div>
                               );
