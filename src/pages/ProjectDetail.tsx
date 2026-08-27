@@ -588,6 +588,9 @@ const ProjectDetail = () => {
                     cumPlanOut: _cumPlanOut,
                     cumCashIn: _cumIn,
                     cumCashOut: _cumOut,
+                    cumPlanNet: _cumPlanIn - _cumPlanOut,
+                    cumActNet: _cumIn - _cumOut,
+
                   };
                 });
 
