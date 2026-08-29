@@ -24,7 +24,7 @@ import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, Box, CheckCircle2, Clock, AlertTriangle, Target, Layers,
   Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon,
-  Package, DollarSign, Wallet, Receipt, Lock, FileText
+  Package, DollarSign, Wallet, Receipt, Lock, FileText, Presentation
 } from "lucide-react";
 
 import { getStatusMeta } from "@/lib/supabase";
