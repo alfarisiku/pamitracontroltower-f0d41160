@@ -463,8 +463,8 @@ const ProjectDetail = () => {
                 </div>
               </div>
 
-              {/* === Progress vs Cashflow per Periode (moved from Finance) === */}
-              {(() => {
+              {/* === Progress vs Cashflow per Periode — DISEMBUNYIKAN sementara (belum dibutuhkan) === */}
+              {false && (() => {
                 type Period = { key: string; label: string; order: number; cashIn: number; cashOut: number; planIn: number; planOut: number };
                 const periodMap: Record<string, Period> = {};
                 financeEntries.forEach(fe => {
