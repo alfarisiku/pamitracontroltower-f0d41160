@@ -24,7 +24,7 @@ import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
   Camera, Video, Cctv, Box, CheckCircle2, Clock, AlertTriangle, Target, Layers,
   Minus, Share2, Shield, TrendingUp, Activity, ExternalLink, Image as ImageIcon,
-  Package, DollarSign, Wallet, Receipt, Lock, FileText, Presentation
+  Package, DollarSign, Wallet, Receipt, Lock, FileText, Presentation as PresentationIcon
 } from "lucide-react";
 
 import { getStatusMeta } from "@/lib/supabase";
@@ -278,7 +278,7 @@ const ProjectDetail = () => {
             </div>
             <div className="flex items-center gap-2">
               <Link to={`/project/${id}/ppt-preview`} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors">
-                <Presentation className="h-3.5 w-3.5" /> Create PPT
+                <PresentationIcon className="h-3.5 w-3.5" /> Create PPT
               </Link>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border transition-colors">
                 <Share2 className="h-3.5 w-3.5" /> Share

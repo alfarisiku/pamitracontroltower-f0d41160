@@ -8,7 +8,7 @@ import {
 import { useBillings } from "@/components/data-entry/BillingPanel";
 import { supabase, formatRupiah, formatIDR, getStatusMeta, DbWeeklyReport } from "@/lib/supabase";
 import { Slide, SlideBlock, downloadPptx } from "@/lib/pptSlides";
-import { ChevronLeft, ChevronRight, Download, ArrowLeft, Presentation } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, ArrowLeft, Presentation as PresentationIcon } from "lucide-react";
 
 const d = (s?: string | null) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const pct = (n?: number | null) => `${(Number(n) || 0).toFixed(1)}%`;
@@ -353,7 +353,7 @@ export default function ProjectPptPreview() {
               <ArrowLeft className="h-3.5 w-3.5" /> Kembali
             </Link>
             <div>
-              <h1 className="text-base font-bold text-foreground flex items-center gap-2"><Presentation className="h-4 w-4 text-primary" /> Preview Laporan PPT</h1>
+              <h1 className="text-base font-bold text-foreground flex items-center gap-2"><PresentationIcon className="h-4 w-4 text-primary" /> Preview Laporan PPT</h1>
               <p className="text-[11px] text-muted-foreground">{project.project_code} — {project.name}</p>
             </div>
           </div>
