@@ -14,6 +14,7 @@ import ExecutiveOverview from "./pages/ExecutiveOverview";
 
 import ProjectSummary from "./pages/ProjectSummary";
 import ProjectDetail from "./pages/ProjectDetail";
+import ProjectPptPreview from "./pages/ProjectPptPreview";
 import Schedule from "./pages/Schedule";
 import CostPerformance from "./pages/CostPerformance";
 import Finance from "./pages/Finance";
@@ -40,6 +41,7 @@ function AppRoutes() {
       <Route path="/projects" element={<ProjectSummary />} />
 
       <Route path="/project/:id" element={<ProjectDetail />} />
+      <Route path="/project/:id/ppt-preview" element={<ProjectPptPreview />} />
       <Route path="/schedule" element={<Schedule />} />
       <Route path="/cost" element={<CostPerformance />} />
       <Route path="/finance" element={<Finance />} />

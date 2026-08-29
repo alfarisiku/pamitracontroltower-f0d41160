@@ -276,9 +276,14 @@ const ProjectDetail = () => {
               <ChevronRight className="h-3 w-3" />
               <span className="text-foreground font-medium">{project.project_code}</span>
             </div>
-            <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border transition-colors">
-              <Share2 className="h-3.5 w-3.5" /> Share
-            </button>
+            <div className="flex items-center gap-2">
+              <Link to={`/project/${id}/ppt-preview`} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors">
+                <Presentation className="h-3.5 w-3.5" /> Create PPT
+              </Link>
+              <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border transition-colors">
+                <Share2 className="h-3.5 w-3.5" /> Share
+              </button>
+            </div>
           </div>
 
           {/* Project Header */}

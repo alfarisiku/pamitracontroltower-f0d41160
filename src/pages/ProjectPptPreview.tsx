@@ -84,7 +84,6 @@ export default function ProjectPptPreview() {
         {
           type: "table",
           headers: ["Indikator", "Nilai", "Keterangan"],
-          headersAlign: undefined as never,
           rows: [
             ["Status Proyek", meta.label, project.phase || "—"],
             ["Contract Value", formatRupiah(project.contract_value), "Nilai kontrak berjalan"],
