@@ -214,7 +214,7 @@ export default function ProjectPptPreview() {
           title: "S-Curve — Plan vs Actual",
           subtitle: `${curveTypes.length} kurva • cut-off ${periodTag} • tabel 3 periode terakhir`,
           blocks: [
-            { type: "chart", kind: "line", categories: catDisplay, series, height: 3.3 },
+            { type: "chart", kind: "line", categories: catDisplay, series, height: 3.9 },
             ...(tables.length ? [{ type: "tables" as const, tables }] : []),
           ],
         });
