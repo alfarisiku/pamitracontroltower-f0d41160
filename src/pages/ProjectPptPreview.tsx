@@ -161,11 +161,13 @@ export default function ProjectPptPreview() {
     const curveTypes = Array.from(new Set(scurve.map((s) => s.curve_type)));
     if (!curveTypes.includes("baseline") && curveTypes.length) curveTypes.unshift("baseline");
     if (scurve.length) {
-      const catLabels = baseRows
+      const catRows = baseRows
         .slice()
         .sort((a, b) => a.period_order - b.period_order)
-        .filter((s: any) => inCutoff(s.period_end || s.period_date))
-        .map((s) => s.period_label);
+        .filter((s: any) => inCutoff(s.period_end || s.period_date));
+      const catLabels = catRows.map((s) => s.period_label);
+      const catDisplay = catRows.map((s: any) => weekShortOf(s));
+
 
       const series = curveTypes.flatMap((ct, i) => {
         const color = CURVE_COLORS[i % CURVE_COLORS.length];
