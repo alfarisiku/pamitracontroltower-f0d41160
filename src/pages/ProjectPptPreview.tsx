@@ -212,9 +212,9 @@ export default function ProjectPptPreview() {
         out.push({
           key: "scurve",
           title: "S-Curve — Plan vs Actual",
-          subtitle: `${curveTypes.length} kurva • cut-off ${selected?.label ?? "—"} • tabel 3 periode terakhir`,
+          subtitle: `${curveTypes.length} kurva • cut-off ${periodTag} • tabel 3 periode terakhir`,
           blocks: [
-            { type: "chart", kind: "line", categories: catLabels, series, height: 2.5 },
+            { type: "chart", kind: "line", categories: catDisplay, series, height: 3.3 },
             ...(tables.length ? [{ type: "tables" as const, tables }] : []),
           ],
         });
