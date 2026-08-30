@@ -8,7 +8,8 @@ import {
 import { useBillings } from "@/components/data-entry/BillingPanel";
 import { useHrPersonnel } from "@/components/data-entry/HrPanel";
 import { supabase, formatRupiah, formatIDR, getStatusMeta, DbWeeklyReport } from "@/lib/supabase";
-import { Slide, SlideBlock, SlideTable, downloadPptx } from "@/lib/pptSlides";
+import { Slide, SlideBlock, SlideTable, downloadPptx, paginateSlides, LAYOUT, imagesGrid } from "@/lib/pptSlides";
+import { weekFullOf, weekShortOf } from "@/lib/weekLabel";
 import { ChevronLeft, ChevronRight, Download, ArrowLeft, Presentation as PresentationIcon, CalendarRange } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
