@@ -81,7 +81,8 @@ export default function ProjectPptPreview() {
     if (!project) return [];
     const out: Slide[] = [];
     const meta = getStatusMeta(project.status);
-    const periodTag = selected ? `${selected.label} (${d(selected.start)} — ${d(selected.end)})` : "Seluruh periode";
+    const periodTag = selected ? weekFullOf(selected) : "Seluruh periode";
+    const periodShort = selected ? weekShortOf(selected) : "—";
 
     const inCutoff = (dt?: string | null) => {
       const t = ts(dt);
