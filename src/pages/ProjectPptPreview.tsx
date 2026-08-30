@@ -202,7 +202,7 @@ export default function ProjectPptPreview() {
           headers: ["Periode", "Plan", "Actual", "Dev"],
           rows: list.map((r) => {
             const dv = (r.actual ?? 0) - (r.plan ?? 0);
-            return [r.label, r.plan != null ? pct(r.plan) : "—", r.actual != null ? pct(r.actual) : "—", r.actual == null || r.plan == null ? "—" : `${dv > 0 ? "+" : ""}${dv.toFixed(1)}%`];
+            return [weekShortOf({ label: r.label, order: r.order }), r.plan != null ? pct(r.plan) : "—", r.actual != null ? pct(r.actual) : "—", r.actual == null || r.plan == null ? "—" : `${dv > 0 ? "+" : ""}${dv.toFixed(1)}%`];
           }),
           align: ["left", "right", "right", "right"] as ("left" | "right")[],
         };
