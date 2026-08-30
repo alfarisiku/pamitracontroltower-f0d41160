@@ -8,7 +8,8 @@ import {
 import { useBillings } from "@/components/data-entry/BillingPanel";
 import { useHrPersonnel } from "@/components/data-entry/HrPanel";
 import { supabase, formatRupiah, formatIDR, getStatusMeta, DbWeeklyReport } from "@/lib/supabase";
-import { Slide, SlideBlock, SlideTable, downloadPptx } from "@/lib/pptSlides";
+import { Slide, SlideBlock, SlideTable, downloadPptx, paginateSlides, LAYOUT, imagesGrid } from "@/lib/pptSlides";
+import { weekFullOf, weekShortOf } from "@/lib/weekLabel";
 import { ChevronLeft, ChevronRight, Download, ArrowLeft, Presentation as PresentationIcon, CalendarRange } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
@@ -80,7 +81,8 @@ export default function ProjectPptPreview() {
     if (!project) return [];
     const out: Slide[] = [];
     const meta = getStatusMeta(project.status);
-    const periodTag = selected ? `${selected.label} (${d(selected.start)} — ${d(selected.end)})` : "Seluruh periode";
+    const periodTag = selected ? weekFullOf(selected) : "Seluruh periode";
+    const periodShort = selected ? weekShortOf(selected) : "—";
 
     const inCutoff = (dt?: string | null) => {
       const t = ts(dt);
@@ -159,11 +161,13 @@ export default function ProjectPptPreview() {
     const curveTypes = Array.from(new Set(scurve.map((s) => s.curve_type)));
     if (!curveTypes.includes("baseline") && curveTypes.length) curveTypes.unshift("baseline");
     if (scurve.length) {
-      const catLabels = baseRows
+      const catRows = baseRows
         .slice()
         .sort((a, b) => a.period_order - b.period_order)
-        .filter((s: any) => inCutoff(s.period_end || s.period_date))
-        .map((s) => s.period_label);
+        .filter((s: any) => inCutoff(s.period_end || s.period_date));
+      const catLabels = catRows.map((s) => s.period_label);
+      const catDisplay = catRows.map((s: any) => weekShortOf(s));
+
 
       const series = curveTypes.flatMap((ct, i) => {
         const color = CURVE_COLORS[i % CURVE_COLORS.length];
@@ -198,7 +202,7 @@ export default function ProjectPptPreview() {
           headers: ["Periode", "Plan", "Actual", "Dev"],
           rows: list.map((r) => {
             const dv = (r.actual ?? 0) - (r.plan ?? 0);
-            return [r.label, r.plan != null ? pct(r.plan) : "—", r.actual != null ? pct(r.actual) : "—", r.actual == null || r.plan == null ? "—" : `${dv > 0 ? "+" : ""}${dv.toFixed(1)}%`];
+            return [weekShortOf({ label: r.label, order: r.order }), r.plan != null ? pct(r.plan) : "—", r.actual != null ? pct(r.actual) : "—", r.actual == null || r.plan == null ? "—" : `${dv > 0 ? "+" : ""}${dv.toFixed(1)}%`];
           }),
           align: ["left", "right", "right", "right"] as ("left" | "right")[],
         };
@@ -208,9 +212,9 @@ export default function ProjectPptPreview() {
         out.push({
           key: "scurve",
           title: "S-Curve — Plan vs Actual",
-          subtitle: `${curveTypes.length} kurva • cut-off ${selected?.label ?? "—"} • tabel 3 periode terakhir`,
+          subtitle: `${curveTypes.length} kurva • cut-off ${periodTag} • tabel 3 periode terakhir`,
           blocks: [
-            { type: "chart", kind: "line", categories: catLabels, series, height: 2.5 },
+            { type: "chart", kind: "line", categories: catDisplay, series, height: 3.9 },
             ...(tables.length ? [{ type: "tables" as const, tables }] : []),
           ],
         });
