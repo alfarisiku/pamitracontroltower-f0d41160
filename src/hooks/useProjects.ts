@@ -293,3 +293,41 @@ export function useManpowerLogs(projectId?: string) {
     },
   });
 }
+
+/* ---------- Portfolio-wide aggregate hooks (Executive Overview) ---------- */
+
+export function useAllSCurveData() {
+  return useQuery<DbSCurveData[]>({
+    queryKey: ["s_curve_data_all"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("s_curve_data").select("*").order("period_order");
+      if (error) throw error;
+      return (data ?? []) as DbSCurveData[];
+    },
+  });
+}
+
+export function useAllBillings() {
+  return useQuery<any[]>({
+    queryKey: ["project_billings_all"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("project_billings").select("*").order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAllHrPersonnel() {
+  return useQuery<any[]>({
+    queryKey: ["hr_personnel_all"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("hr_personnel").select("*").order("category");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
