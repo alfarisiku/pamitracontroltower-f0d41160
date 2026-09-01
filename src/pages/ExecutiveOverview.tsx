@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import {
@@ -9,7 +9,7 @@ import {
   useAllHrPersonnel,
 } from "@/hooks/useProjects";
 import { DbProject, formatRupiah, STATUS_META } from "@/lib/supabase";
-import { CheckSquare, Square, Filter } from "lucide-react";
+import { Filter, ChevronDown, Check, X, LayoutGrid } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -115,6 +115,16 @@ const ExecutiveOverview = () => {
 
   const [selected, setSelected] = useState<string[]>([]);
   const [touched, setTouched] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
 
   // Default: semua proyek terpilih setelah data pertama datang
   useEffect(() => {
