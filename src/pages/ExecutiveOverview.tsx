@@ -9,7 +9,7 @@ import {
   useAllHrPersonnel,
 } from "@/hooks/useProjects";
 import { DbProject, formatRupiah, STATUS_META } from "@/lib/supabase";
-import { Filter, ChevronDown, Check, X, LayoutGrid } from "lucide-react";
+import { Filter, ChevronDown, Check, X } from "lucide-react";
 import {
   BarChart,
   Bar,
