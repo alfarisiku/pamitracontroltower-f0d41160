@@ -1443,11 +1443,17 @@ const ProjectDetail = () => {
                       const s = times.length ? Math.min(...times) : projStart;
                       const e = times.length ? Math.max(...times) : projEnd;
                       const isExp = expandedTimeline.has(area.id);
+                      // Parent progress: pakai nilai tersimpan; jika 0/kosong, hitung dari bobot child items
+                      const childW = areaItems.reduce((t, i) => t + (Number(i.weight) || 0), 0);
+                      const derived = areaItems.length === 0 ? 0 : (childW > 0
+                        ? areaItems.reduce((t, i) => t + (Number(i.weight) || 0) * (Number(i.progress) || 0), 0) / childW
+                        : areaItems.reduce((t, i) => t + (Number(i.progress) || 0), 0) / areaItems.length);
+                      const areaProgress = Math.round(Number(area.progress) > 0 ? Number(area.progress) : derived);
                       rowsData.push({
                         id: area.id, code: area.code, name: area.name, level: 1,
                         leftPct: ((s - pStart) / total) * 100,
                         widthPct: Math.max(0.5, ((e - s) / total) * 100),
-                        progressPct: area.progress || 0,
+                        progressPct: Math.min(100, Math.max(0, areaProgress)),
                         areaId: area.id, hasChildren: areaItems.length > 0, expanded: isExp,
                         startMs: s, endMs: e,
                       });

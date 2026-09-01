@@ -8,7 +8,7 @@ import { ProjectOverviewModal } from "@/components/dashboard/ProjectOverviewModa
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
-import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv, ExternalLink } from "lucide-react";
+import { Search, Filter, MapPin, User, Calendar, ChevronDown, Camera, Video, Cctv, ExternalLink, LayoutGrid, List } from "lucide-react";
 
 type ProjectStatus = string;
 type ProjectPhase = string;
@@ -36,6 +36,7 @@ const ProjectSummary = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [phaseFilter, setPhaseFilter] = useState<ProjectPhase | "all">("all");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   // Access-level restriction removed — every visitor is treated as admin, so show all projects.
   const projects = isAdmin
@@ -109,11 +110,87 @@ const ProjectSummary = () => {
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             </div>
-            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} proyek ditampilkan</span>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{filtered.length} proyek ditampilkan</span>
+              <div className="flex items-center gap-0.5 bg-card border border-border rounded-lg p-0.5">
+                <button onClick={() => setView("grid")} title="Tampilan kartu"
+                  className={`p-1.5 rounded transition-colors ${view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => setView("list")} title="Tampilan list"
+                  className={`p-1.5 rounded transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
 
+          {/* Project List View */}
+          {view === "list" && (
+            <div className="glass-card rounded-lg overflow-hidden shadow-card">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30">
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">P#</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Project</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">PM</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
+                      {!isClient && <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Nilai Kontrak</th>}
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Target</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress</th>
+                      <th className="text-center py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((project, i) => {
+                      const st = statusConfig[project.status] || FALLBACK_STATUS;
+                      return (
+                        <tr key={project.id}
+                          className="border-b border-border/30 hover:bg-muted/20 transition-colors cursor-pointer"
+                          onClick={() => setSelectedProject(project)}>
+                          <td className="py-2 px-3 font-mono-data text-muted-foreground">{i + 1}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-2">
+                              <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-mono-data font-bold">{project.project_code}</span>
+                              <span className="font-medium text-foreground truncate max-w-[200px]">{project.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-muted-foreground truncate max-w-[140px]">{project.location}</td>
+                          <td className="py-2 px-3 text-muted-foreground truncate max-w-[120px]">{project.manager}</td>
+                          <td className="py-2 px-3">
+                            <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium bg-card ${L3 ? "bg-success/15 text-success border-success/30" : st.className}`}>
+                              {L3 ? "On Progress" : st.label}
+                            </span>
+                          </td>
+                          {!isClient && <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah(project.budget)}</td>}
+                          <td className="py-2 px-3 text-muted-foreground">
+                            {new Date(project.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-2 min-w-[90px]">
+                              <Progress value={project.progress} className="h-1 flex-1" />
+                              <span className="font-mono-data text-muted-foreground w-8 text-right">{project.progress}%</span>
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            <button onClick={(e) => { e.stopPropagation(); navigate(`/project/${project.id}`); }}
+                              className="p-1 rounded hover:bg-primary/10 transition-colors" title="Detail WBS">
+                              <ExternalLink className="h-3.5 w-3.5 text-primary" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Project Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className={`${view === "grid" ? "grid" : "hidden"} grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4`}>
             {filtered.map((project) => {
               const st = statusConfig[project.status] || FALLBACK_STATUS;
               const budgetPct = Math.round((project.spent / project.budget) * 100);
