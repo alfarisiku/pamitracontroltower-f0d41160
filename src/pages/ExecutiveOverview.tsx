@@ -281,56 +281,71 @@ const ExecutiveOverview = () => {
             </p>
           </div>
 
-          {/* Filter kumulatif proyek */}
-          <div className="bg-card border border-border rounded-lg shadow-card p-4 mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
+          {/* Filter kumulatif proyek — compact dropdown */}
+          <div className="flex items-center gap-2 flex-wrap mb-5" ref={filterRef}>
+            <div className="relative">
+              <button
+                onClick={() => setFilterOpen((o) => !o)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-card text-xs text-foreground hover:bg-muted transition-colors shadow-card"
+              >
                 <Filter className="h-3.5 w-3.5 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Filter Proyek Kumulatif</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={selectAll}
-                  className="px-2.5 py-1 rounded-md border border-border bg-card text-[11px] text-foreground hover:bg-muted transition-colors"
-                >
-                  Pilih Semua
-                </button>
-                <button
-                  onClick={clearAll}
-                  className="px-2.5 py-1 rounded-md border border-border bg-card text-[11px] text-muted-foreground hover:bg-muted transition-colors"
-                >
-                  Kosongkan
-                </button>
-              </div>
+                Proyek
+                <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono-data text-[10px]">
+                  {chosen.length}/{projects.length}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${filterOpen ? "rotate-180" : ""}`} />
+              </button>
+              {filterOpen && (
+                <div className="absolute left-0 top-full mt-1.5 z-50 w-[320px] bg-card border border-border rounded-lg shadow-xl">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                    <span className="text-[11px] font-semibold text-foreground">Pilih proyek kumulatif</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={selectAll} className="text-[10px] text-primary hover:underline">Semua</button>
+                      <button onClick={clearAll} className="text-[10px] text-muted-foreground hover:underline">Kosongkan</button>
+                    </div>
+                  </div>
+                  <div className="max-h-[280px] overflow-y-auto py-1">
+                    {projects.map((p) => {
+                      const on = selected.includes(p.id);
+                      const st = STATUS_META[p.status];
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => toggle(p.id)}
+                          className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-muted/40 transition-colors"
+                        >
+                          <span className={`h-3.5 w-3.5 shrink-0 rounded-[3px] border flex items-center justify-center ${on ? "bg-primary border-primary" : "border-border"}`}>
+                            {on && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[11px] font-medium text-foreground truncate">{p.name}</span>
+                            <span className="block text-[9px] text-muted-foreground truncate">
+                              {p.project_code} · {p.location} · {st?.label ?? p.status}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-              {projects.map((p) => {
-                const on = selected.includes(p.id);
-                const st = STATUS_META[p.status];
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => toggle(p.id)}
-                    className={`flex items-start gap-2 text-left rounded-md border p-2.5 transition-colors ${
-                      on ? "border-primary/40 bg-primary/5" : "border-border bg-muted/20 hover:bg-muted/40"
-                    }`}
-                  >
-                    {on ? (
-                      <CheckSquare className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                    ) : (
-                      <Square className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                    )}
-                    <span className="min-w-0">
-                      <span className="block text-xs font-semibold text-foreground line-clamp-1">{p.name}</span>
-                      <span className="block text-[10px] text-muted-foreground mt-0.5">
-                        {p.project_code} · {p.location} · {st?.label ?? p.status}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            {chosen.slice(0, 4).map((p) => (
+              <button
+                key={p.id}
+                onClick={() => toggle(p.id)}
+                title="Klik untuk hapus dari kalkulasi"
+                className="flex items-center gap-1 px-2 py-1 rounded-full border border-primary/30 bg-primary/5 text-[10px] font-mono-data text-primary hover:bg-primary/10 transition-colors"
+              >
+                {p.project_code}
+                <X className="h-2.5 w-2.5" />
+              </button>
+            ))}
+            {chosen.length > 4 && (
+              <span className="text-[10px] text-muted-foreground">+{chosen.length - 4} lainnya</span>
+            )}
           </div>
+
 
           {chosen.length === 0 ? (
             <div className="bg-card border border-border rounded-lg shadow-card p-12 text-center">
