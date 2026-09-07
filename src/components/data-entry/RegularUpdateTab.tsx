@@ -100,7 +100,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
         .eq("id", selectedPeriod.id);
       if (sErr) throw sErr;
       const { error: pErr } = await supabase.from("projects")
-        .update({ progress: Math.round(val) })
+        .update({ progress: val })
         .eq("id", projectId);
       if (pErr) throw pErr;
       await logActivity(supabase, "s_curve", "update",

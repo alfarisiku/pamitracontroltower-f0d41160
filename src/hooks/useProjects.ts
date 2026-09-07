@@ -256,6 +256,23 @@ export function useActivityLogs(limit = 50) {
   });
 }
 
+export function useProjectActivityLogs(projectId: string | undefined, limit = 30) {
+  return useQuery<DbActivityLog[]>({
+    queryKey: ["activity_logs_project", projectId, limit],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_logs")
+        .select("*")
+        .eq("project_id", projectId!)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return (data ?? []) as DbActivityLog[];
+    },
+  });
+}
+
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
