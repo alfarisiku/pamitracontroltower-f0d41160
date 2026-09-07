@@ -325,74 +325,54 @@ const ExecutiveOverview = () => {
 
 
           {chosen.length === 0 ? (
-            <div className="bg-card border border-border rounded-lg shadow-card p-12 text-center">
+            <div className="glass-card rounded-lg shadow-card p-12 text-center">
               <p className="text-sm font-medium text-foreground">Belum ada proyek dipilih</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Centang minimal satu proyek untuk melihat kalkulasi eksekutif.
+                Pilih minimal satu proyek untuk melihat kalkulasi eksekutif.
               </p>
             </div>
           ) : (
             <>
               {/* KPI Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-                <KpiCard
-                  label="Proyek Aktif"
+              <h2 className="text-sm font-semibold text-foreground mb-3">Ringkasan Portfolio</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+                <KPICard
+                  title="Proyek Aktif"
                   value={`${calc.active}/${chosen.length}`}
                   subtitle={`${calc.completed} selesai · ${chosen.length} dipilih`}
-                  accent="warning"
-                  valueClass="text-warning"
+                  icon={Briefcase}
+                  variant="primary"
                 />
-                <KpiCard
-                  label="Total Kontrak"
+                <KPICard
+                  title="Total Kontrak"
                   value={formatRupiah(calc.totalContract)}
-                  subtitle={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium font-mono-data ${
-                        calc.margin >= 0
-                          ? "border-success/30 bg-success/15 text-success"
-                          : "border-destructive/30 bg-destructive/15 text-destructive"
-                      }`}
-                    >
-                      Margin RAP {formatRupiah(calc.margin)}
-                    </span>
-                  }
-                  accent="accent"
-                  valueClass="text-accent"
+                  subtitle={`Margin RAP ${formatRupiah(calc.margin)}`}
+                  icon={Wallet}
+                  variant="accent"
                 />
-                <KpiCard
-                  label="Aktual vs Rencana"
-                  value={`${calc.wActual.toFixed(1)}% / ${calc.wPlan.toFixed(1)}%`}
-                  subtitle={`${calc.wActual - calc.wPlan >= 0 ? "+" : ""}${(calc.wActual - calc.wPlan).toFixed(
-                    1
-                  )}% deviasi (bobot RAP)`}
-                  accent="primary"
-                  valueClass="text-primary"
+                <KPICard
+                  title="Aktual vs Rencana"
+                  value={`${calc.wActual.toFixed(2)}% / ${calc.wPlan.toFixed(2)}%`}
+                  subtitle={`${calc.wActual - calc.wPlan >= 0 ? "+" : ""}${(calc.wActual - calc.wPlan).toFixed(2)}% deviasi (bobot RAP)`}
+                  icon={Layers}
+                  variant={calc.wActual - calc.wPlan >= 0 ? "success" : "destructive"}
                 />
-                <KpiCard
-                  label="Cash In Aktual"
+                <KPICard
+                  title="Cash In Aktual"
                   value={formatRupiah(calc.cashInActual)}
                   subtitle={`Rencana ${formatRupiah(calc.cashInPlan)}`}
-                  accent="success"
-                  valueClass="text-success"
+                  icon={TrendingUp}
+                  variant="success"
                 />
-                <KpiCard
-                  label="Net Cashflow"
+                <KPICard
+                  title="Net Cashflow"
                   value={formatRupiah(calc.netCf)}
-                  subtitle={
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium font-mono-data ${
-                        calc.netCf < 0
-                          ? "border-destructive/30 bg-destructive/15 text-destructive"
-                          : "border-success/30 bg-success/15 text-success"
-                      }`}
-                    >
-                      {calc.netCf < 0 ? "▼ Defisit" : "▲ Surplus"}
-                    </span>
-                  }
-                  accent={calc.netCf < 0 ? "destructive" : "success"}
-                  valueClass={calc.netCf < 0 ? "text-destructive" : "text-success"}
+                  subtitle={calc.netCf < 0 ? "Defisit kas berjalan" : "Surplus kas berjalan"}
+                  icon={Coins}
+                  variant={calc.netCf < 0 ? "destructive" : "success"}
                 />
               </div>
+
 
               {/* Grid 3 kolom */}
               <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr_1fr] gap-4 mb-4">
