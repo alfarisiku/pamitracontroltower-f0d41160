@@ -25,6 +25,13 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 const FALLBACK_STATUS = { label: "—", className: "bg-muted text-muted-foreground border-border" };
 
+const PREFS_KEY = "project-summary-prefs";
+type Prefs = { search: string; statusFilter: string; phaseFilter: string; view: "grid" | "list" };
+const loadPrefs = (): Partial<Prefs> => {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"); } catch { return {}; }
+};
+const fmtPct = (n: unknown) => (Number(n) || 0).toFixed(2);
+
 const ProjectSummary = () => {
   const navigate = useNavigate();
   const { data: allProjects = [], isLoading } = useProjects();
