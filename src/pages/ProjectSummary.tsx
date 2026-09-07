@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -25,6 +25,13 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 const FALLBACK_STATUS = { label: "—", className: "bg-muted text-muted-foreground border-border" };
 
+const PREFS_KEY = "project-summary-prefs";
+type Prefs = { search: string; statusFilter: string; phaseFilter: string; view: "grid" | "list" };
+const loadPrefs = (): Partial<Prefs> => {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"); } catch { return {}; }
+};
+const fmtPct = (n: unknown) => (Number(n) || 0).toFixed(2);
+
 const ProjectSummary = () => {
   const navigate = useNavigate();
   const { data: allProjects = [], isLoading } = useProjects();
@@ -33,10 +40,17 @@ const ProjectSummary = () => {
   const L3 = demoLevel === 3;
   const isClient = authIsClient || L3;
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
-  const [phaseFilter, setPhaseFilter] = useState<ProjectPhase | "all">("all");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [prefs] = useState(loadPrefs);
+  const [search, setSearch] = useState(prefs.search ?? "");
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">(prefs.statusFilter ?? "all");
+  const [phaseFilter, setPhaseFilter] = useState<ProjectPhase | "all">(prefs.phaseFilter ?? "all");
+  const [view, setView] = useState<"grid" | "list">(prefs.view ?? "grid");
+
+  useEffect(() => {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ search, statusFilter, phaseFilter, view }));
+  }, [search, statusFilter, phaseFilter, view]);
+
+
 
   // Access-level restriction removed — every visitor is treated as admin, so show all projects.
   const projects = isAdmin
@@ -171,7 +185,7 @@ const ProjectSummary = () => {
                           <td className="py-2 px-3">
                             <div className="flex items-center gap-2 min-w-[90px]">
                               <Progress value={project.progress} className="h-1 flex-1" />
-                              <span className="font-mono-data text-muted-foreground w-8 text-right">{project.progress}%</span>
+                              <span className="font-mono-data text-muted-foreground w-12 text-right">{fmtPct(project.progress)}%</span>
                             </div>
                           </td>
                           <td className="py-2 px-3 text-center">
@@ -251,7 +265,7 @@ const ProjectSummary = () => {
                     <div>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-muted-foreground">Progress</span>
-                        <span className="font-mono-data text-foreground">{project.progress}%</span>
+                        <span className="font-mono-data text-foreground">{fmtPct(project.progress)}%</span>
                       </div>
                       <Progress value={project.progress} className="h-1.5" />
                     </div>
