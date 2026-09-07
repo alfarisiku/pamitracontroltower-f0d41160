@@ -185,7 +185,7 @@ const ProjectSummary = () => {
                           <td className="py-2 px-3">
                             <div className="flex items-center gap-2 min-w-[90px]">
                               <Progress value={project.progress} className="h-1 flex-1" />
-                              <span className="font-mono-data text-muted-foreground w-8 text-right">{project.progress}%</span>
+                              <span className="font-mono-data text-muted-foreground w-12 text-right">{fmtPct(project.progress)}%</span>
                             </div>
                           </td>
                           <td className="py-2 px-3 text-center">
