@@ -40,10 +40,17 @@ const ProjectSummary = () => {
   const L3 = demoLevel === 3;
   const isClient = authIsClient || L3;
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
-  const [phaseFilter, setPhaseFilter] = useState<ProjectPhase | "all">("all");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [prefs] = useState(loadPrefs);
+  const [search, setSearch] = useState(prefs.search ?? "");
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">(prefs.statusFilter ?? "all");
+  const [phaseFilter, setPhaseFilter] = useState<ProjectPhase | "all">(prefs.phaseFilter ?? "all");
+  const [view, setView] = useState<"grid" | "list">(prefs.view ?? "grid");
+
+  useEffect(() => {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ search, statusFilter, phaseFilter, view }));
+  }, [search, statusFilter, phaseFilter, view]);
+
+
 
   // Access-level restriction removed — every visitor is treated as admin, so show all projects.
   const projects = isAdmin
