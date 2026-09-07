@@ -49,39 +49,6 @@ const chartTooltipStyle = {
   color: "hsl(var(--foreground))",
 };
 
-const ACCENTS: Record<string, string> = {
-  warning: "hsl(var(--warning))",
-  primary: "hsl(var(--primary))",
-  success: "hsl(var(--success))",
-  destructive: "hsl(var(--destructive))",
-  accent: "hsl(var(--accent))",
-};
-
-function KpiCard({
-  label,
-  value,
-  subtitle,
-  accent,
-  valueClass,
-}: {
-  label: string;
-  value: string;
-  subtitle: React.ReactNode;
-  accent: keyof typeof ACCENTS;
-  valueClass: string;
-}) {
-  return (
-    <div
-      className="bg-card border border-border rounded-lg shadow-card p-4 transition-all hover:shadow-card-hover"
-      style={{ borderTop: `3px solid ${ACCENTS[accent]}` }}
-    >
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className={`mt-1.5 text-2xl font-bold font-mono-data tracking-tight ${valueClass}`}>{value}</p>
-      <div className="mt-1.5 text-xs text-muted-foreground">{subtitle}</div>
-    </div>
-  );
-}
-
 function Card({
   title,
   subtitle,
@@ -94,12 +61,12 @@ function Card({
   className?: string;
 }) {
   return (
-    <div className={`bg-card border border-border rounded-lg shadow-card p-4 ${className}`}>
-      <div className="mb-3">
-        <h3 className="text-sm font-bold text-foreground">{title}</h3>
-        {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+    <div className={`glass-card rounded-lg overflow-hidden shadow-card animate-slide-up ${className}`}>
+      <div className="p-4 border-b border-border">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
-      {children}
+      <div className="p-4">{children}</div>
     </div>
   );
 }
