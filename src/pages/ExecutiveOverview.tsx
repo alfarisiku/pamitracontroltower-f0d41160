@@ -9,7 +9,8 @@ import {
   useAllHrPersonnel,
 } from "@/hooks/useProjects";
 import { DbProject, formatRupiah, STATUS_META } from "@/lib/supabase";
-import { Filter, ChevronDown, Check, X } from "lucide-react";
+import { Filter, ChevronDown, Check, X, Briefcase, Wallet, Layers, TrendingUp, Coins } from "lucide-react";
+import { KPICard } from "@/components/dashboard/KPICard";
 import {
   BarChart,
   Bar,
