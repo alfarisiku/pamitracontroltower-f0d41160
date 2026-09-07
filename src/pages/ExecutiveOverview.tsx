@@ -374,67 +374,66 @@ const ExecutiveOverview = () => {
                 />
               </div>
 
-
-              {/* Grid 3 kolom */}
-              <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr_1fr] gap-4 mb-4">
-                <Card title="Daftar Proyek Terpilih" subtitle={`${calc.rows.length} proyek dihitung kumulatif`}>
-                  <div className="max-h-[420px] overflow-y-auto divide-y divide-border">
-                    {calc.rows.map((p) => {
-                      const st = STATUS_META[p.status];
-                      return (
-                        <div key={p.id} className="py-3 first:pt-0">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold text-foreground line-clamp-2">{p.name}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                {p.code} · {p.location}
-                              </p>
-                            </div>
-                            <span
-                              className={`shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                                st?.className ?? "bg-muted text-muted-foreground border-border"
-                              }`}
-                            >
-                              {st?.label ?? p.status}
-                            </span>
-                          </div>
-
-                          <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-primary"
-                              style={{ width: `${Math.min(p.actual, 100)}%` }}
-                            />
-                          </div>
-
-                          <div className="mt-1.5 flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-mono-data text-muted-foreground">
-                              {pct(p.actual)} / {pct(p.plan)}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono-data font-medium border ${
-                                  p.deviation >= 0
-                                    ? "bg-success/15 text-success border-success/30"
-                                    : "bg-destructive/15 text-destructive border-destructive/30"
-                                }`}
-                              >
-                                {p.deviation >= 0 ? "+" : ""}
-                                {p.deviation.toFixed(1)}%
+              {/* Daftar Proyek Terpilih — tabel */}
+              <div className="glass-card rounded-lg overflow-hidden shadow-card animate-slide-up mb-5">
+                <div className="p-4 border-b border-border">
+                  <h2 className="text-sm font-semibold text-foreground">Daftar Proyek Terpilih</h2>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{calc.rows.length} proyek dihitung kumulatif</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        {["P#", "Project", "Lokasi", "Status", "RAP", "Progress Actual", "Plan", "Deviasi", "Net Cashflow"].map((h, i) => (
+                          <th key={h} className={`${i >= 4 ? "text-right" : "text-left"} py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider`}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {calc.rows.map((p, i) => {
+                        const st = STATUS_META[p.status];
+                        return (
+                          <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                            <td className="py-2 px-3 font-mono-data text-muted-foreground">{i + 1}</td>
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-2">
+                                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-mono-data font-bold">{p.code}</span>
+                                <span className="font-medium text-foreground truncate max-w-[220px]">{p.name}</span>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location}</td>
+                            <td className="py-2 px-3">
+                              <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium bg-card ${st?.className ?? "text-muted-foreground border-border"}`}>
+                                {st?.label ?? p.status}
                               </span>
-                              <span
-                                className={`text-[10px] font-mono-data font-semibold ${
-                                  p.net < 0 ? "text-destructive" : "text-success"
-                                }`}
-                              >
-                                {formatRupiah(p.net)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
+                            </td>
+                            <td className="py-2 px-3 text-right font-mono-data text-accent">{formatRupiah(p.rap)}</td>
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-2 min-w-[110px]">
+                                <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
+                                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(p.actual, 100)}%` }} />
+                                </div>
+                                <span className="font-mono-data text-muted-foreground w-12 text-right">{pct(p.actual)}</span>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 text-right font-mono-data text-muted-foreground">{pct(p.plan)}</td>
+                            <td className={`py-2 px-3 text-right font-mono-data font-medium ${p.deviation >= 0 ? "text-success" : "text-destructive"}`}>
+                              {p.deviation >= 0 ? "+" : ""}{p.deviation.toFixed(2)}%
+                            </td>
+                            <td className={`py-2 px-3 text-right font-mono-data font-medium ${p.net < 0 ? "text-destructive" : "text-success"}`}>
+                              {formatRupiah(p.net)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Grafik utama */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+
 
                 <Card title="Cashflow" subtitle="Cash In vs Cash Out aktual per proyek">
                   <div className="grid grid-cols-3 gap-2 mb-3">
