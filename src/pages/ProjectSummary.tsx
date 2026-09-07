@@ -265,7 +265,7 @@ const ProjectSummary = () => {
                     <div>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-muted-foreground">Progress</span>
-                        <span className="font-mono-data text-foreground">{project.progress}%</span>
+                        <span className="font-mono-data text-foreground">{fmtPct(project.progress)}%</span>
                       </div>
                       <Progress value={project.progress} className="h-1.5" />
                     </div>
