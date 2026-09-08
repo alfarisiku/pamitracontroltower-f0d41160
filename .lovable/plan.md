@@ -1,51 +1,22 @@
-## Tujuan
-Data `finance_entries` saat ini masih monthly (label `Jun 2024` dst, `period_date` selalu tanggal 1). Regenerate ulang supaya sinkron dengan periode **weekly S-Curve Baseline** — sama seperti flow input weekly yang sudah dipakai editor.
+# Perbaikan S-Curve SPK 1 yang Menurun di Des 2026
 
-## Yang dilakukan
-1. **Hapus** semua `finance_entries` untuk 8 project existing.
-2. **Regenerate** per project berdasarkan periode weekly baseline (`s_curve_data` where `curve_type='baseline'`), dengan aturan realistis EPC di bawah.
-3. Frontend/editor **tidak diubah** — dropdown weekly & tabel Periode sudah jalan sejak update kemarin.
+## Penyebab (sudah dipastikan dari data)
 
-## Aturan generasi (per project)
+Pada proyek MOR V - SPK 1 ada satu baris minggu **W50** yang tanggal akhir periodenya salah ketik:
 
-Sumber periode: semua baris baseline `s_curve_data` yang punya `period_start`/`period_end`, urut `period_order`. Kunci: `period_date = period_end`, `period_label = period_label` (mis. `W7`), `frequency = 'weekly'`.
+- W50: mulai 25 Des 2025, tetapi tanggal cut-off tertulis **31 Des 2026** (seharusnya 31 Des 2025)
+- Nilai actual baris itu 42,80%
 
-### Cash Out (planning & actual)
-- **Total planned cash-out** = `RAP` project.
-- Distribusi per periode = proporsi **incremental planned progress** periode itu (`planned[i] - planned[i-1]`) × RAP. Ini bikin kurva cash-out mengikuti kurva-S baseline (front-load engineering ringan, puncak di construction, ekor commissioning).
-- 3 kategori per periode (split fixed): `material` 55%, `equipment` 20%, `services` 25%. Skip periode yang share-nya < Rp 5 juta.
-- **Actual cash-out** hanya untuk periode yang `actual_progress IS NOT NULL` (≤ cut-off):
-  - Distribusi = proporsi **incremental actual progress** × `spent` project (fallback: RAP × (actual_terakhir/100) kalau `spent` kosong).
-  - Sedikit volatilitas ±8% per periode (deterministic dari hash `project_id||period_order` supaya reproducible & tidak berubah tiap regenerate).
+Karena tampilan bulanan mengelompokkan data berdasarkan tanggal cut-off, baris ini "melompat" ke Desember 2026 — sesudah periode terakhir yang sebenarnya (Sep/Okt 2026, 70,93%) — sehingga grafik terlihat turun ke 42,80% di akhir. Di halaman Data Entry angka ini tampil sebagai W50 (Desember 2025), jadi terasa seperti data yang tidak ada.
 
-### Cash In (planning & actual)
-- **Total planned cash-in** = `contract_value` project.
-- Distribusi milestone-based (payment terms EPC umum), dipetakan ke periode weekly terdekat berdasarkan cumulative planned progress:
-  - **DP 20%** — periode pertama (W1).
-  - **Progress 25%** — periode saat cum planned ≥ 30%.
-  - **Progress 25%** — periode saat cum planned ≥ 60%.
-  - **Progress 20%** — periode saat cum planned ≥ 90%.
-  - **Retensi 10%** — periode terakhir.
-- **Actual cash-in** = sama termin, tapi hanya termin yang periodenya sudah lewat cut-off (`actual_progress IS NOT NULL`). Delay realistis: dicatat 1–2 periode setelah termin planned tercapai (deterministic dari hash).
+## Yang akan diperbaiki
 
-### Metadata entry
-- `entry_kind`: `'planned'` untuk plan; `'actual'` untuk realisasi.
-- `direction`: `'in'` / `'out'`.
-- `category`: cash-in → `progress_payment` (DP → `down_payment`, retensi → `retention`); cash-out → `material` / `equipment` / `services`.
-- `description`: contoh `"Progress payment 25% — W23"`, `"Material W12"`.
-- `related_activity`: null.
-- `po_id`: null (tidak menyentuh `purchase_orders`).
+1. Betulkan tanggal cut-off W50 SPK 1 menjadi 31 Des 2025 supaya grafik bulanan kembali naik rapi.
+2. Cek seluruh proyek untuk kasus serupa (tanggal akhir periode lebih awal/lebih jauh dari urutan mingguannya) dan betulkan yang jelas salah tahun.
+3. Tambahkan pengaman di editor S-Curve: peringatan saat tanggal periode tidak berurutan atau selisihnya tidak wajar (bukan sekitar 7 hari), agar salah ketik tahun langsung terlihat sebelum disimpan.
+4. Tambahkan pengaman tampilan: pengelompokan bulanan mengikuti urutan periode, sehingga satu tanggal aneh tidak lagi membuat grafik turun mendadak.
 
-## Yang TIDAK diubah
-- Schema `finance_entries` (kolom sudah cukup).
-- Tabel lain: `purchase_orders`, `s_curve_data`, `projects.spent`, dst.
-- Kode frontend (editor, chart Finance, table Cashflow di ProjectDetail) — semua sudah baca `period_date` & `period_label`, otomatis ikut.
+## Catatan teknis
 
-## Bagian Teknis
-- Eksekusi lewat 1 SQL script (DELETE + generate_series/CTE). Dihitung server-side pakai `LATERAL` join ke baseline periods, `LAG()` untuk incremental progress, dan `hashtext()` untuk volatilitas deterministik.
-- 8 project total. Estimasi output ~2.500–3.500 entries baru (weekly × 3 kategori out + termin in).
-- Setelah regenerate, `Finance.tsx` dan `ProjectDetail.tsx` (chart & tabel Cashflow) langsung menampilkan angka weekly tanpa perubahan kode.
-
-## Verifikasi
-- Cek: `SELECT project_id, count(*), min(period_date), max(period_date) FROM finance_entries GROUP BY 1;`
-- Buka Project Detail → tab Finance → chart harus punya banyak titik (weekly) dan tabel Cashflow menampilkan baris per minggu.
+- Data: perbaikan `s_curve_data.period_end` untuk baris W50 (period_order 51) proyek SPK 1, plus audit lintas proyek di mana `period_end` menyimpang lebih dari beberapa hari dari `period_start + 6 hari`.
+- UI: validasi di `src/components/data-entry/SCurveEditor.tsx` (badge/peringatan per baris) dan urutan bucket bulanan pada blok S-Curve di `src/pages/ProjectDetail.tsx` diurutkan memakai `period_order`, bukan hanya label bulan.
