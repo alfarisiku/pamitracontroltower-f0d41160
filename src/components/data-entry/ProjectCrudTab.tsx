@@ -35,7 +35,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
 
   const [editForm, setEditForm] = useState({
     project_code: "", name: "", client: "", manager: "", location: "",
-    budget: "", spent: "", rap: "", profit_margin_target: "10", tkdn_percentage: "0",
+    budget: "", spent: "", rap: "", contract_value: "", co_value: "", profit_margin_target: "10", tkdn_percentage: "0",
     start_date: "", end_date: "", description: "", category: "Production I",
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
     image_url: "", video_url: "", cctv_url: "", model_3d_url: "",
@@ -49,7 +49,10 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           project_code: p.project_code || "", name: p.name || "", client: p.client || "",
           manager: p.manager || "", location: p.location || "",
           budget: String(p.budget || 0), spent: String(p.spent || 0),
-          rap: String(p.rap || 0), profit_margin_target: String(p.profit_margin_target || 10),
+          rap: String(p.rap || p.budget || 0),
+          contract_value: String((p as any).contract_value || 0),
+          co_value: String((p as any).co_value || 0),
+          profit_margin_target: String(p.profit_margin_target || 10),
           tkdn_percentage: String(p.tkdn_percentage || 0),
           start_date: p.start_date || "", end_date: p.end_date || "",
           description: p.description || "", category: p.category || "Production I",
@@ -60,6 +63,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         });
       }
     }
+
   }, [editProjectId, projects]);
 
   const handleCreateProject = async () => {
