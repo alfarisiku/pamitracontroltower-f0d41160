@@ -198,13 +198,26 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         </div>
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">💰 Financial & Budget</p>
         <p className="text-[10px] text-muted-foreground mb-2">
-          ⚠️ Semua nilai finance diisi dalam <strong>Juta Rupiah (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5.000</code> = Rp 5,00 M (Miliar) • <code>1.500.000</code> = Rp 1,50 T (Triliun). Desimal pakai koma (standar Indonesia).
+          Isi nominal <strong>Rupiah penuh</strong> (contoh: 5.000.000.000). Titik ribuan otomatis. <strong>RAP</strong> adalah angka utama yang ditampilkan di seluruh dashboard; <strong>Nilai Kontrak</strong> hanya untuk informasi umum; <strong>CO</strong> opsional (total addendum berjalan).
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          <div><label className={labelCls}>Contract Value (Juta Rp)</label><input type="number" value={(ef as any).contract_value || ""} onChange={e => set("contract_value", e.target.value)} className={inputCls} placeholder="mis. 5000" /></div>
-          <div><label className={labelCls}>Budget / Legacy (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>RAP (Juta Rp)</label><input type="number" value={ef.rap} onChange={e => set("rap", e.target.value)} className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>Nilai Kontrak (Rp)</label>
+            <input inputMode="numeric" value={rpDisplay((ef as any).contract_value)} onChange={e => set("contract_value", rpParse(e.target.value))} className={inputCls} placeholder="5.000.000.000" />
+            <p className="text-[9px] text-muted-foreground mt-0.5">{formatRupiah(Number((ef as any).contract_value) || 0)}</p>
+          </div>
+          <div>
+            <label className={labelCls}>RAP (Rp) — nilai utama</label>
+            <input inputMode="numeric" value={rpDisplay(ef.rap)} onChange={e => set("rap", rpParse(e.target.value))} className={inputCls} placeholder="4.200.000.000" />
+            <p className="text-[9px] text-muted-foreground mt-0.5">{formatRupiah(Number(ef.rap) || 0)}</p>
+          </div>
+          <div>
+            <label className={labelCls}>CO / Change Order (Rp) — opsional</label>
+            <input inputMode="numeric" value={rpDisplay((ef as any).co_value)} onChange={e => set("co_value" as any, rpParse(e.target.value))} className={inputCls} placeholder="0" />
+            <p className="text-[9px] text-muted-foreground mt-0.5">{formatRupiah(Number((ef as any).co_value) || 0)}</p>
+          </div>
         </div>
+
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">🖼️ Media & Video / CCTV Links</p>
         <p className="text-[10px] text-muted-foreground mb-2">
           <strong>Video wajib link YouTube</strong> (contoh: <code>https://youtube.com/watch?v=xxxx</code> atau <code>https://youtu.be/xxxx</code>) — thumbnail otomatis diambil dari YouTube. Untuk <strong>CCTV Live</strong>, isi URL YouTube Live (<code>https://youtube.com/live/xxxx</code>) atau URL stream publik; di halaman Project Detail akan ditampilkan sebagai tombol "Buka Live Stream" (bukan di-embed, agar dashboard tetap ringan). Edit di sini (Data Entry → Manage Projects → Edit).
