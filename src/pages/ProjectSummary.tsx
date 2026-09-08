@@ -276,8 +276,9 @@ const ProjectSummary = () => {
                     {!isClient && (
                       <div className="flex justify-between text-xs pt-2 border-t border-border">
                         <div>
-                          <p className="text-muted-foreground">Nilai Kontrak</p>
-                          <p className="font-mono-data font-medium text-accent">{formatRupiah(project.budget)}</p>
+                          <p className="text-muted-foreground">RAP</p>
+                          <p className="font-mono-data font-medium text-accent">{formatRupiah(rapValue)}</p>
+
                         </div>
                         <div className="text-right">
                           <p className="text-muted-foreground">Terpakai</p>
