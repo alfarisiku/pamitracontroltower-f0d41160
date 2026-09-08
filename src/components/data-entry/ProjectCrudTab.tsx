@@ -7,6 +7,20 @@ import { toast } from "@/hooks/use-toast";
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
+/** Nilai disimpan dalam Juta Rupiah; input ditampilkan sebagai Rupiah penuh dengan titik ribuan. */
+const rpDisplay = (juta: string | number | undefined) => {
+  const n = Number(juta);
+  if (!juta && juta !== 0) return "";
+  if (!Number.isFinite(n) || n === 0) return juta === "" ? "" : "0";
+  return Math.round(n * 1_000_000).toLocaleString("id-ID");
+};
+const rpParse = (input: string) => {
+  const digits = input.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return String(Number(digits) / 1_000_000);
+};
+
+
 export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
