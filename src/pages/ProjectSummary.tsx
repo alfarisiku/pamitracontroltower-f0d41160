@@ -151,7 +151,7 @@ const ProjectSummary = () => {
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">PM</th>
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
-                      {!isClient && <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Nilai Kontrak</th>}
+                      {!isClient && <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">RAP</th>}
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Target</th>
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress</th>
                       <th className="text-center py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Detail</th>
