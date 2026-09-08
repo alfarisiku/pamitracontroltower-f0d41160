@@ -72,7 +72,9 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
       const { data: created, error } = await supabase.from("projects").insert({
         project_code: newProject.project_code, name: newProject.name, client: newProject.client,
         manager: newProject.manager, location: newProject.location,
-        budget: parseInt(newProject.budget) || 0, start_date: newProject.start_date,
+        budget: Math.round(Number(newProject.budget) || 0), rap: Math.round(Number(newProject.budget) || 0),
+        start_date: newProject.start_date,
+
         end_date: newProject.end_date, description: newProject.description,
         category: newProject.category, map_x: parseFloat(newProject.map_x) || 50,
         map_y: parseFloat(newProject.map_y) || 50,
