@@ -105,8 +105,11 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
       const { error } = await supabase.from("projects").update({
         project_code: editForm.project_code, name: editForm.name, client: editForm.client,
         manager: editForm.manager, location: editForm.location,
-        budget: parseInt(editForm.budget) || 0, spent: parseInt(editForm.spent) || 0,
-        rap: parseInt(editForm.rap) || 0, contract_value: parseInt((editForm as any).contract_value) || 0,
+        budget: Math.round(Number(editForm.rap) || 0), spent: parseInt(editForm.spent) || 0,
+        rap: Math.round(Number(editForm.rap) || 0),
+        contract_value: Math.round(Number(editForm.contract_value) || 0),
+        co_value: Math.round(Number(editForm.co_value) || 0),
+
         profit_margin_target: parseFloat(editForm.profit_margin_target) || 10,
         tkdn_percentage: parseFloat(editForm.tkdn_percentage) || 0,
         start_date: editForm.start_date, end_date: editForm.end_date,
