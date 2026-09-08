@@ -307,7 +307,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Progress</th>
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">TKDN</th>
-              <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Budget</th>
+              <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">RAP</th>
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Actions</th>
             </tr></thead>
             <tbody>{projects.map(p => (
