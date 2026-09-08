@@ -178,7 +178,7 @@ const ProjectSummary = () => {
                               {L3 ? "On Progress" : st.label}
                             </span>
                           </td>
-                          {!isClient && <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah(project.budget)}</td>}
+                          {!isClient && <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah((project as any).rap || project.budget)}</td>}
                           <td className="py-2 px-3 text-muted-foreground">
                             {new Date(project.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                           </td>
@@ -207,7 +207,9 @@ const ProjectSummary = () => {
           <div className={`${view === "grid" ? "grid" : "hidden"} grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4`}>
             {filtered.map((project) => {
               const st = statusConfig[project.status] || FALLBACK_STATUS;
-              const budgetPct = Math.round((project.spent / project.budget) * 100);
+              const rapValue = (project as any).rap || project.budget || 0;
+              const budgetPct = rapValue ? Math.round((project.spent / rapValue) * 100) : 0;
+
               return (
                 <div
                   key={project.id}
