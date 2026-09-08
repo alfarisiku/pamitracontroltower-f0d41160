@@ -704,6 +704,7 @@ export type Database = {
           category: string | null
           cctv_url: string | null
           client: string
+          co_value: number
           contract_value: number
           created_at: string
           description: string | null
@@ -734,6 +735,7 @@ export type Database = {
           category?: string | null
           cctv_url?: string | null
           client: string
+          co_value?: number
           contract_value?: number
           created_at?: string
           description?: string | null
@@ -764,6 +766,7 @@ export type Database = {
           category?: string | null
           cctv_url?: string | null
           client?: string
+          co_value?: number
           contract_value?: number
           created_at?: string
           description?: string | null
