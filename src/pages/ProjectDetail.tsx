@@ -19,6 +19,8 @@ import {
 import { SCurveChart } from "@/components/dashboard/SCurveChart";
 import { FormulaTooltip, FORMULAS } from "@/components/dashboard/FormulaTooltip";
 import { WeeklyReportView } from "@/components/dashboard/WeeklyReportView";
+import { ProjectActivityLog } from "@/components/dashboard/ProjectActivityLog";
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, AreaChart, Area, Legend, ReferenceLine, ComposedChart, Line } from "recharts";
 import {
   ChevronLeft, ChevronDown, ChevronRight, MapPin, User, Calendar, Briefcase,
@@ -280,6 +282,8 @@ const ProjectDetail = () => {
               <Link to={`/project/${id}/ppt-preview`} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors">
                 <PresentationIcon className="h-3.5 w-3.5" /> Create PPT
               </Link>
+              <ProjectActivityLog projectId={id!} />
+
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border transition-colors">
                 <Share2 className="h-3.5 w-3.5" /> Share
               </button>

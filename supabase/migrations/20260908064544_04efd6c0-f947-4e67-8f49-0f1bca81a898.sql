@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS co_value bigint NOT NULL DEFAULT 0;

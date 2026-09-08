@@ -7,6 +7,20 @@ import { toast } from "@/hooks/use-toast";
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
+/** Nilai disimpan dalam Juta Rupiah; input ditampilkan sebagai Rupiah penuh dengan titik ribuan. */
+const rpDisplay = (juta: string | number | undefined) => {
+  const n = Number(juta);
+  if (!juta && juta !== 0) return "";
+  if (!Number.isFinite(n) || n === 0) return juta === "" ? "" : "0";
+  return Math.round(n * 1_000_000).toLocaleString("id-ID");
+};
+const rpParse = (input: string) => {
+  const digits = input.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return String(Number(digits) / 1_000_000);
+};
+
+
 export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -21,7 +35,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
 
   const [editForm, setEditForm] = useState({
     project_code: "", name: "", client: "", manager: "", location: "",
-    budget: "", spent: "", rap: "", profit_margin_target: "10", tkdn_percentage: "0",
+    budget: "", spent: "", rap: "", contract_value: "", co_value: "", profit_margin_target: "10", tkdn_percentage: "0",
     start_date: "", end_date: "", description: "", category: "Production I",
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
     image_url: "", video_url: "", cctv_url: "", model_3d_url: "",
@@ -35,7 +49,10 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
           project_code: p.project_code || "", name: p.name || "", client: p.client || "",
           manager: p.manager || "", location: p.location || "",
           budget: String(p.budget || 0), spent: String(p.spent || 0),
-          rap: String(p.rap || 0), profit_margin_target: String(p.profit_margin_target || 10),
+          rap: String(p.rap || p.budget || 0),
+          contract_value: String((p as any).contract_value || 0),
+          co_value: String((p as any).co_value || 0),
+          profit_margin_target: String(p.profit_margin_target || 10),
           tkdn_percentage: String(p.tkdn_percentage || 0),
           start_date: p.start_date || "", end_date: p.end_date || "",
           description: p.description || "", category: p.category || "Production I",
@@ -46,6 +63,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         });
       }
     }
+
   }, [editProjectId, projects]);
 
   const handleCreateProject = async () => {
@@ -54,7 +72,9 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
       const { data: created, error } = await supabase.from("projects").insert({
         project_code: newProject.project_code, name: newProject.name, client: newProject.client,
         manager: newProject.manager, location: newProject.location,
-        budget: parseInt(newProject.budget) || 0, start_date: newProject.start_date,
+        budget: Math.round(Number(newProject.budget) || 0), rap: Math.round(Number(newProject.budget) || 0),
+        start_date: newProject.start_date,
+
         end_date: newProject.end_date, description: newProject.description,
         category: newProject.category, map_x: parseFloat(newProject.map_x) || 50,
         map_y: parseFloat(newProject.map_y) || 50,
@@ -87,8 +107,11 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
       const { error } = await supabase.from("projects").update({
         project_code: editForm.project_code, name: editForm.name, client: editForm.client,
         manager: editForm.manager, location: editForm.location,
-        budget: parseInt(editForm.budget) || 0, spent: parseInt(editForm.spent) || 0,
-        rap: parseInt(editForm.rap) || 0, contract_value: parseInt((editForm as any).contract_value) || 0,
+        budget: Math.round(Number(editForm.rap) || 0), spent: parseInt(editForm.spent) || 0,
+        rap: Math.round(Number(editForm.rap) || 0),
+        contract_value: Math.round(Number(editForm.contract_value) || 0),
+        co_value: Math.round(Number(editForm.co_value) || 0),
+
         profit_margin_target: parseFloat(editForm.profit_margin_target) || 10,
         tkdn_percentage: parseFloat(editForm.tkdn_percentage) || 0,
         start_date: editForm.start_date, end_date: editForm.end_date,
@@ -198,13 +221,26 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         </div>
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">💰 Financial & Budget</p>
         <p className="text-[10px] text-muted-foreground mb-2">
-          ⚠️ Semua nilai finance diisi dalam <strong>Juta Rupiah (Jt)</strong>. Contoh: <code>500</code> = Rp 500 Jt • <code>5.000</code> = Rp 5,00 M (Miliar) • <code>1.500.000</code> = Rp 1,50 T (Triliun). Desimal pakai koma (standar Indonesia).
+          Isi nominal <strong>Rupiah penuh</strong> (contoh: 5.000.000.000). Titik ribuan otomatis. <strong>RAP</strong> adalah angka utama yang ditampilkan di seluruh dashboard; <strong>Nilai Kontrak</strong> hanya untuk informasi umum; <strong>CO</strong> opsional (total addendum berjalan).
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-          <div><label className={labelCls}>Contract Value (Juta Rp)</label><input type="number" value={(ef as any).contract_value || ""} onChange={e => set("contract_value", e.target.value)} className={inputCls} placeholder="mis. 5000" /></div>
-          <div><label className={labelCls}>Budget / Legacy (Juta Rp)</label><input type="number" value={ef.budget} onChange={e => set("budget", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>RAP (Juta Rp)</label><input type="number" value={ef.rap} onChange={e => set("rap", e.target.value)} className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>Nilai Kontrak (Rp)</label>
+            <input inputMode="numeric" value={rpDisplay((ef as any).contract_value)} onChange={e => set("contract_value", rpParse(e.target.value))} className={inputCls} placeholder="5.000.000.000" />
+            <p className="text-[9px] text-muted-foreground mt-0.5">{formatRupiah(Number((ef as any).contract_value) || 0)}</p>
+          </div>
+          <div>
+            <label className={labelCls}>RAP (Rp) — nilai utama</label>
+            <input inputMode="numeric" value={rpDisplay(ef.rap)} onChange={e => set("rap", rpParse(e.target.value))} className={inputCls} placeholder="4.200.000.000" />
+            <p className="text-[9px] text-muted-foreground mt-0.5">{formatRupiah(Number(ef.rap) || 0)}</p>
+          </div>
+          <div>
+            <label className={labelCls}>CO / Change Order (Rp) — opsional</label>
+            <input inputMode="numeric" value={rpDisplay((ef as any).co_value)} onChange={e => set("co_value" as any, rpParse(e.target.value))} className={inputCls} placeholder="0" />
+            <p className="text-[9px] text-muted-foreground mt-0.5">{formatRupiah(Number((ef as any).co_value) || 0)}</p>
+          </div>
         </div>
+
         <p className="text-[10px] uppercase text-muted-foreground font-semibold mb-1">🖼️ Media & Video / CCTV Links</p>
         <p className="text-[10px] text-muted-foreground mb-2">
           <strong>Video wajib link YouTube</strong> (contoh: <code>https://youtube.com/watch?v=xxxx</code> atau <code>https://youtu.be/xxxx</code>) — thumbnail otomatis diambil dari YouTube. Untuk <strong>CCTV Live</strong>, isi URL YouTube Live (<code>https://youtube.com/live/xxxx</code>) atau URL stream publik; di halaman Project Detail akan ditampilkan sebagai tombol "Buka Live Stream" (bukan di-embed, agar dashboard tetap ringan). Edit di sini (Data Entry → Manage Projects → Edit).
@@ -253,7 +289,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
             <div><label className={labelCls}>Client</label><input value={newProject.client} onChange={e => setNewProject({ ...newProject, client: e.target.value })} className={inputCls} placeholder="PT Client" /></div>
             <div><label className={labelCls}>Manager</label><input value={newProject.manager} onChange={e => setNewProject({ ...newProject, manager: e.target.value })} className={inputCls} placeholder="Nama PM" /></div>
             <div><label className={labelCls}>Location</label><input value={newProject.location} onChange={e => setNewProject({ ...newProject, location: e.target.value })} className={inputCls} placeholder="Kota, Provinsi" /></div>
-            <div><label className={labelCls}>Budget (Juta Rp)</label><input type="number" value={newProject.budget} onChange={e => setNewProject({ ...newProject, budget: e.target.value })} className={inputCls} placeholder="500000" /></div>
+            <div><label className={labelCls}>RAP (Rp)</label><input inputMode="numeric" value={rpDisplay(newProject.budget)} onChange={e => setNewProject({ ...newProject, budget: rpParse(e.target.value) })} className={inputCls} placeholder="500.000.000" /></div>
             <div><label className={labelCls}>Start Date</label><input type="date" value={newProject.start_date} onChange={e => setNewProject({ ...newProject, start_date: e.target.value })} className={inputCls} /></div>
             <div><label className={labelCls}>End Date</label><input type="date" value={newProject.end_date} onChange={e => setNewProject({ ...newProject, end_date: e.target.value })} className={inputCls} /></div>
           </div>
@@ -273,7 +309,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Progress</th>
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">TKDN</th>
-              <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Budget</th>
+              <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">RAP</th>
               <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Actions</th>
             </tr></thead>
             <tbody>{projects.map(p => (
@@ -284,7 +320,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
                 <td className="py-2 px-3 capitalize text-muted-foreground">{p.status}</td>
                 <td className="py-2 px-3 font-mono-data">{p.progress}%</td>
                 <td className="py-2 px-3 font-mono-data">{p.tkdn_percentage}%</td>
-                <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah(p.budget)}</td>
+                <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah((p as any).rap || p.budget)}</td>
                 <td className="py-2 px-3">
                   <div className="flex items-center gap-1">
                     <button onClick={() => { setEditProjectId(p.id); setShowNewProject(false); }} className="p-1 hover:bg-primary/10 rounded" title="Edit"><Edit3 className="h-3.5 w-3.5 text-primary" /></button>

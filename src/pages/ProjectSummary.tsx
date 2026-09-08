@@ -151,7 +151,7 @@ const ProjectSummary = () => {
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">PM</th>
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
-                      {!isClient && <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Nilai Kontrak</th>}
+                      {!isClient && <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">RAP</th>}
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Target</th>
                       <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress</th>
                       <th className="text-center py-2.5 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Detail</th>
@@ -178,7 +178,7 @@ const ProjectSummary = () => {
                               {L3 ? "On Progress" : st.label}
                             </span>
                           </td>
-                          {!isClient && <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah(project.budget)}</td>}
+                          {!isClient && <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah((project as any).rap || project.budget)}</td>}
                           <td className="py-2 px-3 text-muted-foreground">
                             {new Date(project.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                           </td>
@@ -207,7 +207,9 @@ const ProjectSummary = () => {
           <div className={`${view === "grid" ? "grid" : "hidden"} grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4`}>
             {filtered.map((project) => {
               const st = statusConfig[project.status] || FALLBACK_STATUS;
-              const budgetPct = Math.round((project.spent / project.budget) * 100);
+              const rapValue = (project as any).rap || project.budget || 0;
+              const budgetPct = rapValue ? Math.round((project.spent / rapValue) * 100) : 0;
+
               return (
                 <div
                   key={project.id}
@@ -274,8 +276,9 @@ const ProjectSummary = () => {
                     {!isClient && (
                       <div className="flex justify-between text-xs pt-2 border-t border-border">
                         <div>
-                          <p className="text-muted-foreground">Nilai Kontrak</p>
-                          <p className="font-mono-data font-medium text-accent">{formatRupiah(project.budget)}</p>
+                          <p className="text-muted-foreground">RAP</p>
+                          <p className="font-mono-data font-medium text-accent">{formatRupiah(rapValue)}</p>
+
                         </div>
                         <div className="text-right">
                           <p className="text-muted-foreground">Terpakai</p>
