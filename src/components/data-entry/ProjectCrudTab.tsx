@@ -287,7 +287,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
             <div><label className={labelCls}>Client</label><input value={newProject.client} onChange={e => setNewProject({ ...newProject, client: e.target.value })} className={inputCls} placeholder="PT Client" /></div>
             <div><label className={labelCls}>Manager</label><input value={newProject.manager} onChange={e => setNewProject({ ...newProject, manager: e.target.value })} className={inputCls} placeholder="Nama PM" /></div>
             <div><label className={labelCls}>Location</label><input value={newProject.location} onChange={e => setNewProject({ ...newProject, location: e.target.value })} className={inputCls} placeholder="Kota, Provinsi" /></div>
-            <div><label className={labelCls}>Budget (Juta Rp)</label><input type="number" value={newProject.budget} onChange={e => setNewProject({ ...newProject, budget: e.target.value })} className={inputCls} placeholder="500000" /></div>
+            <div><label className={labelCls}>RAP (Rp)</label><input inputMode="numeric" value={rpDisplay(newProject.budget)} onChange={e => setNewProject({ ...newProject, budget: rpParse(e.target.value) })} className={inputCls} placeholder="500.000.000" /></div>
             <div><label className={labelCls}>Start Date</label><input type="date" value={newProject.start_date} onChange={e => setNewProject({ ...newProject, start_date: e.target.value })} className={inputCls} /></div>
             <div><label className={labelCls}>End Date</label><input type="date" value={newProject.end_date} onChange={e => setNewProject({ ...newProject, end_date: e.target.value })} className={inputCls} /></div>
           </div>
