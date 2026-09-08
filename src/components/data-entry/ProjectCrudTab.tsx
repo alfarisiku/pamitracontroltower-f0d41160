@@ -318,7 +318,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
                 <td className="py-2 px-3 capitalize text-muted-foreground">{p.status}</td>
                 <td className="py-2 px-3 font-mono-data">{p.progress}%</td>
                 <td className="py-2 px-3 font-mono-data">{p.tkdn_percentage}%</td>
-                <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah(p.budget)}</td>
+                <td className="py-2 px-3 font-mono-data text-accent">{formatRupiah((p as any).rap || p.budget)}</td>
                 <td className="py-2 px-3">
                   <div className="flex items-center gap-1">
                     <button onClick={() => { setEditProjectId(p.id); setShowNewProject(false); }} className="p-1 hover:bg-primary/10 rounded" title="Edit"><Edit3 className="h-3.5 w-3.5 text-primary" /></button>
