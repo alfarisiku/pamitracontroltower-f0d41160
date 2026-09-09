@@ -145,6 +145,19 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
   const missingDates = rows.some(r => !r.period_end || !r.period_start);
 
+  // Flag suspicious periods (typo tahun / urutan kebalik) supaya tidak merusak grafik bulanan.
+  const dayDiff = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+  const rowIssues = rows.map((r, i) => {
+    if (!r.period_start || !r.period_end) return "";
+    const len = dayDiff(r.period_start, r.period_end);
+    if (len < 1 || len > 14) return `Durasi periode ${len} hari — cek tanggal (kemungkinan salah tahun)`;
+    const prev = rows[i - 1];
+    if (prev?.period_end && dayDiff(prev.period_end, r.period_start) < 1) return "Tanggal mulai tidak setelah periode sebelumnya";
+    return "";
+  });
+  const issueCount = rowIssues.filter(Boolean).length;
+
+
   return (
     <div className="space-y-4">
       <div className="glass-card rounded-lg shadow-card p-4">
