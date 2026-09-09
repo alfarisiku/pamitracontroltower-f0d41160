@@ -145,6 +145,19 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const inputCls = "w-full px-2 py-1.5 text-xs bg-card border border-border rounded text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
   const missingDates = rows.some(r => !r.period_end || !r.period_start);
 
+  // Flag suspicious periods (typo tahun / urutan kebalik) supaya tidak merusak grafik bulanan.
+  const dayDiff = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+  const rowIssues = rows.map((r, i) => {
+    if (!r.period_start || !r.period_end) return "";
+    const len = dayDiff(r.period_start, r.period_end);
+    if (len < 1 || len > 14) return `Durasi periode ${len} hari — cek tanggal (kemungkinan salah tahun)`;
+    const prev = rows[i - 1];
+    if (prev?.period_end && dayDiff(prev.period_end, r.period_start) < 1) return "Tanggal mulai tidak setelah periode sebelumnya";
+    return "";
+  });
+  const issueCount = rowIssues.filter(Boolean).length;
+
+
   return (
     <div className="space-y-4">
       <div className="glass-card rounded-lg shadow-card p-4">
@@ -168,6 +181,10 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
         {missingDates && (
           <div className="mb-3 text-[10px] text-warning">⚠️ Ada periode tanpa tanggal.</div>
         )}
+        {issueCount > 0 && (
+          <div className="mb-3 text-[10px] text-destructive">⚠️ {issueCount} periode punya tanggal mencurigakan (durasi bukan ±7 hari atau urutannya mundur). Baris ditandai merah di bawah.</div>
+        )}
+
 
         {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : (
           <>
@@ -193,7 +210,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
-                    <tr key={i} className="border-b border-border/30">
+                    <tr key={i} className={`border-b border-border/30 ${rowIssues[i] ? "bg-destructive/5" : ""}`}>
                       <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
                       <td className="py-1 px-2">
                         <DateRangeInput
@@ -201,7 +218,9 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
                           endISO={r.period_end}
                           onChange={(s, e) => updateRow(i, { period_start: s, period_end: e })}
                         />
+                        {rowIssues[i] && <p className="text-[9px] text-destructive mt-0.5">⚠️ {rowIssues[i]}</p>}
                       </td>
+
                       <td className="py-1 px-2"><input value={r.period_label} onChange={e => updateRow(i, { period_label: e.target.value })} className={inputCls} placeholder="W1" /></td>
                       <td className="py-1 px-2"><input type="number" step="0.01" value={r.planned_progress} onChange={e => updateRow(i, { planned_progress: e.target.value })} className={inputCls} /></td>
                       <td className="py-1 px-2"><input type="number" step="0.01" value={r.actual_progress} onChange={e => updateRow(i, { actual_progress: e.target.value })} className={inputCls} placeholder="—" /></td>
