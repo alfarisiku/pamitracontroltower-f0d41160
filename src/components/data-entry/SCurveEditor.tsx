@@ -210,7 +210,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
-                    <tr key={i} className="border-b border-border/30">
+                    <tr key={i} className={`border-b border-border/30 ${rowIssues[i] ? "bg-destructive/5" : ""}`}>
                       <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
                       <td className="py-1 px-2">
                         <DateRangeInput
@@ -218,7 +218,9 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
                           endISO={r.period_end}
                           onChange={(s, e) => updateRow(i, { period_start: s, period_end: e })}
                         />
+                        {rowIssues[i] && <p className="text-[9px] text-destructive mt-0.5">⚠️ {rowIssues[i]}</p>}
                       </td>
+
                       <td className="py-1 px-2"><input value={r.period_label} onChange={e => updateRow(i, { period_label: e.target.value })} className={inputCls} placeholder="W1" /></td>
                       <td className="py-1 px-2"><input type="number" step="0.01" value={r.planned_progress} onChange={e => updateRow(i, { planned_progress: e.target.value })} className={inputCls} /></td>
                       <td className="py-1 px-2"><input type="number" step="0.01" value={r.actual_progress} onChange={e => updateRow(i, { actual_progress: e.target.value })} className={inputCls} placeholder="—" /></td>
