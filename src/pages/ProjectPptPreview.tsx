@@ -77,6 +77,27 @@ export default function ProjectPptPreview() {
   const cutoffTs = selected?.end ? ts(selected.end) : Infinity;
   const startTs = selected?.start ? ts(selected.start) : -Infinity;
 
+  /* ---------- Baris baseline sampai cut-off & data aktual terakhir ---------- */
+  const baseSorted = useMemo(
+    () => scurve.filter((s) => s.curve_type === "baseline").slice().sort((a, b) => a.period_order - b.period_order),
+    [scurve],
+  );
+  const cutRow = useMemo(
+    () => baseSorted.filter((s: any) => { const t = ts(s.period_end || s.period_date); return Number.isNaN(t) ? false : t <= cutoffTs; }).pop() ?? null,
+    [baseSorted, cutoffTs],
+  );
+  const prevRow = useMemo(() => {
+    if (!cutRow) return null;
+    const list = baseSorted.filter((s) => s.period_order < cutRow.period_order && s.actual_progress != null);
+    return list.length ? list[list.length - 1] : null;
+  }, [baseSorted, cutRow]);
+  const lastActualRow = useMemo(
+    () => baseSorted.filter((s: any) => s.actual_progress != null && (Number.isNaN(ts(s.period_end || s.period_date)) || ts(s.period_end || s.period_date) <= cutoffTs)).pop() ?? null,
+    [baseSorted, cutoffTs],
+  );
+
+  const printedAt = useMemo(() => new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }), []);
+
   const slides = useMemo<Slide[]>(() => {
     if (!project) return [];
     const out: Slide[] = [];
@@ -89,31 +110,126 @@ export default function ProjectPptPreview() {
       return Number.isNaN(t) ? true : t <= cutoffTs;
     };
 
+    /* ---------- Angka inti (satu cut-off untuk seluruh deck) ---------- */
+    const finCut = finance.filter((f) => inCutoff(f.period_date));
+    const sum = (kind: string, dir: string) =>
+      finCut.filter((f) => f.entry_kind === kind && f.direction === dir).reduce((a, f) => a + Number(f.amount || 0), 0);
+    const actualOut = sum("actual", "out");
+    const actualIn = sum("actual", "in");
+    const planOutCum = finCut.filter((f) => (f.entry_kind === "rap" || f.entry_kind === "forecast") && f.direction === "out").reduce((a, f) => a + Number(f.amount || 0), 0);
+
+    const planAtCut = cutRow ? Number(cutRow.planned_progress || 0) : 0;
+    const hasActualAtCut = cutRow?.actual_progress != null;
+    const actAtCut = hasActualAtCut
+      ? Number(cutRow!.actual_progress)
+      : lastActualRow?.actual_progress != null
+        ? Number(lastActualRow.actual_progress)
+        : Number(project.progress) || 0;
+    const dev = actAtCut - planAtCut;
+    const spi = planAtCut > 0 ? actAtCut / planAtCut : null;
+    const deltaWeek = prevRow?.actual_progress != null ? actAtCut - Number(prevRow.actual_progress) : null;
+    const dataNote = hasActualAtCut
+      ? null
+      : `Catatan: ${periodShort} belum ada data aktual — angka aktual memakai ${lastActualRow ? weekShortOf(lastActualRow as any) : "data terakhir tersedia"}.`;
+
+    const healthLabel = dev >= 0 ? "ON TRACK" : dev >= -5 ? "PERLU PERHATIAN" : "TERLAMBAT";
+    const healthTone: "success" | "warning" | "danger" = dev >= 0 ? "success" : dev >= -5 ? "warning" : "danger";
+
+    const staff = hrRows.filter((h: any) => h.category === "staff").reduce((a: number, h: any) => a + (Number(h.headcount) || 0), 0);
+    const manpower = hrRows.filter((h: any) => h.category !== "staff").reduce((a: number, h: any) => a + (Number(h.headcount) || 0), 0);
+    const endT = ts(project.end_date);
+    const sisaHari = Number.isNaN(endT) ? null : Math.ceil((endT - (Number.isFinite(cutoffTs) ? cutoffTs : Date.now())) / 86400000);
+
+    const openRisks = risks
+      .filter((r) => !r.is_resolved)
+      .slice()
+      .sort((a, b) => {
+        const rank = (s?: string | null) => ({ critical: 0, high: 1, medium: 2, low: 3 } as any)[String(s || "low")] ?? 3;
+        return rank(a.severity) - rank(b.severity);
+      });
+
+    /* ---------- Milestone terkategori ---------- */
+    const msWithFlag = milestones
+      .map((m: any) => {
+        const t = ts(m.target_date);
+        const done = m.status === "completed" || !!m.actual_date;
+        const late = !done && !Number.isNaN(t) && t < cutoffTs;
+        const soon = !done && !late && !Number.isNaN(t) && t - cutoffTs <= 30 * 86400000;
+        const doneThisWeek = done && ts(m.actual_date) >= startTs && ts(m.actual_date) <= cutoffTs;
+        return { m, t, done, late, soon, doneThisWeek };
+      })
+      .filter((x) => x.late || x.soon || x.doneThisWeek)
+      .sort((a, b) => (a.t || 0) - (b.t || 0));
+
+    /* ---------- Procurement kritis ---------- */
+    const procScored = procurement
+      .map((p: any) => {
+        const st = String(p.status || "").toLowerCase();
+        const arrived = ["onsite", "installed"].includes(st);
+        const poIssued = ["po", "po-issued", "fabrication", "delivery", "onsite", "installed"].includes(st);
+        const delT = ts(p.delivery_plan_date || p.delivery_date);
+        const lateDelivery = !arrived && !Number.isNaN(delT) && delT < cutoffTs;
+        const noPo = !poIssued;
+        const score = lateDelivery ? 0 : noPo ? 1 : arrived ? 3 : 2;
+        const flag = lateDelivery ? "TERLAMBAT" : noPo ? "BELUM PO" : arrived ? "SELESAI" : "PROSES";
+        return { p, score, flag };
+      })
+      .sort((a, b) => a.score - b.score);
+
     /* ============ 1 — Cover ============ */
     out.push({
       key: "cover",
       cover: true,
       title: `${project.project_code} — ${project.name}`,
       subtitle: `${project.client || "—"} • ${project.location || "—"} • ${meta.label}`,
-      blocks: [{ type: "text", value: `Periode Pelaporan: ${periodTag}   |   Project Manager: ${project.manager || "—"}   |   Progress: ${pct(project.progress)}` }],
+      blocks: [
+        { type: "text", value: `Laporan Mingguan • Periode ${periodTag}` },
+        { type: "text", value: `Project Manager: ${project.manager || "—"}   |   Progress Actual: ${pct(actAtCut)} (Plan ${pct(planAtCut)})   |   Status: ${healthLabel}` },
+        { type: "text", value: `Data per ${periodShort} • dicetak ${printedAt}` },
+      ],
     });
 
-    /* ============ 2 — Project Health ============ */
-    const finCut = finance.filter((f) => inCutoff(f.period_date));
-    const actualOut = finCut.filter((f) => f.direction === "out" && f.entry_kind === "actual").reduce((a, f) => a + Number(f.amount || 0), 0);
-    const actualIn = finCut.filter((f) => f.direction === "in" && f.entry_kind === "actual").reduce((a, f) => a + Number(f.amount || 0), 0);
+    /* ============ 2 — Ringkasan Eksekutif Minggu Ini ============ */
+    const perhatian: string[] = [];
+    if (dev < 0) perhatian.push(`Deviasi jadwal ${dev.toFixed(2)}% terhadap rencana (${pct(planAtCut)} vs ${pct(actAtCut)}).`);
+    const lateMs = msWithFlag.filter((x) => x.late);
+    if (lateMs.length) perhatian.push(`${lateMs.length} milestone melewati target: ${lateMs.slice(0, 2).map((x) => x.m.name).join(", ")}.`);
+    const lateProc = procScored.filter((x) => x.flag === "TERLAMBAT");
+    if (lateProc.length) perhatian.push(`${lateProc.length} item pengadaan terlambat kirim: ${lateProc.slice(0, 2).map((x) => x.p.item_name).join(", ")}.`);
+    if (openRisks.length) perhatian.push(`${openRisks.length} risiko aktif, tertinggi: ${openRisks[0].title}.`);
+    if (actualOut > planOutCum && planOutCum > 0) perhatian.push(`Pengeluaran melebihi rencana kas s/d cut-off (${formatRupiah(actualOut)} vs ${formatRupiah(planOutCum)}).`);
+    if (!perhatian.length) perhatian.push("Tidak ada isu kritis pada periode ini — pekerjaan berjalan sesuai rencana.");
 
-    const baseRows = scurve.filter((s) => s.curve_type === "baseline");
-    const cutRow = [...baseRows].filter((s: any) => inCutoff(s.period_end || s.period_date)).sort((a, b) => a.period_order - b.period_order).pop();
-    const planAtCut = cutRow ? Number(cutRow.planned_progress || 0) : 0;
-    const actAtCut = cutRow?.actual_progress != null ? Number(cutRow.actual_progress) : Number(project.progress) || 0;
-    const dev = actAtCut - planAtCut;
+    out.push({
+      key: "summary",
+      title: `Ringkasan Minggu Ini — ${periodShort}`,
+      subtitle: `${periodTag} • status ${healthLabel}`,
+      blocks: [
+        ...(dataNote ? [{ type: "text" as const, value: dataNote }] : []),
+        {
+          type: "kpi",
+          items: [
+            { label: "Progress Actual", value: pct(actAtCut), hint: `Plan ${pct(planAtCut)}`, tone: healthTone },
+            { label: "Deviasi Jadwal", value: `${dev >= 0 ? "+" : ""}${dev.toFixed(2)}%`, hint: spi != null ? `SPI ${spi.toFixed(2)}` : undefined, tone: healthTone },
+            { label: "Kenaikan Minggu Ini", value: deltaWeek == null ? "—" : `${deltaWeek >= 0 ? "+" : ""}${deltaWeek.toFixed(2)}%`, hint: prevRow ? `vs ${weekShortOf(prevRow as any)}` : undefined, tone: "primary" },
+            { label: "Penyerapan Biaya", value: formatRupiah(actualOut), hint: `RAP ${formatRupiah(project.rap)}`, tone: "warning" },
+          ],
+        },
+        { type: "list", title: "Perhatian Utama", items: perhatian.slice(0, 4) },
+        {
+          type: "table",
+          headers: ["Indikator", "Rencana", "Realisasi", "Deviasi"],
+          rows: [
+            ["Progress (%)", pct(planAtCut), pct(actAtCut), `${dev >= 0 ? "+" : ""}${dev.toFixed(2)}%`],
+            ["Cash Out", formatRupiah(planOutCum), formatRupiah(actualOut), formatRupiah(actualOut - planOutCum)],
+            ["Cash In", formatRupiah(sum("rap", "in") + sum("forecast", "in")), formatRupiah(actualIn), formatRupiah(actualIn - (sum("rap", "in") + sum("forecast", "in")))],
+          ],
+          align: ["left", "right", "right", "right"],
+        } as SlideBlock,
+      ],
+    });
 
-    const staff = hrRows.filter((h: any) => h.category === "staff").reduce((a: number, h: any) => a + (Number(h.headcount) || 0), 0);
-    const manpower = hrRows.filter((h: any) => h.category === "manpower").reduce((a: number, h: any) => a + (Number(h.headcount) || 0), 0);
-    const endT = ts(project.end_date);
-    const sisaHari = Number.isNaN(endT) ? null : Math.ceil((endT - (Number.isFinite(cutoffTs) ? cutoffTs : Date.now())) / 86400000);
-
+    /* ============ 3 — Project Health ============ */
     out.push({
       key: "health",
       title: "Project Health",
@@ -137,8 +253,8 @@ export default function ProjectPptPreview() {
           type: "kpi",
           items: [
             { label: "Contract Value", value: formatRupiah(project.contract_value), tone: "primary" },
-            { label: "Progress Actual", value: pct(actAtCut), hint: `Plan ${pct(planAtCut)}`, tone: dev >= 0 ? "success" : "danger" },
-            { label: "Deviasi Jadwal", value: `${dev >= 0 ? "+" : ""}${dev.toFixed(1)}%`, tone: dev >= 0 ? "success" : "danger" },
+            { label: "RAP", value: formatRupiah(project.rap), hint: `Sisa ${formatRupiah(Number(project.rap || 0) - actualOut)}`, tone: "primary" },
+            { label: "Progress Actual", value: pct(actAtCut), hint: `Plan ${pct(planAtCut)}`, tone: healthTone },
             { label: "Actual Cash Out", value: formatRupiah(actualOut), hint: `Cash In ${formatRupiah(actualIn)}`, tone: "warning" },
           ],
         },
@@ -148,26 +264,22 @@ export default function ProjectPptPreview() {
           rows: [
             ["Contract Value", formatRupiah(project.contract_value), "Nilai kontrak berjalan"],
             ["RAP", formatRupiah(project.rap), `Sisa RAP ${formatRupiah(Number(project.rap || 0) - actualOut)}`],
-            ["Actual Cash Out", formatRupiah(actualOut), "Realisasi pengeluaran s/d cut-off"],
+            ["Actual Cash Out", formatRupiah(actualOut), `Realisasi pengeluaran s/d ${periodShort}`],
             ["TKDN", pct(project.tkdn_percentage), "Tingkat komponen dalam negeri"],
-            ["Risiko Aktif", String(risks.filter((r) => !r.is_resolved).length), "Belum closed"],
+            ["Risiko Aktif", String(openRisks.length), "Belum closed"],
           ],
           align: ["left", "right", "left"],
         } as SlideBlock,
       ],
     });
 
-    /* ============ 3 — S-Curve ============ */
+    /* ============ 4 — S-Curve ============ */
     const curveTypes = Array.from(new Set(scurve.map((s) => s.curve_type)));
     if (!curveTypes.includes("baseline") && curveTypes.length) curveTypes.unshift("baseline");
     if (scurve.length) {
-      const catRows = baseRows
-        .slice()
-        .sort((a, b) => a.period_order - b.period_order)
-        .filter((s: any) => inCutoff(s.period_end || s.period_date));
+      const catRows = baseSorted.filter((s: any) => inCutoff(s.period_end || s.period_date)).slice(-16);
       const catLabels = catRows.map((s) => s.period_label);
       const catDisplay = catRows.map((s: any) => weekShortOf(s));
-
 
       const series = curveTypes.flatMap((ct, i) => {
         const color = CURVE_COLORS[i % CURVE_COLORS.length];
@@ -195,7 +307,7 @@ export default function ProjectPptPreview() {
         });
         const list = Object.values(byLabel)
           .filter((r) => (Number.isNaN(r.t) ? true : r.t <= cutoffTs))
-          .sort((a, b) => (a.t || a.order) - (b.t || b.order))
+          .sort((a, b) => a.order - b.order)
           .slice(-3);
         return {
           title: ct === "baseline" ? "Baseline" : ct,
@@ -221,62 +333,73 @@ export default function ProjectPptPreview() {
       }
     }
 
-    /* ============ 4 — Milestones ============ */
-    if (milestones.length) {
+    /* ============ 5 — Milestones ============ */
+    if (msWithFlag.length) {
       out.push({
         key: "milestones",
-        title: "Milestones",
-        subtitle: `${milestones.filter((m) => m.status === "completed").length} dari ${milestones.length} milestone selesai`,
+        title: "Milestones — Terlambat, Jatuh Tempo & Selesai",
+        subtitle: `${lateMs.length} terlambat • ${msWithFlag.filter((x) => x.soon).length} jatuh tempo ≤30 hari • ${msWithFlag.filter((x) => x.doneThisWeek).length} selesai ${periodShort}`,
         blocks: [
           {
             type: "table",
-            headers: ["Milestone", "Fase", "Target", "Actual", "Status"],
-            rows: milestones.slice(0, 10).map((m) => [m.name, m.phase || "—", d(m.target_date), d(m.actual_date), m.status]),
+            headers: ["Milestone", "Fase", "Target", "Actual", "Keterangan"],
+            rows: msWithFlag.slice(0, 10).map((x) => [
+              x.m.name,
+              x.m.phase || "—",
+              d(x.m.target_date),
+              d(x.m.actual_date),
+              x.late ? "TERLAMBAT" : x.doneThisWeek ? `SELESAI ${periodShort}` : "SEGERA",
+            ]),
           },
         ],
       });
     }
 
-    /* ============ 5 — WBS (mirip Project Detail) ============ */
+    /* ============ 6 — WBS (diurut deviasi terbesar) ============ */
     if (workAreas.length) {
-      const rows: string[][] = [];
-      workAreas.forEach((wa: any) => {
-        const items = workItems.filter((wi) => wi.work_area_id === wa.id);
-        rows.push([`▍ ${wa.code ? wa.code + " " : ""}${wa.name}`, `${items.length} item`, pct(wa.weight), pct(wa.progress), "—", "—"]);
-        items.slice(0, 4).forEach((wi: any) => {
-          rows.push([
-            `    ${wi.name}`,
-            `${Number(wi.qty_completed || 0)}/${Number(wi.qty_total || 0)} ${wi.unit || ""}`.trim(),
-            pct(wi.weight),
-            pct(wi.progress),
-            d(wi.start_date),
-            d(wi.end_date),
-          ]);
-        });
-      });
+      const areaRows = workAreas
+        .map((wa: any) => {
+          const items = workItems.filter((wi) => wi.work_area_id === wa.id);
+          const childProg = items.length
+            ? items.reduce((a, wi: any) => a + (Number(wi.weight) || 0) * (Number(wi.progress) || 0), 0) /
+              (items.reduce((a, wi: any) => a + (Number(wi.weight) || 0), 0) || 1)
+            : 0;
+          const prog = Number(wa.progress) || childProg;
+          const devArea = prog - planAtCut;
+          return { wa, items, prog, devArea };
+        })
+        .sort((a, b) => a.devArea - b.devArea);
+
       out.push({
         key: "wbs",
-        title: "Work Breakdown Structure",
-        subtitle: `${workAreas.length} area kerja • ${workItems.length} work item`,
+        title: "Work Breakdown Structure — Area Paling Tertinggal",
+        subtitle: `${workAreas.length} area kerja • ${workItems.length} work item • dibanding rencana ${pct(planAtCut)}`,
         blocks: [
           {
             type: "table",
-            headers: ["Area / Work Item", "Qty", "Bobot", "Progress", "Mulai", "Selesai"],
-            rows: rows.slice(0, 16),
-            align: ["left", "left", "right", "right", "left", "left"],
+            headers: ["Area Kerja", "Item", "Bobot", "Plan", "Progress", "Deviasi"],
+            rows: areaRows.slice(0, 12).map((r) => [
+              `${r.wa.code ? r.wa.code + " " : ""}${r.wa.name}`,
+              `${r.items.length}`,
+              pct(r.wa.weight),
+              pct(planAtCut),
+              pct(r.prog),
+              `${r.devArea >= 0 ? "+" : ""}${r.devArea.toFixed(1)}%`,
+            ]),
+            align: ["left", "right", "right", "right", "right", "right"],
           },
         ],
       });
     }
 
-    /* ============ 6 — Procurement (detail + tanggal) ============ */
+    /* ============ 7 — Procurement ============ */
     if (procurement.length) {
       const cnt = (s: string[]) => procurement.filter((p) => s.includes(p.status)).length;
       const total = procurement.reduce((a, p) => a + Number(p.amount || 0), 0);
       out.push({
         key: "procurement",
-        title: "Procurement",
-        subtitle: `${procurement.length} item pengadaan — lengkap dengan tanggal proses`,
+        title: "Procurement — Item Kritis Lebih Dulu",
+        subtitle: `${procurement.length} item • ${lateProc.length} terlambat • ${procScored.filter((x) => x.flag === "BELUM PO").length} belum PO`,
         blocks: [
           {
             type: "kpi",
@@ -289,25 +412,24 @@ export default function ProjectPptPreview() {
           },
           {
             type: "table",
-            headers: ["Item", "Vendor", "Qty", "Nilai", "RFQ", "PO", "Delivery", "Onsite", "Status"],
-            rows: procurement.slice(0, 9).map((p) => [
-              (p.item_name || "—").slice(0, 28),
-              (p.vendor || "—").slice(0, 16),
-              `${p.qty || 0} ${p.unit || ""}`.trim(),
-              formatIDR(p.amount),
-              d(p.rfq_date),
-              d(p.po_date),
-              d(p.delivery_date),
-              d(p.install_date),
-              (p.status || "—").toUpperCase(),
+            headers: ["Item", "Vendor", "Nilai", "RFQ", "PO", "Delivery", "Onsite", "Keterangan"],
+            rows: procScored.slice(0, 9).map((x) => [
+              (x.p.item_name || "—").slice(0, 26),
+              (x.p.vendor || "—").slice(0, 14),
+              formatIDR(x.p.amount),
+              d(x.p.rfq_date || (x.p as any).pr_actual_date),
+              d(x.p.po_date || (x.p as any).po_actual_date),
+              d((x.p as any).delivery_actual_date || x.p.delivery_date),
+              d((x.p as any).onsite_actual_date || x.p.install_date),
+              x.flag,
             ]),
-            align: ["left", "left", "right", "right", "left", "left", "left", "left", "left"],
+            align: ["left", "left", "right", "left", "left", "left", "left", "left"],
           },
         ],
       });
     }
 
-    /* ============ 7 — Finance (grafik + tabel detail) ============ */
+    /* ============ 8 — Finance ============ */
     if (finCut.length) {
       const bucket: Record<string, { key: string; label: string; planIn: number; planOut: number; actIn: number; actOut: number }> = {};
       finCut.forEach((f) => {
@@ -328,7 +450,7 @@ export default function ProjectPptPreview() {
       out.push({
         key: "finance",
         title: "Finance — Cashflow Plan vs Actual",
-        subtitle: `Realisasi kas s/d ${selected?.label ?? "cut-off"} (nilai dalam Juta Rupiah)`,
+        subtitle: `Realisasi kas s/d ${periodTag}`,
         blocks: [
           {
             type: "kpi",
@@ -353,15 +475,22 @@ export default function ProjectPptPreview() {
           },
           {
             type: "table",
-            headers: ["Periode", "Plan In", "Act In", "Plan Out", "Act Out", "Net Actual"],
-            rows: shown.map((r) => [r.label, formatRupiah(r.planIn), formatRupiah(r.actIn), formatRupiah(r.planOut), formatRupiah(r.actOut), formatRupiah(r.actIn - r.actOut)]),
+            headers: ["Periode", "Plan Out", "Act Out", "Dev Out", "Act In", "Net Actual"],
+            rows: shown.map((r) => [
+              r.label,
+              formatRupiah(r.planOut),
+              formatRupiah(r.actOut),
+              formatRupiah(r.actOut - r.planOut),
+              formatRupiah(r.actIn),
+              formatRupiah(r.actIn - r.actOut),
+            ]),
             align: ["left", "right", "right", "right", "right", "right"],
           },
         ],
       });
     }
 
-    /* ============ 8 — Billing ============ */
+    /* ============ 9 — Billing ============ */
     if (billings.length) {
       const planTot = billings.reduce((a: number, b: any) => a + Number(b.plan_amount || 0), 0);
       const paidTot = billings.reduce((a: number, b: any) => a + Number(b.paid_amount || 0), 0);
@@ -389,35 +518,19 @@ export default function ProjectPptPreview() {
       });
     }
 
-    /* ============ 9 — Risks ============ */
-    const openRisks = risks.filter((r) => !r.is_resolved);
-    if (openRisks.length) {
-      out.push({
-        key: "risks",
-        title: "Risk Monitoring",
-        subtitle: `${openRisks.length} risiko aktif`,
-        blocks: [
-          {
-            type: "table",
-            headers: ["Risiko", "Kategori", "Severity", "PIC", "Mitigasi"],
-            rows: openRisks.slice(0, 8).map((r) => [r.title, r.category || "—", (r.severity || "—").toUpperCase(), r.pic || "—", (r.mitigation_plan || "—").slice(0, 60)]),
-          },
-        ],
-      });
-    }
-
     /* ============ 10 — Weekly Report (periode terpilih) ============ */
-    const wr =
-      weeklyReports.find((w) => {
-        const ws = ts(w.week_start_date), we = ts(w.week_end_date);
-        return we >= startTs && ws <= cutoffTs;
-      }) ?? weeklyReports.find((w) => ts(w.week_start_date) <= cutoffTs);
+    const exactWr = weeklyReports.find((w) => {
+      const ws = ts(w.week_start_date), we = ts(w.week_end_date);
+      return we >= startTs && ws <= cutoffTs;
+    });
+    const wr = exactWr ?? weeklyReports.find((w) => ts(w.week_start_date) <= cutoffTs);
     if (wr) {
       out.push({
         key: "weekly",
         title: "Weekly Progress Report",
-        subtitle: `${d(wr.week_start_date)} — ${d(wr.week_end_date)}${selected ? ` • ${selected.label}` : ""}`,
+        subtitle: `${d(wr.week_start_date)} — ${d(wr.week_end_date)}${exactWr ? ` • ${periodShort}` : ` • laporan terakhir tersedia (bukan ${periodShort})`}`,
         blocks: [
+          ...(exactWr ? [] : [{ type: "text" as const, value: `Catatan: belum ada weekly report untuk ${periodShort}; yang ditampilkan adalah laporan terakhir yang tersedia.` }]),
           ...(wr.summary ? [{ type: "text" as const, value: wr.summary.slice(0, 260) }] : []),
           {
             type: "columns",
@@ -431,28 +544,93 @@ export default function ProjectPptPreview() {
       });
     }
 
-    /* ============ 11 — Media (foto periode terpilih) ============ */
-    const weekPhotos = photos.filter((p) => {
-      if (selected && p.week_label && p.week_label === selected.label) return true;
-      const t = ts(p.uploaded_at);
-      return !Number.isNaN(t) && t >= startTs && t <= cutoffTs;
-    });
-    const mediaBlocks: SlideBlock[] = [];
-    if (weekPhotos.length) mediaBlocks.push({ type: "images", items: weekPhotos.slice(0, 6).map((p) => ({ url: p.photo_url, caption: p.caption || p.week_label || "" })) });
-    const links: string[] = [];
-    if (project.video_url) links.push(`Video progress: ${project.video_url}`);
-    if (project.cctv_url) links.push(`CCTV live: ${project.cctv_url}`);
-    if (links.length) mediaBlocks.push({ type: "list", items: links });
-    if (mediaBlocks.length) {
+    /* ============ 11 — Rencana 2 Minggu ke Depan ============ */
+    const horizon = cutoffTs + 14 * 86400000;
+    const upcomingMs = milestones
+      .filter((m: any) => m.status !== "completed" && !m.actual_date)
+      .filter((m: any) => { const t = ts(m.target_date); return !Number.isNaN(t) && t > cutoffTs && t <= horizon; })
+      .sort((a: any, b: any) => ts(a.target_date) - ts(b.target_date));
+    const upcomingProc = procurement
+      .filter((p: any) => !["onsite", "installed"].includes(String(p.status || "").toLowerCase()))
+      .filter((p: any) => {
+        const t = ts(p.delivery_plan_date || p.delivery_date || p.po_plan_date);
+        return !Number.isNaN(t) && t > cutoffTs && t <= horizon;
+      })
+      .sort((a: any, b: any) => ts(a.delivery_plan_date || a.delivery_date) - ts(b.delivery_plan_date || b.delivery_date));
+    const nextTargets = (exactWr?.next_week_targets || []).map((t: any) => t.target).slice(0, 6);
+    if (nextTargets.length || upcomingMs.length || upcomingProc.length) {
       out.push({
-        key: "media",
-        title: "Media & Dokumentasi",
-        subtitle: `${weekPhotos.length} foto pada periode ${selected?.label ?? "—"}`,
-        blocks: mediaBlocks,
+        key: "lookahead",
+        title: "Rencana 2 Minggu ke Depan",
+        subtitle: `Setelah ${periodShort} • s/d ${d(new Date(horizon).toISOString().slice(0, 10))}`,
+        blocks: [
+          {
+            type: "columns",
+            columns: [
+              { title: "Target Pekerjaan", items: nextTargets.length ? nextTargets : ["Belum diisi pada weekly report"] },
+              { title: "Milestone Jatuh Tempo", items: upcomingMs.slice(0, 6).map((m: any) => `${m.name} — ${d(m.target_date)}`) },
+              { title: "Pengadaan Dijadwalkan", items: upcomingProc.slice(0, 6).map((p: any) => `${p.item_name} — ${d(p.delivery_plan_date || p.delivery_date)}`) },
+            ],
+          },
+        ],
       });
     }
 
-    /* ============ 12 — Addendum ============ */
+    /* ============ 12 — Tindak Lanjut & Keputusan ============ */
+    const pendingAdd = addendums.filter((a: any) => String(a.approval_status || "").toLowerCase() !== "approved");
+    const outstanding = (exactWr?.outstanding_items || []).slice(0, 4);
+    const actionRows: string[][] = [
+      ...openRisks.slice(0, 5).map((r) => [`Risiko: ${r.title}`, (r.severity || "—").toUpperCase(), r.pic || "—", d((r as any).due_date), (r.mitigation_plan || "—").slice(0, 42)]),
+      ...outstanding.map((o: any) => [`Outstanding: ${o.item}`, "—", o.pic || "—", d(o.due_date), (o.action || o.note || "—").toString().slice(0, 42)]),
+      ...pendingAdd.slice(0, 3).map((a: any) => [`Addendum: ${a.addendum_code}`, (a.approval_status || "—").toUpperCase(), a.approved_by || "—", d(a.addendum_date), (a.description || "—").slice(0, 42)]),
+    ];
+    if (actionRows.length) {
+      out.push({
+        key: "actions",
+        title: "Tindak Lanjut & Keputusan",
+        subtitle: `${openRisks.length} risiko aktif • ${outstanding.length} outstanding • ${pendingAdd.length} addendum menunggu persetujuan`,
+        blocks: [
+          {
+            type: "table",
+            headers: ["Item", "Prioritas / Status", "PIC", "Tenggat", "Rencana Tindak Lanjut"],
+            rows: actionRows.slice(0, 10),
+          },
+        ],
+      });
+    }
+
+    /* ============ 13 — Risks ============ */
+    if (openRisks.length) {
+      out.push({
+        key: "risks",
+        title: "Risk Monitoring",
+        subtitle: `${openRisks.length} risiko aktif — diurut tingkat keparahan`,
+        blocks: [
+          {
+            type: "table",
+            headers: ["Risiko", "Kategori", "Severity", "PIC", "Mitigasi"],
+            rows: openRisks.slice(0, 8).map((r) => [r.title, r.category || "—", (r.severity || "—").toUpperCase(), r.pic || "—", (r.mitigation_plan || "—").slice(0, 60)]),
+          },
+        ],
+      });
+    }
+
+    /* ============ 14 — Media (foto periode terpilih) ============ */
+    const weekPhotos = photos.filter((p) => {
+      if (selected && p.week_label) return weekShortOf({ label: p.week_label } as any) === periodShort;
+      const t = ts(p.photo_date || p.uploaded_at);
+      return !Number.isNaN(t) && t >= startTs && t <= cutoffTs;
+    });
+    out.push({
+      key: "media",
+      title: "Media & Dokumentasi",
+      subtitle: weekPhotos.length ? `${weekPhotos.length} foto pada periode ${periodShort}` : `Periode ${periodShort}`,
+      blocks: weekPhotos.length
+        ? [{ type: "images", items: weekPhotos.slice(0, 6).map((p) => ({ url: p.photo_url, caption: p.caption || p.title || periodShort })), fill: true }]
+        : [{ type: "text", value: `Tidak ada dokumentasi foto yang tercatat untuk ${periodShort}. Silakan unggah melalui Quick Weekly Update sebelum rapat.` }],
+    });
+
+    /* ============ 15 — Addendum ============ */
     if (addendums.length) {
       const costTot = addendums.reduce((a, x) => a + Number(x.cost_impact || 0), 0);
       const dayTot = addendums.reduce((a, x) => a + Number(x.schedule_impact_days || 0), 0);
@@ -480,7 +658,19 @@ export default function ProjectPptPreview() {
     }
 
     return out;
-  }, [project, workAreas, workItems, milestones, risks, scurve, procurement, finance, addendums, billings, weeklyReports, photos, hrRows, selected, cutoffTs, startTs]);
+  }, [project, workAreas, workItems, milestones, risks, scurve, procurement, finance, addendums, billings, weeklyReports, photos, hrRows, selected, cutoffTs, startTs, baseSorted, cutRow, prevRow, lastActualRow, printedAt]);
+
+  /* ---------- Kelengkapan data periode terpilih ---------- */
+  const gaps = useMemo(() => {
+    if (!selected) return [] as string[];
+    const g: string[] = [];
+    if (cutRow?.actual_progress == null) g.push("Progress aktual S-Curve");
+    if (!finance.some((f) => { const t = ts(f.period_date); return t >= startTs && t <= cutoffTs && f.entry_kind === "actual"; })) g.push("Realisasi cashflow");
+    if (!weeklyReports.some((w) => ts(w.week_end_date) >= startTs && ts(w.week_start_date) <= cutoffTs)) g.push("Weekly report");
+    const shortSel = weekShortOf(selected as any);
+    if (!photos.some((p) => (p.week_label && weekShortOf({ label: p.week_label } as any) === shortSel) || (ts(p.photo_date || p.uploaded_at) >= startTs && ts(p.photo_date || p.uploaded_at) <= cutoffTs))) g.push("Foto dokumentasi");
+    return g;
+  }, [selected, cutRow, finance, weeklyReports, photos, startTs, cutoffTs]);
 
   const [idx, setIdx] = useState(0);
   useEffect(() => { if (idx > slides.length - 1) setIdx(0); }, [slides.length, idx]);
