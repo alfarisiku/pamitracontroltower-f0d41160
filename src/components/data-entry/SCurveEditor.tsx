@@ -181,6 +181,10 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
         {missingDates && (
           <div className="mb-3 text-[10px] text-warning">⚠️ Ada periode tanpa tanggal.</div>
         )}
+        {issueCount > 0 && (
+          <div className="mb-3 text-[10px] text-destructive">⚠️ {issueCount} periode punya tanggal mencurigakan (durasi bukan ±7 hari atau urutannya mundur). Baris ditandai merah di bawah.</div>
+        )}
+
 
         {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : (
           <>
