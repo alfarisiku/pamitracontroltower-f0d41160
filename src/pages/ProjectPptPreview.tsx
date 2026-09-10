@@ -688,11 +688,15 @@ export default function ProjectPptPreview() {
     if (!project) return;
     setBusy(true);
     try {
-      await downloadPptx(slides, `${project.project_code}-Laporan-${selected?.label || "Proyek"}.pptx`);
+      const cut = selected?.end ? String(selected.end).slice(0, 10) : "all";
+      const wk = selected ? weekShortOf(selected as any).split(" ")[0] : "Proyek";
+      const footer = `${project.project_code} — ${project.name} • Data per ${selected ? weekFullOf(selected as any) : "seluruh periode"} • dicetak ${printedAt}`;
+      await downloadPptx(slides, `${project.project_code}-Weekly-${wk}-${cut}.pptx`, footer);
     } finally {
       setBusy(false);
     }
   };
+
 
   if (!project) return <div className="min-h-screen flex items-center justify-center bg-background text-sm text-muted-foreground">Memuat data proyek…</div>;
 
