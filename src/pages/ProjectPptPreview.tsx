@@ -738,7 +738,17 @@ export default function ProjectPptPreview() {
           </div>
         </div>
 
+        {gaps.length > 0 && (
+          <div className="mb-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2">
+            <p className="text-[11px] font-semibold text-foreground">Kelengkapan data {selected ? weekShortOf(selected as any) : ""}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Belum ada data untuk: {gaps.join(", ")}. Lengkapi lewat Quick Weekly Update sebelum mencetak laporan.
+            </p>
+          </div>
+        )}
+
         {!slides.length ? (
+
           <div className="glass-card rounded-lg shadow-card p-8 text-center text-xs text-muted-foreground">Belum ada data untuk dijadikan laporan.</div>
         ) : (
           <>
