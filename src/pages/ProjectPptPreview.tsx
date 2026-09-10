@@ -700,7 +700,8 @@ export default function ProjectPptPreview() {
 
   if (!project) return <div className="min-h-screen flex items-center justify-center bg-background text-sm text-muted-foreground">Memuat data proyek…</div>;
 
-  const slide = slides[idx];
+  const safeIdx = slides.length ? Math.min(idx, slides.length - 1) : 0;
+  const slide = slides[safeIdx];
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">
