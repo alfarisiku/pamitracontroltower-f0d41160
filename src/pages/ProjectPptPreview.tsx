@@ -755,23 +755,23 @@ export default function ProjectPptPreview() {
           <>
             <div className="glass-card rounded-lg shadow-card overflow-hidden">
               <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
-                <SlideView slide={slide} index={idx} total={slides.length} project={project} />
+                <SlideView slide={slide} index={safeIdx} total={slides.length} project={project} />
               </div>
             </div>
 
             <div className="flex items-center justify-between mt-3 gap-3">
-              <button onClick={() => setIdx((i) => Math.max(i - 1, 0))} disabled={idx === 0} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium disabled:opacity-40 hover:bg-muted transition-colors">
+              <button onClick={() => setIdx((i) => Math.max(i - 1, 0))} disabled={safeIdx === 0} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium disabled:opacity-40 hover:bg-muted transition-colors">
                 <ChevronLeft className="h-3.5 w-3.5" /> Prev
               </button>
               <div className="flex items-center gap-1.5 overflow-x-auto">
                 {slides.map((s, i) => (
                   <button key={s.key} onClick={() => setIdx(i)} title={s.title}
-                    className={`px-2 py-1 rounded text-[10px] font-medium border transition-colors whitespace-nowrap ${i === idx ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}>
+                    className={`px-2 py-1 rounded text-[10px] font-medium border transition-colors whitespace-nowrap ${i === safeIdx ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}>
                     {i + 1}. {s.title}
                   </button>
                 ))}
               </div>
-              <button onClick={() => setIdx((i) => Math.min(i + 1, slides.length - 1))} disabled={idx === slides.length - 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium disabled:opacity-40 hover:bg-muted transition-colors">
+              <button onClick={() => setIdx((i) => Math.min(i + 1, slides.length - 1))} disabled={safeIdx === slides.length - 1} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium disabled:opacity-40 hover:bg-muted transition-colors">
                 Next <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
