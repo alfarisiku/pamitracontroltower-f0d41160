@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { DemoLevelProvider } from "@/contexts/DemoLevelContext";
+import { AccessProvider } from "@/contexts/AccessContext";
 
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
@@ -29,29 +29,34 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Access levels removed — every route is open to all visitors.
+// Level 1 = admin (semua halaman), Level 2 = user proyek, Level 3 = publik.
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/pending" element={<PendingApproval />} />
 
+      {/* Level 3 — publik */}
       <Route path="/" element={<Index />} />
-      <Route path="/overview-eksekutif" element={<ExecutiveOverview />} />
-      <Route path="/projects" element={<ProjectSummary />} />
-
-      <Route path="/project/:id" element={<ProjectDetail />} />
-      <Route path="/project/:id/ppt-preview" element={<ProjectPptPreview />} />
-      <Route path="/schedule" element={<Schedule />} />
-      <Route path="/cost" element={<CostPerformance />} />
-      <Route path="/finance" element={<Finance />} />
-      <Route path="/risk" element={<RiskMonitoring />} />
-      <Route path="/reporting" element={<Reporting />} />
-      <Route path="/data-entry" element={<DataEntry />} />
-      <Route path="/war-room" element={<WarRoom />} />
-      <Route path="/activity-log" element={<ActivityLog />} />
       <Route path="/guide" element={<UserGuide />} />
-      <Route path="/account-manager" element={<AccountManager />} />
+
+      {/* Level 2 — user dengan proyek yang di-assign */}
+      <Route path="/projects" element={<ProtectedRoute minLevel={2}><ProjectSummary /></ProtectedRoute>} />
+      <Route path="/data-entry" element={<ProtectedRoute minLevel={2}><DataEntry /></ProtectedRoute>} />
+      <Route path="/activity-log" element={<ProtectedRoute minLevel={2}><ActivityLog /></ProtectedRoute>} />
+      <Route path="/project/:id" element={<ProtectedRoute minLevel={2} requireProject><ProjectDetail /></ProtectedRoute>} />
+      <Route path="/project/:id/ppt-preview" element={<ProtectedRoute minLevel={2} requireProject><ProjectPptPreview /></ProtectedRoute>} />
+
+      {/* Level 1 — admin */}
+      <Route path="/overview-eksekutif" element={<ProtectedRoute minLevel={1}><ExecutiveOverview /></ProtectedRoute>} />
+      <Route path="/schedule" element={<ProtectedRoute minLevel={1}><Schedule /></ProtectedRoute>} />
+      <Route path="/cost" element={<ProtectedRoute minLevel={1}><CostPerformance /></ProtectedRoute>} />
+      <Route path="/finance" element={<ProtectedRoute minLevel={1}><Finance /></ProtectedRoute>} />
+      <Route path="/risk" element={<ProtectedRoute minLevel={1}><RiskMonitoring /></ProtectedRoute>} />
+      <Route path="/reporting" element={<ProtectedRoute minLevel={1}><Reporting /></ProtectedRoute>} />
+      <Route path="/war-room" element={<ProtectedRoute minLevel={1}><WarRoom /></ProtectedRoute>} />
+      <Route path="/account-manager" element={<ProtectedRoute minLevel={1}><AccountManager /></ProtectedRoute>} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -65,9 +70,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <DemoLevelProvider>
+          <AccessProvider>
             <AppRoutes />
-          </DemoLevelProvider>
+          </AccessProvider>
         </AuthProvider>
       </BrowserRouter>
 
