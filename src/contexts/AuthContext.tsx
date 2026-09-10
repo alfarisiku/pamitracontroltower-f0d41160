@@ -136,19 +136,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAssignedProjectIds([]);
   };
 
-  // Access levels removed — every visitor is treated as full admin.
-  const effectiveRole: AppRole = "admin";
+  const isAdmin = role === "admin";
 
   return (
     <AuthContext.Provider value={{
-      user, profile, role: effectiveRole, loading, assignedProjectIds, signIn, signUp, signOut, refreshProfile,
-      isAdmin: true,
-      isManagement: true,
-      isTeam: true,
-      isClient: false,
-      isPending: false,
-      hasNoProject: false,
+      user, profile, role, loading, assignedProjectIds, signIn, signUp, signOut, refreshProfile,
+      isAdmin,
+      isManagement: role === "management",
+      isTeam: role === "team",
+      isClient: role === "client",
+      isPending: !!user && profile?.status !== "active",
+      hasNoProject: !isAdmin && assignedProjectIds.length === 0,
     }}>
+
       {children}
     </AuthContext.Provider>
   );

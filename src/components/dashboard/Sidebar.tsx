@@ -43,11 +43,12 @@ export function Sidebar() {
   }, [collapsed]);
 
   const { level } = useDemoLevel();
+  const LEVEL2_PATHS = ["/projects", "/data-entry", "/activity-log"];
   const menuItems =
     level === 3
-      ? allMenuItems.filter(i => i.path === "/")
+      ? allMenuItems.filter(i => i.path === "/" || i.path === "/guide")
       : level === 2
-      ? allMenuItems.filter(i => i.path === "/projects" || i.path === "/overview-eksekutif")
+      ? allMenuItems.filter(i => LEVEL2_PATHS.includes(i.path) || i.path === "/guide")
       : allMenuItems;
 
   const toggleCollapse = () => setCollapsed(c => !c);

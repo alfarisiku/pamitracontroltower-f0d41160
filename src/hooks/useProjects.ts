@@ -25,7 +25,8 @@ export function useAllFinanceEntries() {
 }
 
 export function useProjects() {
-  return useQuery<DbProject[]>({
+  const { scope } = useAccess();
+  const q = useQuery<DbProject[]>({
     queryKey: ["projects"],
     queryFn: async () => {
       const { data, error } = await supabase.from("projects").select("*").order("project_code");
@@ -33,12 +34,17 @@ export function useProjects() {
       return (data ?? []) as unknown as DbProject[];
     },
   });
+  const rows = q.data ?? [];
+  const scoped = scope === null ? rows : rows.filter(p => scope.includes(p.id));
+  return { ...q, data: scoped } as typeof q;
 }
 
 export function useProject(id: string | undefined) {
+  const { canView } = useAccess();
+  const allowed = !!id && canView(id);
   return useQuery<DbProject | null>({
     queryKey: ["project", id],
-    enabled: !!id,
+    enabled: allowed,
     queryFn: async () => {
       const { data, error } = await supabase.from("projects").select("*").eq("id", id!).single();
       if (error) throw error;
