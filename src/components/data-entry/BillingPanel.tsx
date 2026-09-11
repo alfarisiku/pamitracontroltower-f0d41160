@@ -141,7 +141,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
 
   // ==== MODE: STATUS ONLY (Quick Weekly Update) ====
   if (mode === "status") {
-    if (rows.length === 0) return <p className="text-xs text-muted-foreground">Belum ada termin. Tambahkan lewat tab Billing (BAL).</p>;
+    if (rows.length === 0) return <p className="text-xs text-muted-foreground">Belum ada BAL. Tambahkan lewat tab BAL.</p>;
     return (
       <div className="overflow-x-auto rounded border border-border">
         <table className="w-full text-xs">
@@ -189,7 +189,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
     <div className="glass-card rounded-lg shadow-card p-4">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Billing — BAL Pembayaran Klien</h3>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> BAL — Penagihan ke Klien</h3>
           <p className="text-[10px] text-muted-foreground">Status termin (Plan → Di Progress → Terbayar), nominal, % progress ditagih, dan tanggal PO / Invoice / Cash In.</p>
         </div>
         <button onClick={() => setAddOpen(o => !o)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><Plus className="h-3 w-3" /> Tambah BAL</button>
@@ -220,7 +220,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
       )}
 
       {rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Belum ada data billing. Klik "Tambah BAL".</p>
+        <p className="text-xs text-muted-foreground text-center py-4">Belum ada data BAL. Klik "Tambah BAL".</p>
       ) : (
         <div className="space-y-2">
           {rows.map(r => {

@@ -348,7 +348,7 @@ const ProjectDetail = () => {
               { key: "wbs" as const, label: L3 ? "WBS" : `WBS (${workAreas.length})`, icon: Layers, publicOk: true },
               { key: "procurement" as const, label: `Procurement (${procurementItems.length})`, icon: Package, publicOk: false },
               { key: "finance" as const, label: "Finance", icon: Wallet, publicOk: false },
-              { key: "billing" as const, label: `Billing (${billings.length})`, icon: Receipt, publicOk: false },
+              { key: "billing" as const, label: `BAL (${billings.length})`, icon: Receipt, publicOk: false },
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
@@ -846,7 +846,7 @@ const ProjectDetail = () => {
           {/* Billing Tab */}
           {activeTab === "billing" && (
             <div className="glass-card rounded-lg p-4 shadow-card">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1"><Receipt className="h-4 w-4 text-primary" /> Billing / BAL ke Client</h3>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1"><Receipt className="h-4 w-4 text-primary" /> BAL ke Client</h3>
               <p className="text-[10px] text-muted-foreground mb-3">Monitoring pengakuan pembayaran termin — status, nominal, % progress tertagih, serta tanggal PO / Invoice / Cash In.</p>
               {billings.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-6 text-center">Belum ada data termin.</p>

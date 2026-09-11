@@ -496,7 +496,7 @@ export default function ProjectPptPreview() {
       const paidTot = billings.reduce((a: number, b: any) => a + Number(b.paid_amount || 0), 0);
       out.push({
         key: "billing",
-        title: "Billing / BAL",
+        title: "BAL",
         subtitle: `${billings.length} termin penagihan`,
         blocks: [
           {
