@@ -496,7 +496,7 @@ export default function ProjectPptPreview() {
       const paidTot = billings.reduce((a: number, b: any) => a + Number(b.paid_amount || 0), 0);
       out.push({
         key: "billing",
-        title: "Billing / Termin",
+        title: "BAL",
         subtitle: `${billings.length} termin penagihan`,
         blocks: [
           {
@@ -510,7 +510,7 @@ export default function ProjectPptPreview() {
           },
           {
             type: "table",
-            headers: ["Termin", "Plan", "Paid", "Status"],
+            headers: ["BAL", "Plan", "Paid", "Status"],
             rows: billings.slice(0, 8).map((b: any) => [b.termin_code, formatRupiah(b.plan_amount), formatRupiah(b.paid_amount), b.status || "—"]),
             align: ["left", "right", "right", "left"],
           },

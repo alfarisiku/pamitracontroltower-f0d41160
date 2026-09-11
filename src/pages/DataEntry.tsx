@@ -47,7 +47,7 @@ const DataEntry = () => {
     { key: "milestones" as const,    label: "Milestones",          icon: Target,          adminOnly: false, group: "project" as const },
     { key: "wbs" as const,           label: "WBS (Full CRUD)",     icon: Layers,          adminOnly: false, group: "project" as const },
     { key: "procurement" as const,   label: "Procurement / PO",    icon: Package,         adminOnly: false, group: "project" as const },
-    { key: "billing" as const,       label: "Billing (Termin)",    icon: Receipt,         adminOnly: false, group: "project" as const },
+    { key: "billing" as const,       label: "BAL",    icon: Receipt,         adminOnly: false, group: "project" as const },
     { key: "finance" as const,       label: "Finance (Cash Flow)", icon: DollarSign,      adminOnly: false, group: "project" as const },
     { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle,   adminOnly: false, group: "project" as const },
     { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false, group: "project" as const },
