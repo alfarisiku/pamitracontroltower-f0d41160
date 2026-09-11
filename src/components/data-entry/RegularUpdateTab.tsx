@@ -379,9 +379,9 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
             <FinanceEntriesEditor projectId={projectId} compact lockedPeriodId={selectedPeriod.id} onLogged={(m) => logChange(7, "Finance", m)} />
           </div>
 
-          {/* === STEP 8: Billing (Termin) === */}
+          {/* === STEP 8: Billing (BAL) === */}
           <div className="glass-card rounded-lg shadow-card p-4">
-            <StepHeader step={8} icon={Receipt} title="Billing / Termin" navKey="billing" onNavigate={onNavigate} badge={<DraftBadge step={8} />} />
+            <StepHeader step={8} icon={Receipt} title="Billing / BAL" navKey="billing" onNavigate={onNavigate} badge={<DraftBadge step={8} />} />
             <p className="text-[10px] text-muted-foreground mb-3">
               Update <b>status termin</b> (Plan / Di Progress / Terbayar) dan tanggal PO, Invoice, Cash In. Tambah termin baru lewat "Kelola lengkap".
             </p>

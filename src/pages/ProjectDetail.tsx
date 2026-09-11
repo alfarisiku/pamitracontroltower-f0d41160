@@ -846,7 +846,7 @@ const ProjectDetail = () => {
           {/* Billing Tab */}
           {activeTab === "billing" && (
             <div className="glass-card rounded-lg p-4 shadow-card">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1"><Receipt className="h-4 w-4 text-primary" /> Billing / Termin ke Client</h3>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1"><Receipt className="h-4 w-4 text-primary" /> Billing / BAL ke Client</h3>
               <p className="text-[10px] text-muted-foreground mb-3">Monitoring pengakuan pembayaran termin — status, nominal, % progress tertagih, serta tanggal PO / Invoice / Cash In.</p>
               {billings.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-6 text-center">Belum ada data termin.</p>
@@ -855,7 +855,7 @@ const ProjectDetail = () => {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-muted border-b border-border">
-                        <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Termin</th>
+                        <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">BAL</th>
                         <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Deskripsi</th>
                         <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Status</th>
                         <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">% Progress</th>

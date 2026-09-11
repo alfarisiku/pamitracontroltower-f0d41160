@@ -57,7 +57,7 @@ function FormFields({ f, set }: { f: Form; set: (v: Form) => void }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        <div><label className={labelCls}>Termin</label><input value={f.termin_code} onChange={e => set({ ...f, termin_code: e.target.value })} className={`w-full ${inputCls}`} placeholder="Termin 1 / DP" /></div>
+        <div><label className={labelCls}>BAL</label><input value={f.termin_code} onChange={e => set({ ...f, termin_code: e.target.value })} className={`w-full ${inputCls}`} placeholder="BAL 1 / DP" /></div>
         <div className="sm:col-span-2"><label className={labelCls}>Deskripsi</label><input value={f.description} onChange={e => set({ ...f, description: e.target.value })} className={`w-full ${inputCls}`} placeholder="Pembayaran uang muka" /></div>
         <div><label className={labelCls}>Status</label>
           <select value={f.status} onChange={e => set({ ...f, status: e.target.value })} className={`w-full ${inputCls}`}>
@@ -106,7 +106,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
     setSaving(false);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "billing", "create", `Billing ${form.termin_code} ditambahkan`, projectId);
-    onLogged?.(`Termin ${form.termin_code} ditambahkan`);
+    onLogged?.(`BAL ${form.termin_code} ditambahkan`);
     setForm(emptyForm); setAddOpen(false); refresh();
     toast({ title: "✅ Billing ditambahkan" });
   };
@@ -118,7 +118,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
     setSaving(false);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await logActivity(supabase, "billing", "update", `Billing ${editForm.termin_code} diupdate`, projectId, id);
-    onLogged?.(`Termin ${editForm.termin_code} diupdate`);
+    onLogged?.(`BAL ${editForm.termin_code} diupdate`);
     setEditingId(null); refresh(); toast({ title: "✅ Tersimpan" });
   };
 
@@ -141,13 +141,13 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
 
   // ==== MODE: STATUS ONLY (Quick Weekly Update) ====
   if (mode === "status") {
-    if (rows.length === 0) return <p className="text-xs text-muted-foreground">Belum ada termin. Tambahkan lewat tab Billing (Termin).</p>;
+    if (rows.length === 0) return <p className="text-xs text-muted-foreground">Belum ada termin. Tambahkan lewat tab Billing (BAL).</p>;
     return (
       <div className="overflow-x-auto rounded border border-border">
         <table className="w-full text-xs">
           <thead className="bg-muted">
             <tr>
-              {["Termin", "Deskripsi", "Nominal", "Progress", "Status", "Tgl PO", "Tgl Invoice", "Tgl Cash In"].map(h => (
+              {["BAL", "Deskripsi", "Nominal", "Progress", "Status", "Tgl PO", "Tgl Invoice", "Tgl Cash In"].map(h => (
                 <th key={h} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -189,15 +189,15 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
     <div className="glass-card rounded-lg shadow-card p-4">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Billing — Termin Pembayaran Klien</h3>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> Billing — BAL Pembayaran Klien</h3>
           <p className="text-[10px] text-muted-foreground">Status termin (Plan → Di Progress → Terbayar), nominal, % progress ditagih, dan tanggal PO / Invoice / Cash In.</p>
         </div>
-        <button onClick={() => setAddOpen(o => !o)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><Plus className="h-3 w-3" /> Tambah Termin</button>
+        <button onClick={() => setAddOpen(o => !o)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><Plus className="h-3 w-3" /> Tambah BAL</button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         {[
-          { l: "Total Termin", v: formatIDR(total) },
+          { l: "Total BAL", v: formatIDR(total) },
           { l: "Di Progress", v: formatIDR(onProgress) },
           { l: "Terbayar", v: formatIDR(paid) },
           { l: "Belum Terbayar", v: formatIDR(total - paid) },
@@ -220,7 +220,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
       )}
 
       {rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Belum ada data billing. Klik "Tambah Termin".</p>
+        <p className="text-xs text-muted-foreground text-center py-4">Belum ada data billing. Klik "Tambah BAL".</p>
       ) : (
         <div className="space-y-2">
           {rows.map(r => {
