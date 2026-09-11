@@ -38,8 +38,10 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   const isAdmin = role === "admin";
   const isActive = !user || profile?.status === "active";
 
-  // Scope proyek: admin = semua (null), lainnya = daftar assignment
-  const scope: string[] | null = isAdmin ? null : assignedProjectIds;
+  // Scope proyek: admin = semua (null). User dengan assignment = hanya proyek miliknya.
+  // Tamu / user tanpa assignment = semua proyek tapi tampilan publik (Level 3, tanpa angka rupiah).
+  const scope: string[] | null =
+    isAdmin ? null : (assignedProjectIds.length > 0 ? assignedProjectIds : null);
 
   // Level maksimum sesuai hak asli
   const maxLevel: AccessLevel = useMemo(() => {
