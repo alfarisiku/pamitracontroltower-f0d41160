@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog, DbPurchaseOrder, DbProjectCashflow, DbManpowerLog, DbFinanceEntry } from "@/lib/supabase";
+import { useAccess } from "@/contexts/AccessContext";
 
 export function useFinanceEntries(projectId?: string) {
   return useQuery<DbFinanceEntry[]>({
