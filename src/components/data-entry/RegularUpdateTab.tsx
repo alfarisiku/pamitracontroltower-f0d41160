@@ -383,7 +383,7 @@ export function RegularUpdateTab({ projectId, projects, onNavigate }: {
           <div className="glass-card rounded-lg shadow-card p-4">
             <StepHeader step={8} icon={Receipt} title="BAL" navKey="billing" onNavigate={onNavigate} badge={<DraftBadge step={8} />} />
             <p className="text-[10px] text-muted-foreground mb-3">
-              Update <b>status termin</b> (Plan / Di Progress / Terbayar) dan tanggal PO, Invoice, Cash In. Tambah termin baru lewat "Kelola lengkap".
+              Update <b>status BAL</b> (Plan / Di Progress / Terbayar) dan tanggal PO, Invoice, Cash In. Tambah BAL baru lewat "Kelola lengkap".
             </p>
             <BillingPanel projectId={projectId} mode="status" onLogged={(m) => logChange(8, "BAL", m)} />
           </div>

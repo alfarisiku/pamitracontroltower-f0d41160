@@ -100,7 +100,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
   const onProgress = rows.filter(r => r.status === "progress").reduce((s, r) => s + (r.plan_amount || 0), 0);
 
   const add = async () => {
-    if (!form.termin_code) { toast({ title: "Isi nama termin", variant: "destructive" }); return; }
+    if (!form.termin_code) { toast({ title: "Isi nama BAL", variant: "destructive" }); return; }
     setSaving(true);
     const { error } = await (supabase as any).from("project_billings").insert(toPayload(form, projectId, rows.length));
     setSaving(false);
@@ -190,7 +190,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> BAL — Penagihan ke Klien</h3>
-          <p className="text-[10px] text-muted-foreground">Status termin (Plan → Di Progress → Terbayar), nominal, % progress ditagih, dan tanggal PO / Invoice / Cash In.</p>
+          <p className="text-[10px] text-muted-foreground">Status BAL (Plan → Di Progress → Terbayar), nominal, % progress ditagih, dan tanggal PO / Invoice / Cash In.</p>
         </div>
         <button onClick={() => setAddOpen(o => !o)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><Plus className="h-3 w-3" /> Tambah BAL</button>
       </div>
