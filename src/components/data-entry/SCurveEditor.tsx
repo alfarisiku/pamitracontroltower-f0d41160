@@ -218,9 +218,17 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
             </button>
           ))}
           <div className="flex items-center gap-1">
-            <input value={newCurveType} onChange={e => setNewCurveType(e.target.value)} className={inputCls + " w-24"} placeholder="KSO name" />
-            <button onClick={handleAddCurve} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium">+ Add Curve</button>
+            <input value={newCurveType} onChange={e => setNewCurveType(e.target.value)} className={inputCls + " w-28"} placeholder="KSO / Addendum-1" />
+            <button onClick={handleAddCurve} disabled={busyCurve} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium disabled:opacity-50">
+              {busyCurve ? "..." : "+ Add Curve"}
+            </button>
           </div>
+          {curveType !== "baseline" && (
+            <button onClick={handleDeleteCurve} disabled={busyCurve}
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-50">
+              <Trash2 className="h-3 w-3" /> Hapus Curve "{curveType}"
+            </button>
+          )}
         </div>
 
         {missingDates && (
