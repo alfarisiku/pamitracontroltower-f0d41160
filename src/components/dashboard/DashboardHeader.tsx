@@ -29,6 +29,25 @@ export function DashboardHeader() {
           <span className="text-xs text-primary font-mono-data font-medium">{timeStr}</span>
         </div>
         <ActivityLogDropdown />
+        {user ? (
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-muted border border-border text-xs text-foreground">
+              <User className="h-3.5 w-3.5 text-primary" />
+              {profile?.display_name ?? user.email}
+              {role && <span className="text-[10px] text-muted-foreground uppercase">· {role}</span>}
+            </span>
+            <button
+              onClick={async () => { await signOut(); navigate("/"); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-card text-foreground hover:bg-muted"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Keluar
+            </button>
+          </div>
+        ) : (
+          <Link to="/login" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+            <LogIn className="h-3.5 w-3.5" /> Masuk
+          </Link>
+        )}
       </div>
 
     </header>
