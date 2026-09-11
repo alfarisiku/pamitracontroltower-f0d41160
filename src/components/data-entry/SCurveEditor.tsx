@@ -94,7 +94,10 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   const removeRow = (idx: number) => setRows(prev => prev.filter((_, i) => i !== idx));
   const updateRow = (idx: number, patch: Partial<Row>) => setRows(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r));
 
-  const handleAddCurve = () => {
+  const [busyCurve, setBusyCurve] = useState(false);
+
+  // Buat curve baru langsung di database (seed dari periode baseline), baru boleh diedit valuenya.
+  const handleAddCurve = async () => {
     const name = newCurveType.trim();
     if (!name) {
       toast({ title: "Nama curve wajib diisi", description: "Contoh: KSO, Addendum-1", variant: "destructive" });
@@ -104,10 +107,52 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
       toast({ title: "Curve sudah ada", description: `${name} sudah terdaftar`, variant: "destructive" });
       return;
     }
-    // Just switch — the useEffect will seed rows from baseline periods with empty values.
-    setCurveType(name);
-    setNewCurveType("");
-    toast({ title: `Curve "${name}" siap diisi`, description: "Periode terkunci ke baseline. Isi Planned/Actual hanya di periode yang relevan (kosongkan periode sebelum addendum mulai)." });
+    const baseline = scurveData.filter(d => d.curve_type === "baseline").sort((a, b) => a.period_order - b.period_order);
+    if (baseline.length === 0) {
+      toast({ title: "Baseline belum ada", description: "Isi & simpan Baseline dulu sebelum menambah curve baru.", variant: "destructive" });
+      return;
+    }
+    setBusyCurve(true);
+    try {
+      const inserts = baseline.map((d, i) => ({
+        project_id: projectId,
+        period_label: d.period_label,
+        period_order: i,
+        planned_progress: 0,
+        actual_progress: null,
+        curve_type: name,
+        period_start: d.period_start ?? null,
+        period_end: d.period_end ?? null,
+      }));
+      const { error } = await supabase.from("s_curve_data").insert(inserts);
+      if (error) throw error;
+      await logActivity(supabase, "s_curve", "create", `Curve ${name} dibuat (${inserts.length} periode)`, projectId);
+      await queryClient.invalidateQueries({ queryKey: ["s_curve_data"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      setCurveType(name);
+      setNewCurveType("");
+      toast({ title: `✅ Curve "${name}" dibuat`, description: "Data periode sudah tersimpan. Silakan edit Planned/Actual lalu klik Save." });
+    } catch (e: any) {
+      toast({ title: "❌ Gagal membuat curve", description: e.message, variant: "destructive" });
+    } finally { setBusyCurve(false); }
+  };
+
+  // Hapus seluruh data curve (non-baseline) dari database.
+  const handleDeleteCurve = async () => {
+    if (curveType === "baseline") return;
+    if (!confirm(`Hapus curve "${curveType}" beserta seluruh datanya dari database?`)) return;
+    setBusyCurve(true);
+    try {
+      const { error } = await supabase.from("s_curve_data").delete().eq("project_id", projectId).eq("curve_type", curveType);
+      if (error) throw error;
+      await logActivity(supabase, "s_curve", "delete", `Curve ${curveType} dihapus`, projectId);
+      await queryClient.invalidateQueries({ queryKey: ["s_curve_data"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      setCurveType("baseline");
+      toast({ title: "🗑️ Curve dihapus" });
+    } catch (e: any) {
+      toast({ title: "❌ Gagal menghapus", description: e.message, variant: "destructive" });
+    } finally { setBusyCurve(false); }
   };
 
 
