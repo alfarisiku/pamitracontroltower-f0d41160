@@ -1,11 +1,16 @@
+import { Link, useNavigate } from "react-router-dom";
+import { LogIn, LogOut, User } from "lucide-react";
 import { ActivityLogDropdown } from "./ActivityLogDropdown";
 import { LevelSwitcher } from "./LevelSwitcher";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 export function DashboardHeader() {
   const now = new Date();
   const dateStr = now.toLocaleDateString("id-ID", { weekday: "short", year: "numeric", month: "long", day: "numeric" });
   const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const { user, profile, role, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="flex items-center justify-between pb-5 mb-5 border-b border-border">
