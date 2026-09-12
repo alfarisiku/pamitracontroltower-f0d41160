@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setAssignedProjectIds([]);
     }
+    setDetailsLoading(false);
   };
 
   const refreshProfile = async () => {
