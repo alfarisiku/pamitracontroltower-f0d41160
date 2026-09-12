@@ -11,13 +11,16 @@ import { Progress } from "@/components/ui/progress";
 import { useProjects } from "@/hooks/useProjects";
 import { DbProject, getStatusMeta } from "@/lib/supabase";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const { data: projects = [], isLoading } = useProjects();
   const navigate = useNavigate();
-  const { level: demoLevel } = useDemoLevel();
+  const { level: demoLevel, isAdmin } = useDemoLevel();
+  const { user, profile, assignedProjectIds } = useAuth();
   const L3 = demoLevel === 3;
+  const noProjectAssigned = !!user && !isAdmin && profile?.status === "active" && assignedProjectIds.length === 0;
 
   const active = projects.filter((p) => p.status !== "completed" && p.status !== "closed").length;
   const completed = projects.filter((p) => p.status === "completed" || p.status === "closed").length;
