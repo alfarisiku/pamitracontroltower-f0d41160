@@ -47,6 +47,15 @@ const Index = () => {
         <div className="max-w-[1400px] mx-auto">
           <DashboardHeader />
 
+          {noProjectAssigned && (
+            <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+              <p className="text-xs font-semibold text-foreground">Akun Anda belum diberi proyek</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Anda hanya melihat tampilan publik. Hubungi administrator untuk mendapatkan akses proyek.
+              </p>
+            </div>
+          )}
+
           <div className="mb-1">
             <h2 className="text-sm font-semibold text-foreground mb-3">Overview Proyek</h2>
           </div>
