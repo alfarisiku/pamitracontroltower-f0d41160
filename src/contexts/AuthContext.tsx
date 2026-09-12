@@ -40,8 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [assignedProjectIds, setAssignedProjectIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  // true selama peran & penugasan proyek belum selesai dibaca (mencegah user terlempar ke level publik)
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   const fetchProfileAndRole = async (userId: string) => {
+    setDetailsLoading(true);
     const [profileRes, roleRes, assignmentsRes] = await Promise.all([
       supabase.from("profiles").select("display_name, avatar_url, assigned_project_id, status").eq("user_id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId).limit(1).single(),
@@ -60,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setAssignedProjectIds([]);
     }
+    setDetailsLoading(false);
   };
 
   const refreshProfile = async () => {
