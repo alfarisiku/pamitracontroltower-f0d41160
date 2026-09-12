@@ -83,9 +83,9 @@ const AccountManager = () => {
   const handleSaveRole = async (userId: string) => {
     if (isSystemUser(userId)) { toast({ title: "Error", description: "Akun sistem tidak bisa diubah.", variant: "destructive" }); return; }
 
-    // Validate: team role must have at least one project
-    if (editRole === "team" && editProjects.length === 0) {
-      toast({ title: "Error", description: "Project Team harus memiliki minimal 1 proyek yang di-assign.", variant: "destructive" });
+    // Validate: semua peran non-admin wajib punya minimal 1 proyek
+    if (editRole !== "admin" && editProjects.length === 0) {
+      toast({ title: "Proyek belum dipilih", description: "Pengguna non-admin harus diberi minimal 1 proyek, jika tidak akun hanya melihat tampilan publik.", variant: "destructive" });
       return;
     }
 
@@ -259,7 +259,7 @@ const AccountManager = () => {
                     <td className="px-4 py-3">{roleBadge(u.role || "unassigned")}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {u.role === "admin" || u.role === "management" ? (
+                        {u.role === "admin" ? (
                           <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full">All Projects</span>
                         ) : userProjects.length > 0 ? (
                           userProjects.map(p => (
@@ -268,7 +268,7 @@ const AccountManager = () => {
                             </span>
                           ))
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">—</span>
+                          <span className="text-[10px] px-2 py-0.5 bg-warning/15 text-warning rounded-full">Belum ada proyek</span>
                         )}
                       </div>
                     </td>

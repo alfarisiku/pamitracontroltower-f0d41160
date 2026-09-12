@@ -11,13 +11,16 @@ import { Progress } from "@/components/ui/progress";
 import { useProjects } from "@/hooks/useProjects";
 import { DbProject, getStatusMeta } from "@/lib/supabase";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const { data: projects = [], isLoading } = useProjects();
   const navigate = useNavigate();
-  const { level: demoLevel } = useDemoLevel();
+  const { level: demoLevel, isAdmin } = useDemoLevel();
+  const { user, profile, assignedProjectIds } = useAuth();
   const L3 = demoLevel === 3;
+  const noProjectAssigned = !!user && !isAdmin && profile?.status === "active" && assignedProjectIds.length === 0;
 
   const active = projects.filter((p) => p.status !== "completed" && p.status !== "closed").length;
   const completed = projects.filter((p) => p.status === "completed" || p.status === "closed").length;
@@ -43,6 +46,15 @@ const Index = () => {
       <main className="flex-1 p-5 overflow-y-auto">
         <div className="max-w-[1400px] mx-auto">
           <DashboardHeader />
+
+          {noProjectAssigned && (
+            <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+              <p className="text-xs font-semibold text-foreground">Akun Anda belum diberi proyek</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Anda hanya melihat tampilan publik. Hubungi administrator untuk mendapatkan akses proyek.
+              </p>
+            </div>
+          )}
 
           <div className="mb-1">
             <h2 className="text-sm font-semibold text-foreground mb-3">Overview Proyek</h2>
