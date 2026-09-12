@@ -85,11 +85,12 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       canEdit: (projectId?: string | null) => canView(projectId) && isActive && level <= 2,
       filterProjects: (rows) => (scope === null ? rows : rows.filter(r => scope.includes(r.id))),
       setLevel: (l: AccessLevel) => {
+        if (!isAdmin) return; // hanya admin yang boleh mengubah tampilan level
         const next = (Math.max(l, maxLevel) as AccessLevel);
-        lastLevel = next;
         setChosen(next);
         const p = new URLSearchParams(params);
-        p.set("level", String(next));
+        if (next === maxLevel) p.delete("level");
+        else p.set("level", String(next));
         setParams(p, { replace: false });
       },
       hideMoney: level === 3,
