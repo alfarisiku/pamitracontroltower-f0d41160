@@ -259,7 +259,7 @@ const AccountManager = () => {
                     <td className="px-4 py-3">{roleBadge(u.role || "unassigned")}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {u.role === "admin" || u.role === "management" ? (
+                        {u.role === "admin" ? (
                           <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full">All Projects</span>
                         ) : userProjects.length > 0 ? (
                           userProjects.map(p => (
@@ -268,7 +268,7 @@ const AccountManager = () => {
                             </span>
                           ))
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">—</span>
+                          <span className="text-[10px] px-2 py-0.5 bg-warning/15 text-warning rounded-full">Belum ada proyek</span>
                         )}
                       </div>
                     </td>
