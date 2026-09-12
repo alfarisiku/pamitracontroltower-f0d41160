@@ -83,9 +83,9 @@ const AccountManager = () => {
   const handleSaveRole = async (userId: string) => {
     if (isSystemUser(userId)) { toast({ title: "Error", description: "Akun sistem tidak bisa diubah.", variant: "destructive" }); return; }
 
-    // Validate: team role must have at least one project
-    if (editRole === "team" && editProjects.length === 0) {
-      toast({ title: "Error", description: "Project Team harus memiliki minimal 1 proyek yang di-assign.", variant: "destructive" });
+    // Validate: semua peran non-admin wajib punya minimal 1 proyek
+    if (editRole !== "admin" && editProjects.length === 0) {
+      toast({ title: "Proyek belum dipilih", description: "Pengguna non-admin harus diberi minimal 1 proyek, jika tidak akun hanya melihat tampilan publik.", variant: "destructive" });
       return;
     }
 
