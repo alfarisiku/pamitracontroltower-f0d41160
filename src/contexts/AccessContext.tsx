@@ -53,16 +53,22 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   const urlRaw = Number(params.get("level"));
   const urlLevel: AccessLevel | null = urlRaw === 1 || urlRaw === 2 || urlRaw === 3 ? (urlRaw as AccessLevel) : null;
 
-  const [chosen, setChosen] = useState<AccessLevel | null>(urlLevel ?? lastLevel);
+  // Pilihan level TIDAK disimpan lintas halaman. Hanya berlaku bila ada ?level= di URL.
+  const [chosen, setChosen] = useState<AccessLevel | null>(urlLevel);
 
   useEffect(() => {
-    if (urlLevel && urlLevel !== chosen) setChosen(urlLevel);
+    setChosen(urlLevel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlLevel]);
 
+  // Reset ke hak penuh saat akun / hak akses berubah
+  useEffect(() => {
+    if (!urlLevel) setChosen(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, maxLevel]);
+
   // Level efektif tidak pernah lebih tinggi (angka lebih kecil) dari hak asli
   const level: AccessLevel = (Math.max(chosen ?? maxLevel, maxLevel) as AccessLevel);
-  lastLevel = chosen;
 
   const value = useMemo<AccessCtx>(() => {
     const canView = (projectId?: string | null) => {
