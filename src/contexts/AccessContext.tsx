@@ -29,8 +29,6 @@ interface AccessCtx {
 
 const Ctx = createContext<AccessCtx | undefined>(undefined);
 
-let lastLevel: AccessLevel | null = null;
-
 export function AccessProvider({ children }: { children: ReactNode }) {
   const { user, role, assignedProjectIds, profile, loading } = useAuth();
   const [params, setParams] = useSearchParams();
