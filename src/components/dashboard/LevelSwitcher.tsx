@@ -1,37 +1,40 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useDemoLevel, DemoLevel } from "@/contexts/DemoLevelContext";
-import { Layers } from "lucide-react";
+import { useAccess, AccessLevel } from "@/contexts/AccessContext";
+import { Layers, RotateCcw } from "lucide-react";
 
-const LEVELS: { level: DemoLevel; label: string; hint: string }[] = [
+const LEVELS: { level: AccessLevel; label: string; hint: string }[] = [
   { level: 1, label: "Level 1", hint: "Detail penuh — semua tab, angka rupiah, dan status apa adanya" },
-  { level: 2, label: "Level 2", hint: "Ringkas — grid semua project dengan angka, tanpa detail operasional" },
+  { level: 2, label: "Level 2", hint: "Ringkas — Project Summary, Data Entry, Activity Log" },
   { level: 3, label: "Level 3", hint: "Publik — tanpa rupiah, tanpa angka plan, tanpa status bermasalah" },
 ];
 
 export function LevelSwitcher() {
-  const { level, setLevel } = useDemoLevel();
+  const { level, maxLevel, isAdmin, setLevel } = useAccess();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handle = (l: DemoLevel) => {
+  // Level hanya bisa dicoba oleh admin; pengguna lain mengikuti hak akunnya.
+  if (!isAdmin) return null;
+
+  const handle = (l: AccessLevel) => {
     const onDetail = location.pathname.startsWith("/project/");
-    const search = `?level=${l}`;
-    if (l === 1) {
-      if (onDetail) setLevel(l);
-      else navigate(`/projects${search}`);
+    const search = l === maxLevel ? "" : `?level=${l}`;
+    if (onDetail) {
+      setLevel(l);
       return;
     }
-    if (l === 2) {
-      navigate(`/projects${search}`);
-      return;
-    }
-    // Level 3 → tampilan Overview (kecuali sedang di detail project, tetap di detail dengan pembatasan)
-    if (onDetail) setLevel(l);
-    else navigate(`/${search}`);
+    if (l === 3) navigate(`/${search}`);
+    else navigate(`/projects${search}`);
+    setLevel(l);
+  };
+
+  const reset = () => {
+    setLevel(maxLevel);
+    navigate(location.pathname, { replace: true });
   };
 
   return (
-    <div className="flex items-center gap-1 p-0.5 rounded-full bg-muted border border-border" title="Demo: level tampilan">
+    <div className="flex items-center gap-1 p-0.5 rounded-full bg-muted border border-border" title="Demo: level tampilan (admin)">
       <Layers className="h-3.5 w-3.5 text-muted-foreground ml-2 mr-0.5" />
       {LEVELS.map(l => (
         <button
@@ -47,6 +50,16 @@ export function LevelSwitcher() {
           {l.label}
         </button>
       ))}
+      {level !== maxLevel && (
+        <button
+          onClick={reset}
+          title="Kembali ke akses penuh"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium text-muted-foreground hover:text-foreground"
+        >
+          <RotateCcw className="h-3 w-3" />
+          Akses penuh
+        </button>
+      )}
     </div>
   );
 }
