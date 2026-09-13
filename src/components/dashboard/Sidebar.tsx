@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
 
 
-import { BookOpen } from "lucide-react";
+
 
 const allMenuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/" },
@@ -20,7 +20,7 @@ const allMenuItems = [
   { icon: FileText, label: "Reporting", path: "/reporting" },
   { icon: Database, label: "Data Entry", path: "/data-entry" },
   { icon: Activity, label: "Activity Log", path: "/activity-log" },
-  { icon: BookOpen, label: "User Guide", path: "/guide" },
+  
   { icon: Monitor, label: "War Room", path: "/war-room" },
   { icon: Shield, label: "Account Manager", path: "/account-manager" },
 ];
@@ -48,6 +48,9 @@ export function Sidebar() {
     level === 2 ? allMenuItems.filter(i => LEVEL2_PATHS.includes(i.path)) : allMenuItems;
 
   const toggleCollapse = () => setCollapsed(c => !c);
+
+  // Level 3 (publik): tanpa sidebar sama sekali
+  if (level === 3) return null;
 
   const sidebarContent = (
     <>
