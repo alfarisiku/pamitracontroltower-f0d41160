@@ -23,6 +23,8 @@ export type Database = {
           entity_type: string
           id: string
           project_id: string | null
+          user_id: string | null
+          user_name: string | null
         }
         Insert: {
           action: string
@@ -32,6 +34,8 @@ export type Database = {
           entity_type: string
           id?: string
           project_id?: string | null
+          user_id?: string | null
+          user_name?: string | null
         }
         Update: {
           action?: string
@@ -41,6 +45,8 @@ export type Database = {
           entity_type?: string
           id?: string
           project_id?: string | null
+          user_id?: string | null
+          user_name?: string | null
         }
         Relationships: [
           {

@@ -459,11 +459,26 @@ export async function logActivity(
   projectId?: string,
   entityId?: string
 ) {
+  let userId: string | null = null;
+  let userName: string | null = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    const u = data?.user;
+    if (u) {
+      userId = u.id;
+      userName = u.user_metadata?.display_name || u.email || null;
+      const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", u.id).maybeSingle();
+      if (prof?.display_name) userName = prof.display_name;
+    }
+  } catch { /* anonymous */ }
+
   await supabase.from("activity_logs").insert({
     entity_type: entityType,
     entity_id: entityId || null,
     action,
     details,
     project_id: projectId || null,
+    user_id: userId,
+    user_name: userName ?? "Tamu",
   });
 }

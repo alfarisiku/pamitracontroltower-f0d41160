@@ -24,7 +24,7 @@ import DataEntry from "./pages/DataEntry";
 import WarRoom from "./pages/WarRoom";
 import ActivityLog from "./pages/ActivityLog";
 import AccountManager from "./pages/AccountManager";
-import UserGuide from "./pages/UserGuide";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,7 +38,7 @@ function AppRoutes() {
 
       {/* Level 3 — publik */}
       <Route path="/" element={<Index />} />
-      <Route path="/guide" element={<UserGuide />} />
+      
 
       {/* Level 2 — user dengan proyek yang di-assign */}
       <Route path="/projects" element={<ProtectedRoute minLevel={2}><ProjectSummary /></ProtectedRoute>} />

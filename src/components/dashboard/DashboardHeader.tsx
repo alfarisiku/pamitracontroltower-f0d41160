@@ -3,6 +3,7 @@ import { LogIn, LogOut, User } from "lucide-react";
 import { ActivityLogDropdown } from "./ActivityLogDropdown";
 import { LevelSwitcher } from "./LevelSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAccess } from "@/contexts/AccessContext";
 
 
 export function DashboardHeader() {
@@ -10,6 +11,7 @@ export function DashboardHeader() {
   const dateStr = now.toLocaleDateString("id-ID", { weekday: "short", year: "numeric", month: "long", day: "numeric" });
   const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   const { user, profile, role, signOut } = useAuth();
+  const { level } = useAccess();
   const navigate = useNavigate();
 
   return (
@@ -28,7 +30,7 @@ export function DashboardHeader() {
           <span className="text-xs text-muted-foreground">{dateStr}</span>
           <span className="text-xs text-primary font-mono-data font-medium">{timeStr}</span>
         </div>
-        <ActivityLogDropdown />
+        {level !== 3 && <ActivityLogDropdown />}
         {user ? (
           <div className="flex items-center gap-2">
             <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-muted border border-border text-xs text-foreground">

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -85,6 +85,13 @@ const Login = () => {
       {/* Right panel - form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mb-5 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-border rounded-lg text-muted-foreground hover:bg-muted"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Kembali ke Dashboard
+          </button>
           <div className="lg:hidden mb-8 text-center">
             <img src="/images/pamitra-icon.jpg" alt="Pamitra" className="h-12 mx-auto mb-2" />
             <h1 className="text-lg font-bold text-foreground">Pamitra Control Tower</h1>
