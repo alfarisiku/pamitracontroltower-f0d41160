@@ -25,8 +25,29 @@ export function useAllFinanceEntries() {
   });
 }
 
+/**
+ * Progress resmi proyek = actual terakhir pada S-Curve Baseline.
+ * Dipakai sebagai single source of truth agar Project Summary, Overview,
+ * dan Project Detail selalu menampilkan angka yang sama.
+ */
+function useBaselineProgressMap() {
+  const { data = [] } = useAllSCurveData();
+  const map = new Map<string, number>();
+  const best = new Map<string, number>();
+  for (const r of data as any[]) {
+    if (r.curve_type !== "baseline" || r.actual_progress == null) continue;
+    const order = Number(r.period_order) || 0;
+    if (!best.has(r.project_id) || order >= (best.get(r.project_id) as number)) {
+      best.set(r.project_id, order);
+      map.set(r.project_id, Number(r.actual_progress));
+    }
+  }
+  return map;
+}
+
 export function useProjects() {
   const { scope } = useAccess();
+  const progressMap = useBaselineProgressMap();
   const q = useQuery<DbProject[]>({
     queryKey: ["projects"],
     queryFn: async () => {
@@ -35,15 +56,18 @@ export function useProjects() {
       return (data ?? []) as unknown as DbProject[];
     },
   });
-  const rows = q.data ?? [];
+  const rows = (q.data ?? []).map(p =>
+    progressMap.has(p.id) ? ({ ...p, progress: progressMap.get(p.id) as number }) : p
+  );
   const scoped = scope === null ? rows : rows.filter(p => scope.includes(p.id));
   return { ...q, data: scoped } as typeof q;
 }
 
 export function useProject(id: string | undefined) {
   const { canView } = useAccess();
+  const progressMap = useBaselineProgressMap();
   const allowed = !!id && canView(id);
-  return useQuery<DbProject | null>({
+  const q = useQuery<DbProject | null>({
     queryKey: ["project", id],
     enabled: allowed,
     queryFn: async () => {
@@ -52,6 +76,10 @@ export function useProject(id: string | undefined) {
       return (data ?? null) as unknown as DbProject | null;
     },
   });
+  const row = q.data && id && progressMap.has(id)
+    ? ({ ...q.data, progress: progressMap.get(id) as number })
+    : q.data;
+  return { ...q, data: row } as typeof q;
 }
 
 export function useAlerts() {
