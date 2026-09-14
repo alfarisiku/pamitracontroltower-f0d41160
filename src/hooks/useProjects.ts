@@ -2,26 +2,41 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, DbProject, DbAlert, DbMonthlyBudget, DbWorkArea, DbWorkItem, DbSubTask, DbMilestone, DbNotification, DbAddendum, DbSCurveData, DbProcurementItem, DbActivityLog, DbPurchaseOrder, DbProjectCashflow, DbManpowerLog, DbFinanceEntry } from "@/lib/supabase";
 import { useAccess } from "@/contexts/AccessContext";
 
+/** Ambil SEMUA baris (PostgREST membatasi 1000 baris per request). */
+async function fetchAllRows(build: () => any): Promise<any[]> {
+  const PAGE = 1000;
+  let from = 0;
+  const out: any[] = [];
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await build().range(from, from + PAGE - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+    from += PAGE;
+  }
+  return out;
+}
+
 export function useFinanceEntries(projectId?: string) {
   return useQuery<DbFinanceEntry[]>({
     queryKey: ["finance_entries", projectId],
     enabled: !!projectId,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any).from("finance_entries").select("*").eq("project_id", projectId!).order("period_date", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as DbFinanceEntry[];
-    },
+    queryFn: async () =>
+      (await fetchAllRows(() =>
+        (supabase as any).from("finance_entries").select("*").eq("project_id", projectId!).order("period_date", { ascending: true }),
+      )) as DbFinanceEntry[],
   });
 }
 
 export function useAllFinanceEntries() {
   return useQuery<DbFinanceEntry[]>({
     queryKey: ["finance_entries_all"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any).from("finance_entries").select("*").order("period_date", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as DbFinanceEntry[];
-    },
+    queryFn: async () =>
+      (await fetchAllRows(() =>
+        (supabase as any).from("finance_entries").select("*").order("period_date", { ascending: true }),
+      )) as DbFinanceEntry[],
   });
 }
 
@@ -201,16 +216,15 @@ export function useSCurveData(projectId: string | undefined) {
   return useQuery<DbSCurveData[]>({
     queryKey: ["s_curve_data", projectId],
     enabled: !!projectId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("s_curve_data")
-        .select("*")
-        .eq("project_id", projectId!)
-        .order("curve_type")
-        .order("period_order");
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () =>
+      (await fetchAllRows(() =>
+        supabase
+          .from("s_curve_data")
+          .select("*")
+          .eq("project_id", projectId!)
+          .order("curve_type")
+          .order("period_order"),
+      )) as DbSCurveData[],
   });
 }
 
@@ -277,14 +291,18 @@ export function useProjectCashflow(projectId?: string) {
 }
 
 export function useActivityLogs(limit = 50) {
+  const { scope } = useAccess();
   return useQuery<(DbActivityLog & { projects?: { name: string; project_code: string } | null })[]>({
-    queryKey: ["activity_logs", limit],
+    queryKey: ["activity_logs", limit, scope?.join(",") ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("activity_logs")
         .select("*, projects(name, project_code)")
         .order("created_at", { ascending: false })
         .limit(limit);
+      // Level 2: hanya log proyek yang di-assign ke user
+      if (scope !== null) q = q.in("project_id", scope.length ? scope : ["00000000-0000-0000-0000-000000000000"]);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
@@ -351,12 +369,10 @@ export function useManpowerLogs(projectId?: string) {
 export function useAllSCurveData() {
   return useQuery<DbSCurveData[]>({
     queryKey: ["s_curve_data_all"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("s_curve_data").select("*").order("period_order");
-      if (error) throw error;
-      return (data ?? []) as DbSCurveData[];
-    },
+    queryFn: async () =>
+      (await fetchAllRows(() =>
+        (supabase as any).from("s_curve_data").select("*").order("period_order"),
+      )) as DbSCurveData[],
   });
 }
 

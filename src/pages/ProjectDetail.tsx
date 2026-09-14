@@ -663,9 +663,9 @@ const ProjectDetail = () => {
                                   <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                                     <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Δ Progress (kenaikan periode)" : "Progress"}</span><span />
                                     <span className="text-muted-foreground">Planning</span>
-                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.plan }}>{planPct == null ? "—" : `${planPct.toFixed(1)}%`}</span>
+                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.plan }}>{planPct == null ? "—" : `${planPct.toFixed(2)}%`}</span>
                                     <span className="text-muted-foreground">Actual</span>
-                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(1)}%`}</span>
+                                    <span className="font-mono-data font-semibold text-right" style={{ color: lc.actual }}>{actPct == null ? "—" : `${actPct.toFixed(2)}%`}</span>
                                     <span className="col-span-2 border-t border-border/60 my-1" />
                                     <span className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wide">{isBarMode ? "Cash In / Out" : "Net Kumulatif"}</span><span />
                                     {isBarMode ? (
@@ -807,9 +807,9 @@ const ProjectDetail = () => {
                               return (
                               <tr key={r.label} className="border-b border-border/30 hover:bg-muted/20">
                                 <td className="py-1.5 px-2 text-foreground font-medium">{r.label}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct == null ? "—" : `${r.planPct.toFixed(1)}%`}</td>
-                                <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(1)}%`}</td>
-                                <td className={`py-1.5 px-2 text-right font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{dev == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data border-l border-border/40" style={{ color: lineColor.plan }}>{r.planPct == null ? "—" : `${r.planPct.toFixed(2)}%`}</td>
+                                <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: r.actPct == null ? undefined : lineColor.actual }}>{r.actPct == null ? "—" : `${r.actPct.toFixed(2)}%`}</td>
+                                <td className={`py-1.5 px-2 text-right font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>{dev == null ? "—" : `${dev > 0 ? "+" : ""}${dev.toFixed(2)}%`}</td>
                                 {isCurveTable ? (
                                   <>
                                     <td className="py-1.5 px-2 text-right font-mono-data text-muted-foreground border-l border-border/40">{formatRupiah(planNet)}</td>
@@ -876,7 +876,7 @@ const ProjectDetail = () => {
                             <td className="py-1.5 px-2 text-center">
                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${BILLING_STATUS_CLASS[b.status] || "bg-muted text-muted-foreground border-border"}`}>{st?.label || b.status}</span>
                             </td>
-                            <td className="py-1.5 px-2 text-right font-mono-data">{Number(b.plan_progress_pct || 0).toFixed(1)}%</td>
+                            <td className="py-1.5 px-2 text-right font-mono-data">{Number(b.plan_progress_pct || 0).toFixed(2)}%</td>
                             <td className="py-1.5 px-2 text-right font-mono-data font-semibold text-foreground">{formatRupiah(Number(b.plan_amount || 0))}</td>
                             <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_po_date || b.plan_po_date)}</td>
                             <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_invoice_date || b.plan_invoice_date)}</td>
@@ -1302,14 +1302,14 @@ const ProjectDetail = () => {
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] uppercase text-muted-foreground">Deviasi</span>
                         <span className={`text-sm font-bold font-mono-data ${dev == null ? "text-muted-foreground" : dev >= 0 ? "text-success" : "text-destructive"}`}>
-                          {dev == null ? "N/A" : `${dev > 0 ? "+" : ""}${dev.toFixed(1)}%`}
+                          {dev == null ? "N/A" : `${dev > 0 ? "+" : ""}${dev.toFixed(2)}%`}
                         </span>
                       </div>
                       {lastAct != null && lastPlan != null && (
                         <div className="text-[10px] text-muted-foreground ml-auto font-mono-data flex items-center gap-2">
-                          <span>Plan <span className="font-semibold" style={{ color: pal.plan }}>{lastPlan.toFixed(1)}%</span></span>
+                          <span>Plan <span className="font-semibold" style={{ color: pal.plan }}>{lastPlan.toFixed(2)}%</span></span>
                           <span className="text-border">|</span>
-                          <span>Actual <span className="font-semibold" style={{ color: pal.actual }}>{lastAct.toFixed(1)}%</span></span>
+                          <span>Actual <span className="font-semibold" style={{ color: pal.actual }}>{lastAct.toFixed(2)}%</span></span>
                         </div>
                       )}
                     </div>
@@ -1359,9 +1359,9 @@ const ProjectDetail = () => {
                                       {r.label}
                                       {isCurrent && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded font-semibold uppercase" style={{ color: pal.hue, backgroundColor: `${pal.hue.replace('hsl(', 'hsla(').replace(')', ', 0.15)')}` }}>Now</span>}
                                     </td>
-                                    <td className="py-1.5 px-2 text-right font-mono-data" style={{ color: pal.plan }}>{r.plan != null ? `${Number(r.plan).toFixed(1)}%` : "—"}</td>
-                                    <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: pal.actual }}>{r.actual != null ? `${Number(r.actual).toFixed(1)}%` : "—"}</td>
-                                    <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data" style={{ color: pal.plan }}>{r.plan != null ? `${Number(r.plan).toFixed(2)}%` : "—"}</td>
+                                    <td className="py-1.5 px-2 text-right font-mono-data font-semibold" style={{ color: pal.actual }}>{r.actual != null ? `${Number(r.actual).toFixed(2)}%` : "—"}</td>
+                                    <td className={`py-1.5 px-2 text-right font-mono-data font-semibold ${r.actual == null || r.plan == null ? "text-muted-foreground" : d >= 0 ? "text-success" : "text-destructive"}`}>{r.actual == null || r.plan == null ? "—" : `${d > 0 ? "+" : ""}${d.toFixed(2)}%`}</td>
                                   </tr>
                                 );
                               })}

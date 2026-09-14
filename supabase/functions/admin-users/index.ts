@@ -74,6 +74,41 @@ Deno.serve(async (req) => {
       return json({ ok: true, user_id: uid });
     }
 
+    if (action === "set_status") {
+      const { user_id, status } = body;
+      if (!user_id || !["active", "disabled", "pending"].includes(status)) {
+        return json({ error: "user_id dan status (active/disabled/pending) wajib diisi" }, 400);
+      }
+      if (user_id === userRes.user.id && status !== "active") {
+        return json({ error: "Tidak bisa menonaktifkan akun sendiri" }, 400);
+      }
+      const { error } = await admin.from("profiles").update({ status }).eq("user_id", user_id);
+      if (error) throw error;
+      if (status === "disabled") {
+        await admin.auth.admin.updateUserById(user_id, { ban_duration: "876000h" });
+      } else {
+        await admin.auth.admin.updateUserById(user_id, { ban_duration: "none" });
+      }
+      return json({ ok: true });
+    }
+
+    if (action === "set_projects") {
+      const { user_id, project_ids = [] } = body;
+      if (!user_id) return json({ error: "user_id wajib diisi" }, 400);
+      await admin.from("user_project_assignments").delete().eq("user_id", user_id);
+      if (project_ids.length > 0) {
+        await admin.from("user_project_assignments").insert(
+          project_ids.map((pid: string) => ({ user_id, project_id: pid })),
+        );
+      }
+      await admin.from("user_roles").upsert({ user_id, role: "team" }, { onConflict: "user_id" });
+      await admin.from("profiles")
+        .update({ assigned_project_id: project_ids[0] ?? null, status: "active" })
+        .eq("user_id", user_id);
+      return json({ ok: true });
+    }
+
+
     if (action === "delete") {
       const { user_id } = body;
       if (!user_id) return json({ error: "user_id wajib diisi" }, 400);
