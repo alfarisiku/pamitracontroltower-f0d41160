@@ -366,12 +366,10 @@ export function useManpowerLogs(projectId?: string) {
 export function useAllSCurveData() {
   return useQuery<DbSCurveData[]>({
     queryKey: ["s_curve_data_all"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("s_curve_data").select("*").order("period_order");
-      if (error) throw error;
-      return (data ?? []) as DbSCurveData[];
-    },
+    queryFn: async () =>
+      (await fetchAllRows(() =>
+        (supabase as any).from("s_curve_data").select("*").order("period_order"),
+      )) as DbSCurveData[],
   });
 }
 
