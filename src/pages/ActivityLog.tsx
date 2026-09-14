@@ -161,6 +161,9 @@ const ActivityLog = () => {
                         {log.projects && (
                           <span className="text-[10px] font-mono-data text-primary">{(log.projects as any).project_code}</span>
                         )}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground border border-border">
+                          👤 {(log as any).user_name || "Tamu"}
+                        </span>
                       </div>
                       {log.details && <p className="text-xs text-foreground mt-0.5">{log.details}</p>}
                     </div>
