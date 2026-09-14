@@ -291,14 +291,18 @@ export function useProjectCashflow(projectId?: string) {
 }
 
 export function useActivityLogs(limit = 50) {
+  const { scope } = useAccess();
   return useQuery<(DbActivityLog & { projects?: { name: string; project_code: string } | null })[]>({
-    queryKey: ["activity_logs", limit],
+    queryKey: ["activity_logs", limit, scope?.join(",") ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("activity_logs")
         .select("*, projects(name, project_code)")
         .order("created_at", { ascending: false })
         .limit(limit);
+      // Level 2: hanya log proyek yang di-assign ke user
+      if (scope !== null) q = q.in("project_id", scope.length ? scope : ["00000000-0000-0000-0000-000000000000"]);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
