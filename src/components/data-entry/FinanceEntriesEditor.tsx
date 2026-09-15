@@ -298,6 +298,15 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
           <div className="overflow-auto max-h-[520px] border border-border rounded-md">
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
+                <th className="py-1.5 px-2 w-8">
+                  <input
+                    type="checkbox"
+                    aria-label="Pilih semua transaksi yang tampil"
+                    className="accent-primary cursor-pointer"
+                    checked={filtered.length > 0 && filtered.every(e => selected.has(e.id))}
+                    onChange={ev => setSelected(ev.target.checked ? new Set(filtered.map(e => e.id)) : new Set())}
+                  />
+                </th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Type</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan/Act</th>
