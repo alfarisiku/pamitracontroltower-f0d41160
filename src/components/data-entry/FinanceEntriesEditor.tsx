@@ -162,13 +162,13 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
     toast({ title: "🗑️ Terhapus" });
   };
 
-  // Hapus massal semua baris yang sedang tampil pada filter (chunked agar aman untuk ribuan baris)
-  const handleBulkDelete = async () => {
-    if (filtered.length === 0) return;
-    if (!confirm(`Hapus ${filtered.length} transaksi yang sedang tampil? Tindakan ini tidak bisa dibatalkan.`)) return;
+  // Hapus massal (chunked agar aman untuk ribuan baris)
+  const handleBulkDelete = async (idsInput?: string[]) => {
+    const ids = idsInput ?? filtered.map(e => e.id);
+    if (ids.length === 0) return;
+    if (!confirm(`Hapus ${ids.length} transaksi terpilih? Tindakan ini tidak bisa dibatalkan.`)) return;
     setSaving(true);
     try {
-      const ids = filtered.map(e => e.id);
       for (let i = 0; i < ids.length; i += 200) {
         const { error } = await (supabase as any).from("finance_entries").delete().in("id", ids.slice(i, i + 200));
         if (error) throw error;
