@@ -333,7 +333,16 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
                     <td className="py-1 px-1 flex gap-1"><button onClick={() => saveEdit(e.id)} className="p-1 bg-success/15 rounded"><Save className="h-3 w-3 text-success" /></button><button onClick={() => setEditingId(null)} className="p-1 bg-muted rounded"><X className="h-3 w-3" /></button></td>
                   </tr>
                 ) : (
-                  <tr key={e.id} className="border-b border-border/30 hover:bg-muted/20">
+                  <tr key={e.id} className={`border-b border-border/30 hover:bg-muted/20 ${selected.has(e.id) ? "bg-primary/5" : ""}`}>
+                    <td className="py-1.5 px-2">
+                      <input
+                        type="checkbox"
+                        aria-label={`Pilih transaksi ${e.period_label}`}
+                        className="accent-primary cursor-pointer"
+                        checked={selected.has(e.id)}
+                        onChange={() => toggleSelect(e.id)}
+                      />
+                    </td>
                     <td className="py-1.5 px-2">
                       <div className="font-medium text-foreground">{e.period_label}</div>
                       <div className="text-[9px] text-muted-foreground">{fmtDMY(e.period_date)}</div>
