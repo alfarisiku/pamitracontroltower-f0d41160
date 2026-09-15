@@ -23,6 +23,25 @@ const actionColors: Record<string, string> = {
   approve: "bg-success/15 text-success border-success/30",
 };
 
+function timeAgo(d: Date) {
+  const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return "baru saja";
+  if (mins < 60) return `${mins} menit lalu`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} jam lalu`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days} hari lalu`;
+  return `${Math.floor(days / 30)} bulan lalu`;
+}
+
+function dayLabel(d: Date) {
+  const today = new Date();
+  const yest = new Date(Date.now() - 86400000);
+  if (d.toDateString() === today.toDateString()) return "Hari ini";
+  if (d.toDateString() === yest.toDateString()) return "Kemarin";
+  return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
 const RANGES: { key: string; label: string; days: number | null }[] = [
   { key: "all", label: "Semua", days: null },
   { key: "today", label: "Hari ini", days: 0 },
