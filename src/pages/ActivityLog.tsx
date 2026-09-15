@@ -178,6 +178,10 @@ const ActivityLog = () => {
               <option value="all">Semua Proyek</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.project_code} — {p.name}</option>)}
             </select>
+            <select value={user} onChange={(e) => setUser(e.target.value)} className={selectCls}>
+              <option value="all">Semua Akun</option>
+              {users.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
             <div className="flex items-center gap-1 bg-card border border-border rounded-md p-0.5">
               {RANGES.map((r) => (
                 <button
