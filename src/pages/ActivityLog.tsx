@@ -59,6 +59,12 @@ const ActivityLog = () => {
   const [action, setAction] = useState("all");
   const [projectId, setProjectId] = useState("all");
   const [range, setRange] = useState("all");
+  const [user, setUser] = useState("all");
+
+  const users = useMemo(
+    () => Array.from(new Set(logs.map((l) => (l as any).user_name || "Tamu"))).sort(),
+    [logs]
+  );
 
   const entities = useMemo(
     () => Array.from(new Set(logs.map((l) => l.entity_type))).sort(),
