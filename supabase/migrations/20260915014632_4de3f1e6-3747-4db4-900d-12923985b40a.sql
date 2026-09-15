@@ -1,0 +1,1 @@
+UPDATE public.s_curve_data SET actual_progress = NULL WHERE project_id = '00bc73ea-19fd-53a5-898b-3b5f3dbca608' AND curve_type = 'baseline' AND period_order = 48 AND actual_progress = 0;
