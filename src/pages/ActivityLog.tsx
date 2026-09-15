@@ -230,41 +230,53 @@ const ActivityLog = () => {
               <p className="text-sm text-muted-foreground">Tidak ada aktivitas yang cocok dengan filter.</p>
             </div>
           ) : (
-            <div className="space-y-1">
-              {filtered.map(log => {
-                const Icon = entityIcons[log.entity_type] || Activity;
-                const colorCls = actionColors[log.action] || "bg-muted text-muted-foreground border-border";
-                const time = new Date(log.created_at);
-                return (
-                  <div key={log.id} className="glass-card rounded-lg shadow-card p-3 flex items-start gap-3 hover:bg-muted/20 transition-colors">
-                    <div className={`p-1.5 rounded-lg border ${colorCls} flex-shrink-0`}>
-                      <Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${colorCls}`}>{log.action}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase">{log.entity_type}</span>
-                        {log.projects && (
-                          <span className="text-[10px] font-mono-data text-primary">{(log.projects as any).project_code}</span>
-                        )}
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                          👤 {(log as any).user_name || "Tamu"}
-                        </span>
-                      </div>
-                      {log.details && <p className="text-xs text-foreground mt-0.5">{log.details}</p>}
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-[10px] font-mono-data text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" />
-                        {time.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                      </p>
-                      <p className="text-[9px] font-mono-data text-muted-foreground">
-                        {time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
+            <div className="space-y-3">
+              {grouped.map(([day, items]) => (
+                <div key={day} className="space-y-1">
+                  <div className="flex items-center gap-2 px-1">
+                    <p className="text-[11px] font-semibold text-foreground">{dayLabel(new Date(day))}</p>
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[10px] text-muted-foreground">{items.length} aktivitas</span>
                   </div>
-                );
-              })}
+                  {items.map(log => {
+                    const Icon = entityIcons[log.entity_type] || Activity;
+                    const colorCls = actionColors[log.action] || "bg-muted text-muted-foreground border-border";
+                    const time = new Date(log.created_at);
+                    const proj = log.projects as any;
+                    return (
+                      <div key={log.id} className="glass-card rounded-lg shadow-card p-3 flex items-start gap-3 hover:bg-muted/20 transition-colors">
+                        <div className={`p-1.5 rounded-lg border ${colorCls} flex-shrink-0`}>
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${colorCls}`}>{log.action.replace(/_/g, " ")}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">{log.entity_type.replace(/_/g, " ")}</span>
+                            {proj && (
+                              <span className="text-[10px] font-mono-data text-primary">{proj.project_code} · {proj.name}</span>
+                            )}
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground border border-border">
+                              👤 {(log as any).user_name || "Tamu"}
+                            </span>
+                          </div>
+                          {log.details && <p className="text-xs text-foreground mt-1 break-words whitespace-pre-wrap">{log.details}</p>}
+                          <p className="text-[9px] font-mono-data text-muted-foreground mt-1">
+                            {time.toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            {log.entity_id ? ` · ref ${String(log.entity_id).slice(0, 8)}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          <p className="text-[10px] font-mono-data text-muted-foreground flex items-center gap-1 justify-end">
+                            <Clock className="h-2.5 w-2.5" />
+                            {time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                          <p className="text-[9px] text-muted-foreground">{timeAgo(time)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
               {logs.length >= limit && (
                 <button onClick={() => setLimit(l => l + 50)}
                   className="w-full py-2 text-xs text-primary hover:bg-muted/50 rounded-lg transition-colors">
