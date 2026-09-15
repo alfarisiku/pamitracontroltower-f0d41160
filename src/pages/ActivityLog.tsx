@@ -198,8 +198,27 @@ const ActivityLog = () => {
                 <X className="h-3 w-3" /> Reset ({activeFilters})
               </button>
             )}
-            <span className="text-[11px] text-muted-foreground ml-auto">{filtered.length} aktivitas</span>
+            <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-foreground border border-border rounded-md hover:bg-muted transition-colors ml-auto">
+              Export CSV
+            </button>
           </div>
+
+          {/* Ringkasan */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+            {[
+              { label: "Total Aktivitas", value: stats.total, cls: "text-foreground" },
+              { label: "Dibuat", value: stats.create, cls: "text-success" },
+              { label: "Diubah", value: stats.update, cls: "text-primary" },
+              { label: "Dihapus", value: stats.delete, cls: "text-destructive" },
+              { label: "Akun Terlibat", value: stats.users, cls: "text-foreground" },
+            ].map((s) => (
+              <div key={s.label} className="glass-card rounded-lg shadow-card p-2.5">
+                <p className="text-[9px] uppercase text-muted-foreground">{s.label}</p>
+                <p className={`text-base font-bold font-mono-data ${s.cls}`}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
 
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
