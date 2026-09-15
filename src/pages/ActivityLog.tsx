@@ -81,6 +81,7 @@ const ActivityLog = () => {
       if (entity !== "all" && l.entity_type !== entity) return false;
       if (action !== "all" && l.action !== action) return false;
       if (projectId !== "all" && l.project_id !== projectId) return false;
+      if (user !== "all" && ((l as any).user_name || "Tamu") !== user) return false;
       if (rangeDef?.days !== null && rangeDef?.days !== undefined) {
         const t = new Date(l.created_at);
         if (rangeDef.days === 0) {
