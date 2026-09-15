@@ -49,6 +49,13 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => setSelected(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
 
   useEffect(() => {
     if (lockedPeriodId) { setForm(f => ({ ...f, period_id: lockedPeriodId })); return; }
