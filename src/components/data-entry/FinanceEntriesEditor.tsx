@@ -206,8 +206,11 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cash Flow Transactions{compact ? "" : ` (${filtered.length}/${visible.length})`}</h3>
           <div className="flex gap-1">
             {!compact && <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Download className="h-3 w-3" /> CSV</button>}
+            {!compact && selected.size > 0 && (
+              <button onClick={() => handleBulkDelete(Array.from(selected))} disabled={saving} className="flex items-center gap-1 px-2 py-1 bg-destructive text-destructive-foreground rounded text-[10px] disabled:opacity-50"><Trash2 className="h-3 w-3" /> Hapus terpilih ({selected.size})</button>
+            )}
             {!compact && filtered.length > 0 && (
-              <button onClick={handleBulkDelete} disabled={saving} className="flex items-center gap-1 px-2 py-1 bg-destructive text-destructive-foreground rounded text-[10px] disabled:opacity-50"><Trash2 className="h-3 w-3" /> Hapus {filtered.length}</button>
+              <button onClick={() => handleBulkDelete(filtered.map(e => e.id))} disabled={saving} className="flex items-center gap-1 px-2 py-1 bg-destructive/15 text-destructive border border-destructive/30 rounded text-[10px] disabled:opacity-50"><Trash2 className="h-3 w-3" /> Hapus semua hasil filter ({filtered.length})</button>
             )}
             <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px]"><Plus className="h-3 w-3" /> Add</button>
           </div>
