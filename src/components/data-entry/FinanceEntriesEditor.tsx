@@ -177,6 +177,7 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
+      setSelected(new Set());
       toast({ title: "🗑️ Terhapus", description: `${ids.length} transaksi dihapus.` });
     } catch (err: any) {
       toast({ title: "❌ Gagal menghapus", description: err.message, variant: "destructive" });
