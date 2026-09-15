@@ -50,7 +50,8 @@ function useBaselineProgressMap() {
   const map = new Map<string, number>();
   const best = new Map<string, number>();
   for (const r of data as any[]) {
-    if (r.curve_type !== "baseline" || r.actual_progress == null) continue;
+    // Abaikan baris actual kosong / 0 (placeholder) agar tidak menurunkan progres resmi
+    if (r.curve_type !== "baseline" || r.actual_progress == null || Number(r.actual_progress) <= 0) continue;
     const order = Number(r.period_order) || 0;
     if (!best.has(r.project_id) || order >= (best.get(r.project_id) as number)) {
       best.set(r.project_id, order);

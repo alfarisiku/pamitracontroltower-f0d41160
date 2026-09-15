@@ -23,6 +23,25 @@ const actionColors: Record<string, string> = {
   approve: "bg-success/15 text-success border-success/30",
 };
 
+function timeAgo(d: Date) {
+  const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return "baru saja";
+  if (mins < 60) return `${mins} menit lalu`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} jam lalu`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days} hari lalu`;
+  return `${Math.floor(days / 30)} bulan lalu`;
+}
+
+function dayLabel(d: Date) {
+  const today = new Date();
+  const yest = new Date(Date.now() - 86400000);
+  if (d.toDateString() === today.toDateString()) return "Hari ini";
+  if (d.toDateString() === yest.toDateString()) return "Kemarin";
+  return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
 const RANGES: { key: string; label: string; days: number | null }[] = [
   { key: "all", label: "Semua", days: null },
   { key: "today", label: "Hari ini", days: 0 },
@@ -40,6 +59,12 @@ const ActivityLog = () => {
   const [action, setAction] = useState("all");
   const [projectId, setProjectId] = useState("all");
   const [range, setRange] = useState("all");
+  const [user, setUser] = useState("all");
+
+  const users = useMemo(
+    () => Array.from(new Set(logs.map((l) => (l as any).user_name || "Tamu"))).sort(),
+    [logs]
+  );
 
   const entities = useMemo(
     () => Array.from(new Set(logs.map((l) => l.entity_type))).sort(),
@@ -56,6 +81,7 @@ const ActivityLog = () => {
       if (entity !== "all" && l.entity_type !== entity) return false;
       if (action !== "all" && l.action !== action) return false;
       if (projectId !== "all" && l.project_id !== projectId) return false;
+      if (user !== "all" && ((l as any).user_name || "Tamu") !== user) return false;
       if (rangeDef?.days !== null && rangeDef?.days !== undefined) {
         const t = new Date(l.created_at);
         if (rangeDef.days === 0) {
@@ -64,16 +90,53 @@ const ActivityLog = () => {
       }
       if (search) {
         const q = search.toLowerCase();
-        const hay = `${l.entity_type} ${l.action} ${l.details ?? ""} ${(l.projects as any)?.project_code ?? ""} ${(l.projects as any)?.name ?? ""}`.toLowerCase();
+        const hay = `${l.entity_type} ${l.action} ${l.details ?? ""} ${(l as any).user_name ?? ""} ${(l.projects as any)?.project_code ?? ""} ${(l.projects as any)?.name ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [logs, entity, action, projectId, range, search]);
+  }, [logs, entity, action, projectId, range, search, user]);
 
-  const activeFilters = [entity, action, projectId, range].filter((v) => v !== "all").length + (search ? 1 : 0);
+  // Kelompokkan per hari agar mudah dibaca
+  const grouped = useMemo(() => {
+    const map = new Map<string, typeof filtered>();
+    for (const l of filtered) {
+      const key = new Date(l.created_at).toDateString();
+      if (!map.has(key)) map.set(key, [] as any);
+      (map.get(key) as any).push(l);
+    }
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  const stats = useMemo(() => ({
+    total: filtered.length,
+    create: filtered.filter((l) => l.action === "create").length,
+    update: filtered.filter((l) => l.action.startsWith("update")).length,
+    delete: filtered.filter((l) => l.action === "delete").length,
+    users: new Set(filtered.map((l) => (l as any).user_name || "Tamu")).size,
+  }), [filtered]);
+
+  const exportCSV = () => {
+    const head = ["Waktu", "Akun", "Proyek", "Entitas", "Aksi", "Detail", "Entity ID"];
+    const rows = filtered.map((l) => [
+      new Date(l.created_at).toLocaleString("id-ID"),
+      (l as any).user_name || "Tamu",
+      (l.projects as any)?.project_code ?? "",
+      l.entity_type,
+      l.action,
+      (l.details ?? "").replace(/[",\n]/g, " "),
+      l.entity_id ?? "",
+    ]);
+    const csv = [head, ...rows].map((r) => r.join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `activity-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
+  const activeFilters = [entity, action, projectId, range, user].filter((v) => v !== "all").length + (search ? 1 : 0);
   const resetFilters = () => {
-    setSearch(""); setEntity("all"); setAction("all"); setProjectId("all"); setRange("all");
+    setSearch(""); setEntity("all"); setAction("all"); setProjectId("all"); setRange("all"); setUser("all");
   };
 
   const selectCls =
@@ -115,6 +178,10 @@ const ActivityLog = () => {
               <option value="all">Semua Proyek</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.project_code} — {p.name}</option>)}
             </select>
+            <select value={user} onChange={(e) => setUser(e.target.value)} className={selectCls}>
+              <option value="all">Semua Akun</option>
+              {users.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
             <div className="flex items-center gap-1 bg-card border border-border rounded-md p-0.5">
               {RANGES.map((r) => (
                 <button
@@ -131,8 +198,27 @@ const ActivityLog = () => {
                 <X className="h-3 w-3" /> Reset ({activeFilters})
               </button>
             )}
-            <span className="text-[11px] text-muted-foreground ml-auto">{filtered.length} aktivitas</span>
+            <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-foreground border border-border rounded-md hover:bg-muted transition-colors ml-auto">
+              Export CSV
+            </button>
           </div>
+
+          {/* Ringkasan */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+            {[
+              { label: "Total Aktivitas", value: stats.total, cls: "text-foreground" },
+              { label: "Dibuat", value: stats.create, cls: "text-success" },
+              { label: "Diubah", value: stats.update, cls: "text-primary" },
+              { label: "Dihapus", value: stats.delete, cls: "text-destructive" },
+              { label: "Akun Terlibat", value: stats.users, cls: "text-foreground" },
+            ].map((s) => (
+              <div key={s.label} className="glass-card rounded-lg shadow-card p-2.5">
+                <p className="text-[9px] uppercase text-muted-foreground">{s.label}</p>
+                <p className={`text-base font-bold font-mono-data ${s.cls}`}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
 
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
@@ -144,41 +230,53 @@ const ActivityLog = () => {
               <p className="text-sm text-muted-foreground">Tidak ada aktivitas yang cocok dengan filter.</p>
             </div>
           ) : (
-            <div className="space-y-1">
-              {filtered.map(log => {
-                const Icon = entityIcons[log.entity_type] || Activity;
-                const colorCls = actionColors[log.action] || "bg-muted text-muted-foreground border-border";
-                const time = new Date(log.created_at);
-                return (
-                  <div key={log.id} className="glass-card rounded-lg shadow-card p-3 flex items-start gap-3 hover:bg-muted/20 transition-colors">
-                    <div className={`p-1.5 rounded-lg border ${colorCls} flex-shrink-0`}>
-                      <Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${colorCls}`}>{log.action}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase">{log.entity_type}</span>
-                        {log.projects && (
-                          <span className="text-[10px] font-mono-data text-primary">{(log.projects as any).project_code}</span>
-                        )}
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                          👤 {(log as any).user_name || "Tamu"}
-                        </span>
-                      </div>
-                      {log.details && <p className="text-xs text-foreground mt-0.5">{log.details}</p>}
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-[10px] font-mono-data text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" />
-                        {time.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                      </p>
-                      <p className="text-[9px] font-mono-data text-muted-foreground">
-                        {time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
+            <div className="space-y-3">
+              {grouped.map(([day, items]) => (
+                <div key={day} className="space-y-1">
+                  <div className="flex items-center gap-2 px-1">
+                    <p className="text-[11px] font-semibold text-foreground">{dayLabel(new Date(day))}</p>
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[10px] text-muted-foreground">{items.length} aktivitas</span>
                   </div>
-                );
-              })}
+                  {items.map(log => {
+                    const Icon = entityIcons[log.entity_type] || Activity;
+                    const colorCls = actionColors[log.action] || "bg-muted text-muted-foreground border-border";
+                    const time = new Date(log.created_at);
+                    const proj = log.projects as any;
+                    return (
+                      <div key={log.id} className="glass-card rounded-lg shadow-card p-3 flex items-start gap-3 hover:bg-muted/20 transition-colors">
+                        <div className={`p-1.5 rounded-lg border ${colorCls} flex-shrink-0`}>
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${colorCls}`}>{log.action.replace(/_/g, " ")}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">{log.entity_type.replace(/_/g, " ")}</span>
+                            {proj && (
+                              <span className="text-[10px] font-mono-data text-primary">{proj.project_code} · {proj.name}</span>
+                            )}
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground border border-border">
+                              👤 {(log as any).user_name || "Tamu"}
+                            </span>
+                          </div>
+                          {log.details && <p className="text-xs text-foreground mt-1 break-words whitespace-pre-wrap">{log.details}</p>}
+                          <p className="text-[9px] font-mono-data text-muted-foreground mt-1">
+                            {time.toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            {log.entity_id ? ` · ref ${String(log.entity_id).slice(0, 8)}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          <p className="text-[10px] font-mono-data text-muted-foreground flex items-center gap-1 justify-end">
+                            <Clock className="h-2.5 w-2.5" />
+                            {time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                          <p className="text-[9px] text-muted-foreground">{timeAgo(time)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
               {logs.length >= limit && (
                 <button onClick={() => setLimit(l => l + 50)}
                   className="w-full py-2 text-xs text-primary hover:bg-muted/50 rounded-lg transition-colors">

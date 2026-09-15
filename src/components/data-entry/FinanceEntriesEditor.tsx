@@ -49,6 +49,13 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => setSelected(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
 
   useEffect(() => {
     if (lockedPeriodId) { setForm(f => ({ ...f, period_id: lockedPeriodId })); return; }
@@ -155,13 +162,13 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
     toast({ title: "🗑️ Terhapus" });
   };
 
-  // Hapus massal semua baris yang sedang tampil pada filter (chunked agar aman untuk ribuan baris)
-  const handleBulkDelete = async () => {
-    if (filtered.length === 0) return;
-    if (!confirm(`Hapus ${filtered.length} transaksi yang sedang tampil? Tindakan ini tidak bisa dibatalkan.`)) return;
+  // Hapus massal (chunked agar aman untuk ribuan baris)
+  const handleBulkDelete = async (idsInput?: string[]) => {
+    const ids = idsInput ?? filtered.map(e => e.id);
+    if (ids.length === 0) return;
+    if (!confirm(`Hapus ${ids.length} transaksi terpilih? Tindakan ini tidak bisa dibatalkan.`)) return;
     setSaving(true);
     try {
-      const ids = filtered.map(e => e.id);
       for (let i = 0; i < ids.length; i += 200) {
         const { error } = await (supabase as any).from("finance_entries").delete().in("id", ids.slice(i, i + 200));
         if (error) throw error;
@@ -170,6 +177,7 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
       qc.invalidateQueries({ queryKey: ["finance_entries"] });
       qc.invalidateQueries({ queryKey: ["finance_entries_all"] });
       qc.invalidateQueries({ queryKey: ["project_cashflow"] });
+      setSelected(new Set());
       toast({ title: "🗑️ Terhapus", description: `${ids.length} transaksi dihapus.` });
     } catch (err: any) {
       toast({ title: "❌ Gagal menghapus", description: err.message, variant: "destructive" });
@@ -198,8 +206,11 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" /> Cash Flow Transactions{compact ? "" : ` (${filtered.length}/${visible.length})`}</h3>
           <div className="flex gap-1">
             {!compact && <button onClick={exportCSV} className="flex items-center gap-1 px-2 py-1 bg-success text-success-foreground rounded text-[10px]"><Download className="h-3 w-3" /> CSV</button>}
+            {!compact && selected.size > 0 && (
+              <button onClick={() => handleBulkDelete(Array.from(selected))} disabled={saving} className="flex items-center gap-1 px-2 py-1 bg-destructive text-destructive-foreground rounded text-[10px] disabled:opacity-50"><Trash2 className="h-3 w-3" /> Hapus terpilih ({selected.size})</button>
+            )}
             {!compact && filtered.length > 0 && (
-              <button onClick={handleBulkDelete} disabled={saving} className="flex items-center gap-1 px-2 py-1 bg-destructive text-destructive-foreground rounded text-[10px] disabled:opacity-50"><Trash2 className="h-3 w-3" /> Hapus {filtered.length}</button>
+              <button onClick={() => handleBulkDelete(filtered.map(e => e.id))} disabled={saving} className="flex items-center gap-1 px-2 py-1 bg-destructive/15 text-destructive border border-destructive/30 rounded text-[10px] disabled:opacity-50"><Trash2 className="h-3 w-3" /> Hapus semua hasil filter ({filtered.length})</button>
             )}
             <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px]"><Plus className="h-3 w-3" /> Add</button>
           </div>
@@ -287,6 +298,15 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
           <div className="overflow-auto max-h-[520px] border border-border rounded-md">
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10"><tr className="bg-muted border-b border-border">
+                <th className="py-1.5 px-2 w-8">
+                  <input
+                    type="checkbox"
+                    aria-label="Pilih semua transaksi yang tampil"
+                    className="accent-primary cursor-pointer"
+                    checked={filtered.length > 0 && filtered.every(e => selected.has(e.id))}
+                    onChange={ev => setSelected(ev.target.checked ? new Set(filtered.map(e => e.id)) : new Set())}
+                  />
+                </th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Periode</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Type</th>
                 <th className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Plan/Act</th>
@@ -298,6 +318,7 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
               <tbody>
                 {filtered.map(e => editingId === e.id ? (
                   <tr key={e.id} className="border-b border-border/30 bg-muted/20">
+                    <td className="py-1 px-2" />
                     <td className="py-1 px-1">
                       <select value={edit.period_id || ""} onChange={ev => setEdit({...edit, period_id: ev.target.value})} className={inputCls}>
                         {!edit.period_id && <option value="">— pilih —</option>}
@@ -312,7 +333,16 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
                     <td className="py-1 px-1 flex gap-1"><button onClick={() => saveEdit(e.id)} className="p-1 bg-success/15 rounded"><Save className="h-3 w-3 text-success" /></button><button onClick={() => setEditingId(null)} className="p-1 bg-muted rounded"><X className="h-3 w-3" /></button></td>
                   </tr>
                 ) : (
-                  <tr key={e.id} className="border-b border-border/30 hover:bg-muted/20">
+                  <tr key={e.id} className={`border-b border-border/30 hover:bg-muted/20 ${selected.has(e.id) ? "bg-primary/5" : ""}`}>
+                    <td className="py-1.5 px-2">
+                      <input
+                        type="checkbox"
+                        aria-label={`Pilih transaksi ${e.period_label}`}
+                        className="accent-primary cursor-pointer"
+                        checked={selected.has(e.id)}
+                        onChange={() => toggleSelect(e.id)}
+                      />
+                    </td>
                     <td className="py-1.5 px-2">
                       <div className="font-medium text-foreground">{e.period_label}</div>
                       <div className="text-[9px] text-muted-foreground">{fmtDMY(e.period_date)}</div>
