@@ -90,16 +90,53 @@ const ActivityLog = () => {
       }
       if (search) {
         const q = search.toLowerCase();
-        const hay = `${l.entity_type} ${l.action} ${l.details ?? ""} ${(l.projects as any)?.project_code ?? ""} ${(l.projects as any)?.name ?? ""}`.toLowerCase();
+        const hay = `${l.entity_type} ${l.action} ${l.details ?? ""} ${(l as any).user_name ?? ""} ${(l.projects as any)?.project_code ?? ""} ${(l.projects as any)?.name ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [logs, entity, action, projectId, range, search]);
+  }, [logs, entity, action, projectId, range, search, user]);
 
-  const activeFilters = [entity, action, projectId, range].filter((v) => v !== "all").length + (search ? 1 : 0);
+  // Kelompokkan per hari agar mudah dibaca
+  const grouped = useMemo(() => {
+    const map = new Map<string, typeof filtered>();
+    for (const l of filtered) {
+      const key = new Date(l.created_at).toDateString();
+      if (!map.has(key)) map.set(key, [] as any);
+      (map.get(key) as any).push(l);
+    }
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  const stats = useMemo(() => ({
+    total: filtered.length,
+    create: filtered.filter((l) => l.action === "create").length,
+    update: filtered.filter((l) => l.action.startsWith("update")).length,
+    delete: filtered.filter((l) => l.action === "delete").length,
+    users: new Set(filtered.map((l) => (l as any).user_name || "Tamu")).size,
+  }), [filtered]);
+
+  const exportCSV = () => {
+    const head = ["Waktu", "Akun", "Proyek", "Entitas", "Aksi", "Detail", "Entity ID"];
+    const rows = filtered.map((l) => [
+      new Date(l.created_at).toLocaleString("id-ID"),
+      (l as any).user_name || "Tamu",
+      (l.projects as any)?.project_code ?? "",
+      l.entity_type,
+      l.action,
+      (l.details ?? "").replace(/[",\n]/g, " "),
+      l.entity_id ?? "",
+    ]);
+    const csv = [head, ...rows].map((r) => r.join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `activity-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
+  const activeFilters = [entity, action, projectId, range, user].filter((v) => v !== "all").length + (search ? 1 : 0);
   const resetFilters = () => {
-    setSearch(""); setEntity("all"); setAction("all"); setProjectId("all"); setRange("all");
+    setSearch(""); setEntity("all"); setAction("all"); setProjectId("all"); setRange("all"); setUser("all");
   };
 
   const selectCls =
