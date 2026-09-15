@@ -318,6 +318,7 @@ export function FinanceEntriesEditor({ projectId, compact = false, lockedPeriodI
               <tbody>
                 {filtered.map(e => editingId === e.id ? (
                   <tr key={e.id} className="border-b border-border/30 bg-muted/20">
+                    <td className="py-1 px-2" />
                     <td className="py-1 px-1">
                       <select value={edit.period_id || ""} onChange={ev => setEdit({...edit, period_id: ev.target.value})} className={inputCls}>
                         {!edit.period_id && <option value="">— pilih —</option>}
