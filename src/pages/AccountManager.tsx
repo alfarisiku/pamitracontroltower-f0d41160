@@ -98,6 +98,10 @@ const AccountManager = () => {
 
   const saveUser = async () => {
     if (!editingUser) return;
+    if (editPassword && editPassword.length < 6) {
+      toast({ title: "Kata sandi terlalu pendek", description: "Minimal 6 karakter.", variant: "destructive" });
+      return;
+    }
     if (!editingUser.isAdmin && editProjects.length === 0) {
       toast({ title: "Proyek belum dipilih", description: "Pilih minimal 1 proyek agar akun bisa mengakses data.", variant: "destructive" });
       return;
