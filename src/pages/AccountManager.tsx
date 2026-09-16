@@ -41,7 +41,18 @@ const AccountManager = () => {
 
   const callAdmin = async (body: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("admin-users", { body });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Ambil pesan asli dari server bila tersedia
+      let detail = error.message;
+      const res = (error as any)?.context;
+      if (res && typeof res.json === "function") {
+        try {
+          const j = await res.json();
+          if (j?.error) detail = j.error;
+        } catch { /* noop */ }
+      }
+      throw new Error(detail);
+    }
     if ((data as any)?.error) throw new Error((data as any).error);
     return data as any;
   };
@@ -87,6 +98,10 @@ const AccountManager = () => {
 
   const saveUser = async () => {
     if (!editingUser) return;
+    if (editPassword && editPassword.length < 6) {
+      toast({ title: "Kata sandi terlalu pendek", description: "Minimal 6 karakter.", variant: "destructive" });
+      return;
+    }
     if (!editingUser.isAdmin && editProjects.length === 0) {
       toast({ title: "Proyek belum dipilih", description: "Pilih minimal 1 proyek agar akun bisa mengakses data.", variant: "destructive" });
       return;
@@ -138,6 +153,10 @@ const AccountManager = () => {
   const createUser = async () => {
     if (!newUser.email || !newUser.password) {
       toast({ title: "Lengkapi data", description: "Email dan password wajib diisi.", variant: "destructive" });
+      return;
+    }
+    if (newUser.password.length < 6) {
+      toast({ title: "Kata sandi terlalu pendek", description: "Minimal 6 karakter.", variant: "destructive" });
       return;
     }
     if (newProjects.length === 0) {
