@@ -155,6 +155,10 @@ const AccountManager = () => {
       toast({ title: "Lengkapi data", description: "Email dan password wajib diisi.", variant: "destructive" });
       return;
     }
+    if (newUser.password.length < 6) {
+      toast({ title: "Kata sandi terlalu pendek", description: "Minimal 6 karakter.", variant: "destructive" });
+      return;
+    }
     if (newProjects.length === 0) {
       toast({ title: "Proyek belum dipilih", description: "Pilih minimal 1 proyek.", variant: "destructive" });
       return;
