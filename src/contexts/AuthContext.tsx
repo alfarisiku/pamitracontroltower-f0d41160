@@ -40,11 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [assignedProjectIds, setAssignedProjectIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  // true selama peran & penugasan proyek belum selesai dibaca (mencegah user terlempar ke level publik)
-  const [detailsLoading, setDetailsLoading] = useState(false);
+  // false selama peran & penugasan proyek belum selesai dibaca (mencegah user terlempar ke level publik)
+  const [detailsReady, setDetailsReady] = useState(false);
 
   const fetchProfileAndRole = async (userId: string) => {
-    setDetailsLoading(true);
+    setDetailsReady(false);
     const [profileRes, roleRes, assignmentsRes] = await Promise.all([
       supabase.from("profiles").select("display_name, avatar_url, assigned_project_id, status").eq("user_id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId).limit(1).single(),
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setAssignedProjectIds([]);
     }
-    setDetailsLoading(false);
+    setDetailsReady(true);
   };
 
   const refreshProfile = async () => {
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, profile, role, loading, assignedProjectIds, signIn, signUp, signOut, refreshProfile,
+      user, profile, role, loading: loading || (!!user && !detailsReady), assignedProjectIds, signIn, signUp, signOut, refreshProfile,
       isAdmin,
       isManagement: role === "management",
       isTeam: role === "team",
