@@ -40,18 +40,35 @@ export function useAllFinanceEntries() {
   });
 }
 
+/** Kurva acuan progres per proyek (projects.primary_curve_type, default "baseline"). */
+export function usePrimaryCurveMap() {
+  const { data = [] } = useQuery<any[]>({
+    queryKey: ["projects_primary_curve"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("projects").select("id, primary_curve_type");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const map = new Map<string, string>();
+  for (const r of data as any[]) map.set(r.id, r.primary_curve_type || "baseline");
+  return map;
+}
+
 /**
- * Progress resmi proyek = actual terakhir pada S-Curve Baseline.
+ * Progress resmi proyek = actual terakhir pada kurva acuan (default Baseline).
  * Dipakai sebagai single source of truth agar Project Summary, Overview,
  * dan Project Detail selalu menampilkan angka yang sama.
  */
 function useBaselineProgressMap() {
   const { data = [] } = useAllSCurveData();
+  const curveMap = usePrimaryCurveMap();
   const map = new Map<string, number>();
   const best = new Map<string, number>();
   for (const r of data as any[]) {
+    const primary = curveMap.get(r.project_id) || "baseline";
     // Abaikan baris actual kosong / 0 (placeholder) agar tidak menurunkan progres resmi
-    if (r.curve_type !== "baseline" || r.actual_progress == null || Number(r.actual_progress) <= 0) continue;
+    if (r.curve_type !== primary || r.actual_progress == null || Number(r.actual_progress) <= 0) continue;
     const order = Number(r.period_order) || 0;
     if (!best.has(r.project_id) || order >= (best.get(r.project_id) as number)) {
       best.set(r.project_id, order);
