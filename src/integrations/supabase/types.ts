@@ -466,6 +466,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allowed_menus: string[] | null
           approved_at: string | null
           approved_by: string | null
           assigned_project_id: string | null
@@ -478,6 +479,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          allowed_menus?: string[] | null
           approved_at?: string | null
           approved_by?: string | null
           assigned_project_id?: string | null
@@ -490,6 +492,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          allowed_menus?: string[] | null
           approved_at?: string | null
           approved_by?: string | null
           assigned_project_id?: string | null
@@ -725,6 +728,7 @@ export type Database = {
           model_3d_url: string | null
           name: string
           phase: string
+          primary_curve_type: string
           profit_margin_target: number
           progress: number
           project_code: string
@@ -756,6 +760,7 @@ export type Database = {
           model_3d_url?: string | null
           name: string
           phase?: string
+          primary_curve_type?: string
           profit_margin_target?: number
           progress?: number
           project_code: string
@@ -787,6 +792,7 @@ export type Database = {
           model_3d_url?: string | null
           name?: string
           phase?: string
+          primary_curve_type?: string
           profit_margin_target?: number
           progress?: number
           project_code?: string

@@ -71,7 +71,7 @@ function FormFields({ f, set }: { f: Form; set: (v: Form) => void }) {
         <div><label className={labelCls}>Nominal (Rp)</label><input type="number" value={f.amount} onChange={e => set({ ...f, amount: e.target.value })} className={`w-full ${inputCls}`} placeholder="500000000" />
           {f.amount && <p className="text-[9px] text-muted-foreground mt-0.5">≈ {formatIDR(Number(f.amount))}</p>}
         </div>
-        <div><label className={labelCls}>Tgl PO</label><input type="date" value={f.po_date} onChange={e => set({ ...f, po_date: e.target.value })} className={`w-full ${inputCls}`} /></div>
+        <div><label className={labelCls}>Tgl BA</label><input type="date" value={f.po_date} onChange={e => set({ ...f, po_date: e.target.value })} className={`w-full ${inputCls}`} /></div>
         <div><label className={labelCls}>Tgl Invoice</label><input type="date" value={f.invoice_date} onChange={e => set({ ...f, invoice_date: e.target.value })} className={`w-full ${inputCls}`} /></div>
         <div><label className={labelCls}>Tgl Cash In</label><input type="date" value={f.cash_in_date} onChange={e => set({ ...f, cash_in_date: e.target.value })} className={`w-full ${inputCls}`} /></div>
       </div>
@@ -147,7 +147,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
         <table className="w-full text-xs">
           <thead className="bg-muted">
             <tr>
-              {["BAL", "Deskripsi", "Nominal", "Progress", "Status", "Tgl PO", "Tgl Invoice", "Tgl Cash In"].map(h => (
+              {["BAL", "Deskripsi", "Nominal", "Progress", "Status", "Tgl BA", "Tgl Invoice", "Tgl Cash In"].map(h => (
                 <th key={h} className="text-left py-1.5 px-2 text-[9px] uppercase text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -166,7 +166,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
                   </select>
                 </td>
                 {([
-                  ["plan_po_date", "Tgl PO"],
+                  ["plan_po_date", "Tgl BA"],
                   ["plan_invoice_date", "Tgl Invoice"],
                   ["plan_cash_in_date", "Tgl Cash In"],
                 ] as const).map(([field, lbl]) => (
@@ -190,7 +190,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Receipt className="h-4 w-4 text-primary" /> BAL — Penagihan ke Klien</h3>
-          <p className="text-[10px] text-muted-foreground">Status BAL (Plan → Di Progress → Terbayar), nominal, % progress ditagih, dan tanggal PO / Invoice / Cash In.</p>
+          <p className="text-[10px] text-muted-foreground">Status BAL (Plan → Di Progress → Terbayar), nominal, % progress ditagih, dan tanggal BA / Invoice / Cash In.</p>
         </div>
         <button onClick={() => setAddOpen(o => !o)} className="flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-medium"><Plus className="h-3 w-3" /> Tambah BAL</button>
       </div>
@@ -249,7 +249,7 @@ export function BillingPanel({ projectId, mode = "full", onLogged }: {
                   <button onClick={() => del(r.id, r.termin_code)} className="p-1 hover:bg-muted rounded"><Trash2 className="h-3 w-3 text-destructive" /></button>
                 </div>
                 <div className="flex items-center gap-4 flex-wrap text-[11px] text-muted-foreground">
-                  <span>Tgl PO: <span className="text-foreground font-mono-data">{fmtD(r.plan_po_date)}</span></span>
+                  <span>Tgl BA: <span className="text-foreground font-mono-data">{fmtD(r.plan_po_date)}</span></span>
                   <span>Tgl Invoice: <span className="text-foreground font-mono-data">{fmtD(r.plan_invoice_date)}</span></span>
                   <span>Tgl Cash In: <span className="text-foreground font-mono-data">{fmtD(r.plan_cash_in_date)}</span></span>
                 </div>

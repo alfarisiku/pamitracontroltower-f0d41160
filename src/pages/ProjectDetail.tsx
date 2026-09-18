@@ -847,7 +847,30 @@ const ProjectDetail = () => {
           {activeTab === "billing" && (
             <div className="glass-card rounded-lg p-4 shadow-card">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1"><Receipt className="h-4 w-4 text-primary" /> BAL ke Client</h3>
-              <p className="text-[10px] text-muted-foreground mb-3">Monitoring pengakuan pembayaran BAL — status, nominal, % progress tertagih, serta tanggal PO / Invoice / Cash In.</p>
+              <p className="text-[10px] text-muted-foreground mb-3">Monitoring pengakuan pembayaran BAL — status, nominal, % progress tertagih, serta tanggal BA / Invoice / Cash In.</p>
+              {billings.length > 0 && (() => {
+                const sum = (f: (b: any) => boolean) => billings.filter(f).reduce((s, b: any) => s + (Number(b.plan_amount) || 0), 0);
+                const totalBal = sum(() => true);
+                const paidBal = sum((b: any) => b.status === "paid");
+                const progBal = sum((b: any) => b.status === "progress");
+                const planBal = sum((b: any) => b.status === "plan");
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                    {[
+                      { l: "Total BAL", v: totalBal, c: "text-foreground" },
+                      { l: "Terbayar", v: paidBal, c: "text-success" },
+                      { l: "Di Progress", v: progBal, c: "text-warning" },
+                      { l: "Plan (Belum Ditagih)", v: planBal, c: "text-muted-foreground" },
+                    ].map(k => (
+                      <div key={k.l} className="rounded border border-border bg-card p-2">
+                        <p className="text-[9px] uppercase text-muted-foreground">{k.l}</p>
+                        <p className={`text-xs font-semibold font-mono-data ${k.c}`}>{formatIDR(k.v)}</p>
+                        <p className="text-[9px] text-muted-foreground">{totalBal > 0 ? ((k.v / totalBal) * 100).toFixed(2) : "0.00"}% dari total</p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               {billings.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-6 text-center">Belum ada data BAL.</p>
               ) : (

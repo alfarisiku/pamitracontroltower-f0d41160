@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2, Pencil, Star } from "lucide-react";
 import { supabase, logActivity } from "@/lib/supabase";
-import { useSCurveData } from "@/hooks/useProjects";
+import { useSCurveData, usePrimaryCurveMap } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
 import { DateRangeInput } from "@/components/ui/date-range-input";
 
@@ -31,6 +31,9 @@ const fromISO = (iso: string) => (iso ? new Date(iso + "T00:00:00") : undefined)
 
 export function SCurveEditor({ projectId }: { projectId: string }) {
   const { data: scurveData = [], isLoading } = useSCurveData(projectId);
+  const primaryMap = usePrimaryCurveMap();
+  const primaryCurve = primaryMap.get(projectId) || "baseline";
+  
   
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<Row[]>([]);
@@ -140,6 +143,10 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   // Hapus seluruh data curve (non-baseline) dari database.
   const handleDeleteCurve = async () => {
     if (curveType === "baseline") return;
+    if (primaryCurve === curveType) {
+      toast({ title: "Curve ini adalah acuan progres", description: "Pilih curve lain sebagai acuan progres sebelum menghapus.", variant: "destructive" });
+      return;
+    }
     if (!confirm(`Hapus curve "${curveType}" beserta seluruh datanya dari database?`)) return;
     setBusyCurve(true);
     try {
@@ -155,6 +162,52 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     } finally { setBusyCurve(false); }
   };
 
+  // Ganti nama curve (termasuk baseline) — semua baris data ikut berpindah nama.
+  const handleRenameCurve = async () => {
+    const name = prompt(`Ganti nama curve "${curveType}" menjadi:`, curveType)?.trim();
+    if (!name || name === curveType) return;
+    if (curveTypes.includes(name)) {
+      toast({ title: "Nama sudah dipakai", description: `Curve "${name}" sudah ada.`, variant: "destructive" });
+      return;
+    }
+    setBusyCurve(true);
+    try {
+      const { error } = await supabase.from("s_curve_data")
+        .update({ curve_type: name }).eq("project_id", projectId).eq("curve_type", curveType);
+      if (error) throw error;
+      // Ikut pindahkan acuan progres bila curve ini yang jadi acuan
+      if (primaryCurve === curveType) {
+        await (supabase as any).from("projects").update({ primary_curve_type: name }).eq("id", projectId);
+      }
+      await logActivity(supabase, "s_curve", "update", `Curve ${curveType} diganti nama → ${name}`, projectId);
+      await queryClient.invalidateQueries({ queryKey: ["s_curve_data"] });
+      queryClient.invalidateQueries({ queryKey: ["s_curve_data_all"] });
+      queryClient.invalidateQueries({ queryKey: ["projects_primary_curve"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      setCurveType(name);
+      toast({ title: "✅ Nama curve diperbarui" });
+    } catch (e: any) {
+      toast({ title: "❌ Gagal ganti nama", description: e.message, variant: "destructive" });
+    } finally { setBusyCurve(false); }
+  };
+
+  // Tetapkan curve aktif sebagai acuan progres proyek (dipakai di Summary/Overview/Detail).
+  const handleSetPrimary = async () => {
+    if (primaryCurve === curveType) return;
+    setBusyCurve(true);
+    try {
+      const { error } = await (supabase as any).from("projects")
+        .update({ primary_curve_type: curveType }).eq("id", projectId);
+      if (error) throw error;
+      await logActivity(supabase, "s_curve", "update", `Curve acuan progres diubah → ${curveType}`, projectId);
+      await queryClient.invalidateQueries({ queryKey: ["projects_primary_curve"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "⭐ Acuan progres diperbarui", description: `Progres proyek kini mengikuti curve "${curveType}".` });
+    } catch (e: any) {
+      toast({ title: "❌ Gagal", description: e.message, variant: "destructive" });
+    } finally { setBusyCurve(false); }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -213,10 +266,19 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           {curveTypes.map(ct => (
             <button key={ct} onClick={() => setCurveType(ct)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${curveType === ct ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border border-border hover:bg-muted/80"}`}>
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${curveType === ct ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border border-border hover:bg-muted/80"}`}>
+              {ct === primaryCurve && <Star className="h-3 w-3 fill-current" />}
               {ct === "baseline" ? "Baseline" : ct}
             </button>
           ))}
+          <button onClick={handleRenameCurve} disabled={busyCurve}
+            className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium border border-border text-foreground hover:bg-muted disabled:opacity-50">
+            <Pencil className="h-3 w-3" /> Ganti Nama
+          </button>
+          <button onClick={handleSetPrimary} disabled={busyCurve || primaryCurve === curveType}
+            className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-40">
+            <Star className="h-3 w-3" /> {primaryCurve === curveType ? "Acuan Progres" : "Jadikan Acuan Progres"}
+          </button>
           <div className="flex items-center gap-1">
             <input value={newCurveType} onChange={e => setNewCurveType(e.target.value)} className={inputCls + " w-28"} placeholder="KSO / Addendum-1" />
             <button onClick={handleAddCurve} disabled={busyCurve} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium disabled:opacity-50">
