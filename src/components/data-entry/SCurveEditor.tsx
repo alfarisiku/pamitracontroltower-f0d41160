@@ -262,10 +262,19 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           {curveTypes.map(ct => (
             <button key={ct} onClick={() => setCurveType(ct)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${curveType === ct ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border border-border hover:bg-muted/80"}`}>
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${curveType === ct ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border border-border hover:bg-muted/80"}`}>
+              {ct === primaryCurve && <Star className="h-3 w-3 fill-current" />}
               {ct === "baseline" ? "Baseline" : ct}
             </button>
           ))}
+          <button onClick={handleRenameCurve} disabled={busyCurve}
+            className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium border border-border text-foreground hover:bg-muted disabled:opacity-50">
+            <Pencil className="h-3 w-3" /> Ganti Nama
+          </button>
+          <button onClick={handleSetPrimary} disabled={busyCurve || primaryCurve === curveType}
+            className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-40">
+            <Star className="h-3 w-3" /> {primaryCurve === curveType ? "Acuan Progres" : "Jadikan Acuan Progres"}
+          </button>
           <div className="flex items-center gap-1">
             <input value={newCurveType} onChange={e => setNewCurveType(e.target.value)} className={inputCls + " w-28"} placeholder="KSO / Addendum-1" />
             <button onClick={handleAddCurve} disabled={busyCurve} className="px-2 py-1.5 bg-success text-success-foreground rounded text-[10px] font-medium disabled:opacity-50">
