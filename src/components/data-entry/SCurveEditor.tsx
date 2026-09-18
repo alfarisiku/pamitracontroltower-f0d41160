@@ -143,6 +143,10 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   // Hapus seluruh data curve (non-baseline) dari database.
   const handleDeleteCurve = async () => {
     if (curveType === "baseline") return;
+    if (primaryCurve === curveType) {
+      toast({ title: "Curve ini adalah acuan progres", description: "Pilih curve lain sebagai acuan progres sebelum menghapus.", variant: "destructive" });
+      return;
+    }
     if (!confirm(`Hapus curve "${curveType}" beserta seluruh datanya dari database?`)) return;
     setBusyCurve(true);
     try {
