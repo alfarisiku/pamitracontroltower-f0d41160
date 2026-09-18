@@ -158,6 +158,52 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     } finally { setBusyCurve(false); }
   };
 
+  // Ganti nama curve (termasuk baseline) — semua baris data ikut berpindah nama.
+  const handleRenameCurve = async () => {
+    const name = prompt(`Ganti nama curve "${curveType}" menjadi:`, curveType)?.trim();
+    if (!name || name === curveType) return;
+    if (curveTypes.includes(name)) {
+      toast({ title: "Nama sudah dipakai", description: `Curve "${name}" sudah ada.`, variant: "destructive" });
+      return;
+    }
+    setBusyCurve(true);
+    try {
+      const { error } = await supabase.from("s_curve_data")
+        .update({ curve_type: name }).eq("project_id", projectId).eq("curve_type", curveType);
+      if (error) throw error;
+      // Ikut pindahkan acuan progres bila curve ini yang jadi acuan
+      if (primaryCurve === curveType) {
+        await (supabase as any).from("projects").update({ primary_curve_type: name }).eq("id", projectId);
+      }
+      await logActivity(supabase, "s_curve", "update", `Curve ${curveType} diganti nama → ${name}`, projectId);
+      await queryClient.invalidateQueries({ queryKey: ["s_curve_data"] });
+      queryClient.invalidateQueries({ queryKey: ["s_curve_data_all"] });
+      queryClient.invalidateQueries({ queryKey: ["projects_primary_curve"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      setCurveType(name);
+      toast({ title: "✅ Nama curve diperbarui" });
+    } catch (e: any) {
+      toast({ title: "❌ Gagal ganti nama", description: e.message, variant: "destructive" });
+    } finally { setBusyCurve(false); }
+  };
+
+  // Tetapkan curve aktif sebagai acuan progres proyek (dipakai di Summary/Overview/Detail).
+  const handleSetPrimary = async () => {
+    if (primaryCurve === curveType) return;
+    setBusyCurve(true);
+    try {
+      const { error } = await (supabase as any).from("projects")
+        .update({ primary_curve_type: curveType }).eq("id", projectId);
+      if (error) throw error;
+      await logActivity(supabase, "s_curve", "update", `Curve acuan progres diubah → ${curveType}`, projectId);
+      await queryClient.invalidateQueries({ queryKey: ["projects_primary_curve"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
+      toast({ title: "⭐ Acuan progres diperbarui", description: `Progres proyek kini mengikuti curve "${curveType}".` });
+    } catch (e: any) {
+      toast({ title: "❌ Gagal", description: e.message, variant: "destructive" });
+    } finally { setBusyCurve(false); }
+  };
 
   const handleSave = async () => {
     setSaving(true);
