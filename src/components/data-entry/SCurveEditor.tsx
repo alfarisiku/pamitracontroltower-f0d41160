@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2, Pencil, Star } from "lucide-react";
 import { supabase, logActivity } from "@/lib/supabase";
-import { useSCurveData } from "@/hooks/useProjects";
+import { useSCurveData, usePrimaryCurveMap } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
 import { DateRangeInput } from "@/components/ui/date-range-input";
 
