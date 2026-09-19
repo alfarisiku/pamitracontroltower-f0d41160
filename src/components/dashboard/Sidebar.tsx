@@ -4,6 +4,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
+import { DEFAULT_LEVEL2_MENUS } from "@/lib/menus";
 
 
 
@@ -43,9 +44,13 @@ export function Sidebar() {
   }, [collapsed]);
 
   const { level } = useDemoLevel();
-  const LEVEL2_PATHS = ["/projects", "/data-entry", "/activity-log"];
+  const { allowedMenus } = useAuth();
   const menuItems =
-    level === 2 ? allMenuItems.filter(i => LEVEL2_PATHS.includes(i.path)) : allMenuItems;
+    level === 2
+      ? allMenuItems.filter(i =>
+          (allowedMenus && allowedMenus.length > 0 ? allowedMenus : DEFAULT_LEVEL2_MENUS).includes(i.path),
+        )
+      : allMenuItems;
 
   const toggleCollapse = () => setCollapsed(c => !c);
 
