@@ -883,7 +883,7 @@ const ProjectDetail = () => {
                         <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Status</th>
                         <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">% Progress</th>
                         <th className="text-right py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Nominal</th>
-                        <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Tgl PO</th>
+                        <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Tgl BA</th>
                         <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Tgl Invoice</th>
                         <th className="text-center py-1.5 px-2 text-[9px] uppercase text-muted-foreground">Tgl Cash In</th>
                       </tr>
@@ -900,7 +900,7 @@ const ProjectDetail = () => {
                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${BILLING_STATUS_CLASS[b.status] || "bg-muted text-muted-foreground border-border"}`}>{st?.label || b.status}</span>
                             </td>
                             <td className="py-1.5 px-2 text-right font-mono-data">{Number(b.plan_progress_pct || 0).toFixed(2)}%</td>
-                            <td className="py-1.5 px-2 text-right font-mono-data font-semibold text-foreground">{formatRupiah(Number(b.plan_amount || 0))}</td>
+                            <td className="py-1.5 px-2 text-right font-mono-data font-semibold text-foreground">{formatIDR(Number(b.plan_amount || 0))}</td>
                             <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_po_date || b.plan_po_date)}</td>
                             <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_invoice_date || b.plan_invoice_date)}</td>
                             <td className="py-1.5 px-2 text-center font-mono-data text-muted-foreground">{d(b.actual_cash_in_date || b.plan_cash_in_date)}</td>

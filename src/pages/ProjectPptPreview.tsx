@@ -502,16 +502,16 @@ export default function ProjectPptPreview() {
           {
             type: "kpi",
             items: [
-              { label: "Total Plan", value: formatRupiah(planTot) },
-              { label: "Total Terbayar", value: formatRupiah(paidTot), tone: "success" },
-              { label: "Outstanding", value: formatRupiah(planTot - paidTot), tone: "warning" },
+              { label: "Total Plan", value: formatIDR(planTot) },
+              { label: "Total Terbayar", value: formatIDR(paidTot), tone: "success" },
+              { label: "Outstanding", value: formatIDR(planTot - paidTot), tone: "warning" },
               { label: "Realisasi", value: `${planTot ? ((paidTot / planTot) * 100).toFixed(1) : "0.0"}%`, tone: "primary" },
             ],
           },
           {
             type: "table",
             headers: ["BAL", "Plan", "Paid", "Status"],
-            rows: billings.slice(0, 8).map((b: any) => [b.termin_code, formatRupiah(b.plan_amount), formatRupiah(b.paid_amount), b.status || "—"]),
+            rows: billings.slice(0, 8).map((b: any) => [b.termin_code, formatIDR(b.plan_amount), formatIDR(b.paid_amount), b.status || "—"]),
             align: ["left", "right", "right", "left"],
           },
         ],

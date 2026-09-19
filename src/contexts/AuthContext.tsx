@@ -9,6 +9,7 @@ interface UserProfile {
   avatar_url: string | null;
   assigned_project_id: string | null;
   status: string;
+  allowed_menus: string[] | null;
 }
 
 interface AuthContextType {
@@ -26,6 +27,7 @@ interface AuthContextType {
   isClient: boolean;
   isPending: boolean;
   hasNoProject: boolean;
+  allowedMenus: string[] | null;
   refreshProfile: () => Promise<void>;
 }
 
@@ -46,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfileAndRole = async (userId: string) => {
     setDetailsReady(false);
     const [profileRes, roleRes, assignmentsRes] = await Promise.all([
-      supabase.from("profiles").select("display_name, avatar_url, assigned_project_id, status").eq("user_id", userId).single(),
+      supabase.from("profiles").select("display_name, avatar_url, assigned_project_id, status, allowed_menus").eq("user_id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId).limit(1).single(),
       supabase.from("user_project_assignments").select("project_id").eq("user_id", userId),
     ]);
@@ -151,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isClient: role === "client",
       isPending: !!user && profile?.status !== "active",
       hasNoProject: !isAdmin && assignedProjectIds.length === 0,
+      allowedMenus: profile?.allowed_menus ?? null,
     }}>
 
       {children}
