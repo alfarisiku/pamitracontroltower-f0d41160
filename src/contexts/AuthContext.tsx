@@ -9,6 +9,7 @@ interface UserProfile {
   avatar_url: string | null;
   assigned_project_id: string | null;
   status: string;
+  allowed_menus: string[] | null;
 }
 
 interface AuthContextType {
