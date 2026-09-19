@@ -59,21 +59,25 @@ const Index = () => {
           <div className="mb-1">
             <h2 className="text-sm font-semibold text-foreground mb-3">Overview Proyek</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-            <KPICard title="Total Projects" value={projects.length} subtitle={`${active} aktif`} icon={Briefcase} variant="primary" />
-            <KPICard title="Proyek Aktif" value={active} subtitle="Sedang berjalan" icon={Clock} variant="accent" />
-            <KPICard title="Selesai" value={completed} subtitle="Completed / Closed" icon={CheckCircle2} variant="success" />
-            <KPICard title="Overall Progress" value={`${avgProgress}%`} subtitle="Rata-rata semua proyek" icon={Layers} variant="primary" />
-          </div>
+          {!L3 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+              <KPICard title="Total Projects" value={projects.length} subtitle={`${active} aktif`} icon={Briefcase} variant="primary" />
+              <KPICard title="Proyek Aktif" value={active} subtitle="Sedang berjalan" icon={Clock} variant="accent" />
+              <KPICard title="Selesai" value={completed} subtitle="Completed / Closed" icon={CheckCircle2} variant="success" />
+              <KPICard title="Overall Progress" value={`${avgProgress}%`} subtitle="Rata-rata semua proyek" icon={Layers} variant="primary" />
+            </div>
+          )}
 
           {/* Map + Distribusi Production */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-5">
-            <div className="lg:col-span-3">
+          <div className={`grid grid-cols-1 ${L3 ? "" : "lg:grid-cols-4"} gap-3 mb-5`}>
+            <div className={L3 ? "" : "lg:col-span-3"}>
               <IndonesiaMap projects={projects} onSelectProject={setSelectedProject} hideMoney={L3} neutralStatus={L3} />
             </div>
-            <div>
-              <PhaseChart projects={projects} />
-            </div>
+            {!L3 && (
+              <div>
+                <PhaseChart projects={projects} />
+              </div>
+            )}
           </div>
 
           {/* Daftar Proyek — non-sensitive */}
