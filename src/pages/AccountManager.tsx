@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { MENU_DEFS, DEFAULT_LEVEL2_MENUS } from "@/lib/menus";
 import {
   Users, Shield, CheckCircle2, Edit3, UserX, UserCheck, Trash2,
   Search, RefreshCw, Lock, KeyRound, Plus, Mail,
@@ -18,6 +19,7 @@ interface UserRow {
   email: string;
   isAdmin: boolean;
   assignedProjectIds: string[];
+  allowedMenus: string[] | null;
 }
 
 const AccountManager = () => {
@@ -33,6 +35,7 @@ const AccountManager = () => {
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editProjects, setEditProjects] = useState<string[]>([]);
+  const [editMenus, setEditMenus] = useState<string[]>([]);
 
   // Create modal
   const [showCreate, setShowCreate] = useState(false);
@@ -78,6 +81,7 @@ const AccountManager = () => {
         email: emails[p.user_id] ?? "—",
         isAdmin: (roles ?? []).some((r: any) => r.user_id === p.user_id && r.role === "admin"),
         assignedProjectIds: (assignments ?? []).filter((a: any) => a.user_id === p.user_id).map((a: any) => a.project_id),
+        allowedMenus: p.allowed_menus ?? null,
       }));
       setUsers(mapped);
     } catch (e: any) {
@@ -94,6 +98,7 @@ const AccountManager = () => {
     setEditEmail(u.email === "—" ? "" : u.email);
     setEditPassword("");
     setEditProjects(u.assignedProjectIds);
+    setEditMenus(u.allowedMenus && u.allowedMenus.length > 0 ? u.allowedMenus : DEFAULT_LEVEL2_MENUS);
   };
 
   const saveUser = async () => {
@@ -118,6 +123,7 @@ const AccountManager = () => {
       }
       if (!editingUser.isAdmin) {
         await callAdmin({ action: "set_projects", user_id: editingUser.user_id, project_ids: editProjects });
+        await callAdmin({ action: "set_menus", user_id: editingUser.user_id, menus: editMenus });
       }
       toast({ title: "✅ Tersimpan", description: "Akun diperbarui." });
       setEditingUser(null);
@@ -361,6 +367,23 @@ const AccountManager = () => {
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">Akses Proyek <span className="text-destructive">*</span></label>
                   {projectPicker(editProjects, setEditProjects)}
                   {editProjects.length === 0 && <p className="text-[10px] text-destructive mt-1">Minimal 1 proyek harus dipilih</p>}
+                </div>
+              )}
+
+              {!editingUser.isAdmin && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Menu yang Boleh Diakses</label>
+                  <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+                    {MENU_DEFS.map(m => (
+                      <label key={m.path} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/30 cursor-pointer">
+                        <input type="checkbox" checked={editMenus.includes(m.path)}
+                          onChange={() => setEditMenus(editMenus.includes(m.path) ? editMenus.filter(x => x !== m.path) : [...editMenus, m.path])}
+                          className="rounded border-border text-primary focus:ring-primary" />
+                        <span className="text-xs text-foreground">{m.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">Kosongkan semua untuk memakai menu bawaan (Project Summary, Data Entry, Activity Log).</p>
                 </div>
               )}
 

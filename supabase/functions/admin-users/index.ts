@@ -109,6 +109,15 @@ Deno.serve(async (req) => {
     }
 
 
+    if (action === "set_menus") {
+      const { user_id, menus } = body;
+      if (!user_id) return json({ error: "user_id wajib diisi" }, 400);
+      const value = Array.isArray(menus) && menus.length > 0 ? menus : null;
+      const { error } = await admin.from("profiles").update({ allowed_menus: value }).eq("user_id", user_id);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
     if (action === "delete") {
       const { user_id } = body;
       if (!user_id) return json({ error: "user_id wajib diisi" }, 400);
