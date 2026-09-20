@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, CheckCircle2, Clock, Layers, ExternalLink } from "lucide-react";
+import { Briefcase, CheckCircle2, Clock, Layers, ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { KPICard } from "@/components/dashboard/KPICard";
@@ -21,6 +21,15 @@ const Index = () => {
   const { user, profile, assignedProjectIds } = useAuth();
   const L3 = demoLevel === 3;
   const noProjectAssigned = !!user && !isAdmin && profile?.status === "active" && assignedProjectIds.length === 0;
+
+  const [openClients, setOpenClients] = useState<string[]>([]);
+  const clientGroups = Object.entries(
+    projects.reduce<Record<string, DbProject[]>>((acc, p) => {
+      const key = p.client || "Lainnya";
+      (acc[key] ||= []).push(p);
+      return acc;
+    }, {})
+  ).sort((a, b) => a[0].localeCompare(b[0]));
 
   const active = projects.filter((p) => p.status !== "completed" && p.status !== "closed").length;
   const completed = projects.filter((p) => p.status === "completed" || p.status === "closed").length;
