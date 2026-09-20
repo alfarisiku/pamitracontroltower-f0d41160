@@ -1,0 +1,1 @@
+ALTER TABLE public.project_tanks ADD COLUMN manual_progress numeric;
