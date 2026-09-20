@@ -752,6 +752,7 @@ export type Database = {
           description: string | null
           finish_date: string | null
           id: string
+          manual_progress: number | null
           map_x: number
           map_y: number
           photo_url: string | null
@@ -770,6 +771,7 @@ export type Database = {
           description?: string | null
           finish_date?: string | null
           id?: string
+          manual_progress?: number | null
           map_x?: number
           map_y?: number
           photo_url?: string | null
@@ -788,6 +790,7 @@ export type Database = {
           description?: string | null
           finish_date?: string | null
           id?: string
+          manual_progress?: number | null
           map_x?: number
           map_y?: number
           photo_url?: string | null
