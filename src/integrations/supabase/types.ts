@@ -707,6 +707,123 @@ export type Database = {
           },
         ]
       }
+      project_tank_sites: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          project_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          project_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          project_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tank_sites_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_tanks: {
+        Row: {
+          capacity_kl: number | null
+          created_at: string
+          description: string | null
+          finish_date: string | null
+          id: string
+          map_x: number
+          map_y: number
+          photo_url: string | null
+          product: string | null
+          project_id: string
+          site_id: string | null
+          sort_order: number
+          status: string
+          tank_code: string
+          updated_at: string
+          work_area_id: string | null
+        }
+        Insert: {
+          capacity_kl?: number | null
+          created_at?: string
+          description?: string | null
+          finish_date?: string | null
+          id?: string
+          map_x?: number
+          map_y?: number
+          photo_url?: string | null
+          product?: string | null
+          project_id: string
+          site_id?: string | null
+          sort_order?: number
+          status?: string
+          tank_code: string
+          updated_at?: string
+          work_area_id?: string | null
+        }
+        Update: {
+          capacity_kl?: number | null
+          created_at?: string
+          description?: string | null
+          finish_date?: string | null
+          id?: string
+          map_x?: number
+          map_y?: number
+          photo_url?: string | null
+          product?: string | null
+          project_id?: string
+          site_id?: string | null
+          sort_order?: number
+          status?: string
+          tank_code?: string
+          updated_at?: string
+          work_area_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tanks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tanks_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "project_tank_sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tanks_work_area_id_fkey"
+            columns: ["work_area_id"]
+            isOneToOne: false
+            referencedRelation: "work_areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           budget: number
