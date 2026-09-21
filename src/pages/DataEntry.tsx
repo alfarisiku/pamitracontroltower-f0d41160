@@ -22,8 +22,9 @@ import { MilestonesEditor } from "@/components/data-entry/MilestonesEditor";
 import { BillingPanel } from "@/components/data-entry/BillingPanel";
 import { HrPanel } from "@/components/data-entry/HrPanel";
 import { ExcelSyncPanel } from "@/components/data-entry/ExcelSyncPanel";
+import { TankPanel } from "@/components/data-entry/TankPanel";
 
-type ActiveTab = "regular" | "billing" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum" | "hr";
+type ActiveTab = "regular" | "billing" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum" | "hr" | "tanks";
 
 const inputCls = "w-full px-3 py-2 text-xs bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
@@ -54,6 +55,7 @@ const DataEntry = () => {
     { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,          adminOnly: false, group: "project" as const },
     { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,    adminOnly: true,  group: "project" as const },
     { key: "hr" as const,            label: "SDM (Staff/Manpower)", icon: Users,          adminOnly: false, group: "project" as const },
+    { key: "tanks" as const,         label: "Tangki (BoD)",        icon: Layers,          adminOnly: false, group: "project" as const },
   ];
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
   const quickTabs = tabs.filter(t => t.group === "quick");
@@ -153,6 +155,7 @@ const DataEntry = () => {
           {activeTab === "scurve" && updateProjectId && <SCurveEditor projectId={updateProjectId} />}
           {activeTab === "addendum" && updateProjectId && <AddendumTab projectId={updateProjectId} projects={projects} />}
           {activeTab === "hr" && updateProjectId && <HrPanel projectId={updateProjectId} />}
+          {activeTab === "tanks" && updateProjectId && <TankPanel projectId={updateProjectId} />}
           {activeTab === "project-crud" && <ProjectCrudTab projects={projects} />}
 
           {!updateProjectId && activeTab !== "project-crud" && (

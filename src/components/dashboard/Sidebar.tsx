@@ -23,6 +23,7 @@ const allMenuItems = [
   { icon: Activity, label: "Activity Log", path: "/activity-log" },
   
   { icon: Monitor, label: "War Room", path: "/war-room" },
+  { icon: Layers, label: "BoD Tank View", path: "/bod" },
   { icon: Shield, label: "Account Manager", path: "/account-manager" },
 ];
 
