@@ -11,6 +11,7 @@ export const MENU_DEFS: { path: string; label: string }[] = [
   { path: "/data-entry", label: "Data Entry" },
   { path: "/activity-log", label: "Activity Log" },
   { path: "/war-room", label: "War Room" },
+  { path: "/bod", label: "BoD Tank View" },
 ];
 
 /** Menu bawaan untuk akun level 2 bila admin belum mengatur menu khusus */

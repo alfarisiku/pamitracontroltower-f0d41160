@@ -60,7 +60,7 @@ export function usePrimaryCurveMap() {
  * Dipakai sebagai single source of truth agar Project Summary, Overview,
  * dan Project Detail selalu menampilkan angka yang sama.
  */
-function useBaselineProgressMap() {
+export function useBaselineProgressMap() {
   const { data = [] } = useAllSCurveData();
   const curveMap = usePrimaryCurveMap();
   const map = new Map<string, number>();

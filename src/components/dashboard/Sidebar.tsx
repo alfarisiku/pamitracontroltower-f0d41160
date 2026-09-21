@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet, LogOut, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CalendarClock, DollarSign, AlertTriangle, Database, FileText, Menu, X, Monitor, Shield, Activity, Wallet, LogOut, BarChart3, ChevronLeft, ChevronRight, Layers } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,7 @@ const allMenuItems = [
   { icon: Activity, label: "Activity Log", path: "/activity-log" },
   
   { icon: Monitor, label: "War Room", path: "/war-room" },
+  { icon: Layers, label: "BoD Tank View", path: "/bod" },
   { icon: Shield, label: "Account Manager", path: "/account-manager" },
 ];
 

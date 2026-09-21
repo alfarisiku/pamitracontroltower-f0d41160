@@ -24,6 +24,8 @@ import DataEntry from "./pages/DataEntry";
 import WarRoom from "./pages/WarRoom";
 import ActivityLog from "./pages/ActivityLog";
 import AccountManager from "./pages/AccountManager";
+import BodPortfolio from "./pages/BodPortfolio";
+import BodTankDetail from "./pages/BodTankDetail";
 
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +40,8 @@ function AppRoutes() {
 
       {/* Level 3 — publik */}
       <Route path="/" element={<Index />} />
+      <Route path="/bod" element={<BodPortfolio />} />
+      <Route path="/bod/:id" element={<BodTankDetail />} />
       
 
       {/* Level 2 — user dengan proyek yang di-assign */}
