@@ -750,13 +750,16 @@ export type Database = {
           capacity_kl: number | null
           created_at: string
           description: string | null
+          duration_months: number | null
           finish_date: string | null
           id: string
           manual_progress: number | null
           map_x: number
           map_y: number
           photo_url: string | null
+          plan_percent: number | null
           product: string | null
+          progress_source: string
           project_id: string
           site_id: string | null
           sort_order: number
@@ -769,13 +772,16 @@ export type Database = {
           capacity_kl?: number | null
           created_at?: string
           description?: string | null
+          duration_months?: number | null
           finish_date?: string | null
           id?: string
           manual_progress?: number | null
           map_x?: number
           map_y?: number
           photo_url?: string | null
+          plan_percent?: number | null
           product?: string | null
+          progress_source?: string
           project_id: string
           site_id?: string | null
           sort_order?: number
@@ -788,13 +794,16 @@ export type Database = {
           capacity_kl?: number | null
           created_at?: string
           description?: string | null
+          duration_months?: number | null
           finish_date?: string | null
           id?: string
           manual_progress?: number | null
           map_x?: number
           map_y?: number
           photo_url?: string | null
+          plan_percent?: number | null
           product?: string | null
+          progress_source?: string
           project_id?: string
           site_id?: string | null
           sort_order?: number
@@ -829,6 +838,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          bod_region: string | null
           budget: number
           category: string | null
           cctv_url: string | null
@@ -861,6 +871,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          bod_region?: string | null
           budget?: number
           category?: string | null
           cctv_url?: string | null
@@ -893,6 +904,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          bod_region?: string | null
           budget?: number
           category?: string | null
           cctv_url?: string | null
