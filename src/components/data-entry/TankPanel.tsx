@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2, Upload, MapPin, Droplets } from "lucide-react";
 import { supabase, logActivity } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +25,27 @@ export function TankPanel({ projectId }: { projectId: string }) {
   const [newSite, setNewSite] = useState("");
   const [newTank, setNewTank] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const { data: projectRow } = useQuery({
+    queryKey: ["bod_project_region", projectId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("projects").select("bod_region").eq("id", projectId).maybeSingle();
+      if (error) throw error;
+      return data as { bod_region: string | null } | null;
+    },
+  });
+  const region = projectRow?.bod_region ?? "";
+
+  const saveRegion = async (value: string) => {
+    const v = value.trim();
+    const { error } = await (supabase as any).from("projects").update({ bod_region: v || null }).eq("id", projectId);
+    if (error) return toast({ title: "Gagal menyimpan region", description: error.message, variant: "destructive" });
+    await logActivity("project", projectId, "update", `Mengatur region BoD: ${v || "—"}`, projectId);
+    qc.invalidateQueries({ queryKey: ["bod_project_region", projectId] });
+    qc.invalidateQueries({ queryKey: ["bod_regions"] });
+    qc.invalidateQueries({ queryKey: ["bod_projects"] });
+    toast({ title: "Region tersimpan" });
+  };
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["project_tanks", projectId] });
@@ -80,6 +101,21 @@ export function TankPanel({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-5">
+      {/* Region BoD */}
+      <div className="glass-card rounded-lg shadow-card p-4">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-1"><MapPin className="h-4 w-4 text-primary" /> Region Portfolio BoD</h3>
+        <p className="text-[11px] text-muted-foreground mb-2">
+          Isi region (mis. <b>MOR V</b> atau <b>MOR III</b>). Proyek akan muncul di halaman /bod pada region tersebut. Kosongkan bila tidak ditampilkan di BoD.
+        </p>
+        <input
+          key={region}
+          defaultValue={region}
+          placeholder="MOR V"
+          onBlur={e => e.target.value.trim() !== region && saveRegion(e.target.value)}
+          className={`${inputCls} max-w-xs`}
+        />
+      </div>
+
       {/* Lokasi / foto udara */}
       <div className="glass-card rounded-lg shadow-card p-4">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3"><MapPin className="h-4 w-4 text-primary" /> Lokasi Terminal & Foto Udara</h3>
@@ -149,10 +185,12 @@ export function TankPanel({ projectId }: { projectId: string }) {
                 <div><label className={labelCls}>Progress Manual (%)</label>
                   <input type="number" step="0.01" defaultValue={t.manual_progress ?? ""} placeholder="kosong = ikut WBS"
                     onBlur={e => saveTank(t.id, { manual_progress: e.target.value === "" ? null : Number(e.target.value) })} className={inputCls} /></div>
-                <div><label className={labelCls}>Posisi X (%)</label>
-                  <input type="number" defaultValue={t.map_x} onBlur={e => saveTank(t.id, { map_x: Number(e.target.value) || 0 })} className={inputCls} /></div>
-                <div><label className={labelCls}>Posisi Y (%)</label>
-                  <input type="number" defaultValue={t.map_y} onBlur={e => saveTank(t.id, { map_y: Number(e.target.value) || 0 })} className={inputCls} /></div>
+                <div><label className={labelCls}>Plan (%)</label>
+                  <input type="number" step="0.01" defaultValue={(t as any).plan_percent ?? ""}
+                    onBlur={e => saveTank(t.id, { plan_percent: e.target.value === "" ? null : Number(e.target.value) })} className={inputCls} /></div>
+                <div><label className={labelCls}>Durasi (bulan)</label>
+                  <input type="number" defaultValue={(t as any).duration_months ?? ""}
+                    onBlur={e => saveTank(t.id, { duration_months: e.target.value === "" ? null : Number(e.target.value) })} className={inputCls} /></div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[1.5fr_auto] gap-2 items-end">

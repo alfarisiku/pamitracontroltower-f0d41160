@@ -59,20 +59,48 @@ export const TANK_STATUS_OPTIONS = [
   { value: "on_preparation", label: "On Preparation" },
 ];
 
+/** Slug URL untuk region BoD: "MOR V" -> "mor5", "MOR III" -> "mor3". */
+const ROMAN: Record<string, string> = { i: "1", ii: "2", iii: "3", iv: "4", v: "5", vi: "6", vii: "7", viii: "8", ix: "9", x: "10" };
+export const regionSlug = (region: string) =>
+  region.toLowerCase().trim().split(/\s+/).map(w => ROMAN[w] ?? w).join("").replace(/[^a-z0-9]/g, "");
+
+/** Daftar region BoD (mis. MOR V, MOR III) beserta jumlah proyeknya. */
+export function useBodRegions() {
+  return useQuery<{ region: string; slug: string; count: number }[]>({
+    queryKey: ["bod_regions"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("projects").select("bod_region").not("bod_region", "is", null);
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const r of (data ?? []) as { bod_region: string }[]) {
+        const key = (r.bod_region ?? "").trim();
+        if (key) map.set(key, (map.get(key) ?? 0) + 1);
+      }
+      return [...map.entries()]
+        .map(([region, count]) => ({ region, slug: regionSlug(region), count }))
+        .sort((a, b) => a.region.localeCompare(b.region));
+    },
+  });
+}
+
 /** Proyek BoD dengan progres resmi (aktual terakhir kurva acuan) — sinkron dengan dashboard. */
-export function useBodProjects() {
+export function useBodProjects(regionSlugParam?: string) {
   const progressMap = useBaselineProgressMap();
   const q = useQuery<DbProject[]>({
     queryKey: ["bod_projects"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("projects").select("*").in("project_code", BOD_PROJECT_CODES);
+      const { data, error } = await (supabase as any).from("projects").select("*").not("bod_region", "is", null);
       if (error) throw error;
       return (data ?? []) as unknown as DbProject[];
     },
   });
   const rows = (q.data ?? [])
+    .filter(p => !regionSlugParam || regionSlug(((p as any).bod_region ?? "") as string) === regionSlugParam)
     .map(p => (progressMap.has(p.id) ? ({ ...p, progress: progressMap.get(p.id) as number }) : p))
-    .sort((a, b) => BOD_PROJECT_CODES.indexOf(a.project_code) - BOD_PROJECT_CODES.indexOf(b.project_code));
+    .sort((a, b) => {
+      const ia = BOD_PROJECT_CODES.indexOf(a.project_code), ib = BOD_PROJECT_CODES.indexOf(b.project_code);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.project_code.localeCompare(b.project_code);
+    });
   return { ...q, data: rows } as typeof q;
 }
 

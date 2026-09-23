@@ -1,10 +1,13 @@
-import { Link } from "react-router-dom";
-import { ArrowRight, LayoutDashboard } from "lucide-react";
-import { useBodProjects, BOD_SHORT_LABEL } from "@/hooks/useTanks";
+import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, LayoutDashboard } from "lucide-react";
+import { useBodProjects, useBodRegions, BOD_SHORT_LABEL } from "@/hooks/useTanks";
 import { resolveImageUrl, getStatusMeta } from "@/lib/supabase";
 
 const BodPortfolio = () => {
-  const { data: projects = [], isLoading } = useBodProjects();
+  const { region } = useParams<{ region: string }>();
+  const { data: projects = [], isLoading } = useBodProjects(region);
+  const { data: regions = [] } = useBodRegions();
+  const regionName = regions.find(r => r.slug === region)?.region ?? region?.toUpperCase() ?? "—";
 
   return (
     <div className="min-h-screen bg-background">
@@ -14,20 +17,28 @@ const BodPortfolio = () => {
             <img src="/images/pamitra-icon.jpg" alt="Pamitra" className="w-9 h-9 rounded-lg object-contain" />
             <div>
               <h1 className="text-lg font-bold text-foreground tracking-tight">Board of Directors — Tank View</h1>
-              <p className="text-xs text-muted-foreground">PT Pamitra Jaya Konstruksi · Project Management Information System</p>
+              <p className="text-xs text-muted-foreground">Region {regionName} · PT Pamitra Jaya Konstruksi</p>
             </div>
           </div>
-          <Link to="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-muted/70">
-            <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/bod" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-muted/70">
+              <ArrowLeft className="h-3.5 w-3.5" /> Region
+            </Link>
+            <Link to="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-muted/70">
+              <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+            </Link>
+          </div>
         </div>
       </header>
 
       <main className="max-w-[1400px] mx-auto px-5 py-6">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">Portfolio Project</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">Portfolio Project — {regionName}</h2>
         <p className="text-xs text-muted-foreground mb-5">Dokumentasi lapangan dan progres per tangki — angka mengikuti data Dashboard Control Tower.</p>
 
         {isLoading && <p className="text-xs text-muted-foreground">Memuat data…</p>}
+        {!isLoading && projects.length === 0 && (
+          <p className="text-xs text-muted-foreground">Belum ada proyek untuk region ini.</p>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {projects.map(p => {
@@ -35,7 +46,7 @@ const BodPortfolio = () => {
             return (
               <Link
                 key={p.id}
-                to={`/bod/${p.id}`}
+                to={`/bod/${region}/${p.id}`}
                 className="glass-card rounded-xl shadow-card overflow-hidden border border-border hover:shadow-lg transition-shadow group"
               >
                 <div className="relative h-44 bg-muted">

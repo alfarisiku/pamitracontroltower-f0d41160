@@ -10,7 +10,7 @@ const pct = (n: number) => `${Number(n || 0).toFixed(2).replace(".", ",")}%`;
 const dateID = (d?: string | null) => (d ? new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—");
 
 const BodTankDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, region } = useParams<{ id: string; region: string }>();
   const { data: projects = [] } = useBodProjects();
   const project = projects.find(p => p.id === id);
   const { data: tanks = [] } = useTanks(id);
@@ -35,7 +35,7 @@ const BodTankDetail = () => {
               <p className="text-xs text-muted-foreground">{project?.client ?? "—"} · {project?.location ?? "—"}</p>
             </div>
           </div>
-          <Link to="/bod" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-muted/70">
+          <Link to={region ? `/bod/${region}` : "/bod"} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-muted/70">
             <ArrowLeft className="h-3.5 w-3.5" /> Portfolio
           </Link>
         </div>
@@ -62,40 +62,23 @@ const BodTankDetail = () => {
           </div>
 
           <div className={`grid gap-3 ${sites.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}>
-            {sites.map(site => {
-              const siteTanks = rows.filter(t => t.site_id === site.id);
-              return (
-                <div key={site.id} className="relative rounded-lg overflow-hidden border border-border bg-muted aspect-[16/10]">
-                  {site.image_url ? (
-                    <img src={resolveImageUrl(site.image_url)} alt={site.name} className="absolute inset-0 w-full h-full object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground text-center px-4">
-                      Foto udara lokasi belum diunggah.<br />Admin dapat mengunggahnya di Data Entry → Tangki (BoD).
-                    </div>
-                  )}
-                  {siteTanks.map(t => {
-                    const m = tankStatusMeta(t.status);
-                    const on = t.id === selected;
-                    return (
-                      <button
-                        key={t.id}
-                        onClick={() => setSelected(on ? null : t.id)}
-                        style={{ left: `${t.map_x}%`, top: `${t.map_y}%` }}
-                        className={`absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 rounded-md text-[10px] font-bold border-2 shadow-card bg-card transition-transform hover:scale-110 ${m.ring} ${on ? "ring-2 ring-primary" : ""}`}
-                      >
-                        {t.tank_code}
-                      </button>
-                    );
-                  })}
-                  <span className="absolute left-2 bottom-2 px-2 py-0.5 rounded bg-card/90 border border-border text-[10px] font-semibold text-foreground">
-                    {site.name}
-                  </span>
-                </div>
-              );
-            })}
+            {sites.map(site => (
+              <div key={site.id} className="relative rounded-lg overflow-hidden border border-border bg-muted aspect-[16/10]">
+                {site.image_url ? (
+                  <img src={resolveImageUrl(site.image_url)} alt={site.name} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground text-center px-4">
+                    Foto udara lokasi belum diunggah.<br />Admin dapat mengunggahnya di Data Entry → Tangki (BoD).
+                  </div>
+                )}
+                <span className="absolute left-2 bottom-2 px-2 py-0.5 rounded bg-card/90 border border-border text-[10px] font-semibold text-foreground">
+                  {site.name}
+                </span>
+              </div>
+            ))}
           </div>
           <p className="text-[11px] italic text-muted-foreground mt-3">
-            *Petunjuk: klik salah satu node tangki pada layout atau kartu di bawah untuk melihat detail dokumentasi.
+            *Petunjuk: klik salah satu kartu tangki di bawah untuk melihat detail dokumentasinya.
           </p>
 
           <div className="mt-4 rounded-lg border border-border bg-muted/40 p-3 flex flex-wrap gap-3">
