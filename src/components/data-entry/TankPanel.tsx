@@ -80,6 +80,21 @@ export function TankPanel({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-5">
+      {/* Region BoD */}
+      <div className="glass-card rounded-lg shadow-card p-4">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-1"><MapPin className="h-4 w-4 text-primary" /> Region Portfolio BoD</h3>
+        <p className="text-[11px] text-muted-foreground mb-2">
+          Isi region (mis. <b>MOR V</b> atau <b>MOR III</b>). Proyek akan muncul di halaman /bod pada region tersebut. Kosongkan bila tidak ditampilkan di BoD.
+        </p>
+        <input
+          key={region}
+          defaultValue={region}
+          placeholder="MOR V"
+          onBlur={e => e.target.value.trim() !== region && saveRegion(e.target.value)}
+          className={`${inputCls} max-w-xs`}
+        />
+      </div>
+
       {/* Lokasi / foto udara */}
       <div className="glass-card rounded-lg shadow-card p-4">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3"><MapPin className="h-4 w-4 text-primary" /> Lokasi Terminal & Foto Udara</h3>
