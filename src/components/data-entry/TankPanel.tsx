@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2, Upload, MapPin, Droplets } from "lucide-react";
 import { supabase, logActivity } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +25,27 @@ export function TankPanel({ projectId }: { projectId: string }) {
   const [newSite, setNewSite] = useState("");
   const [newTank, setNewTank] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const { data: projectRow } = useQuery({
+    queryKey: ["bod_project_region", projectId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("projects").select("bod_region").eq("id", projectId).maybeSingle();
+      if (error) throw error;
+      return data as { bod_region: string | null } | null;
+    },
+  });
+  const region = projectRow?.bod_region ?? "";
+
+  const saveRegion = async (value: string) => {
+    const v = value.trim();
+    const { error } = await (supabase as any).from("projects").update({ bod_region: v || null }).eq("id", projectId);
+    if (error) return toast({ title: "Gagal menyimpan region", description: error.message, variant: "destructive" });
+    await logActivity("project", projectId, "update", `Mengatur region BoD: ${v || "—"}`, projectId);
+    qc.invalidateQueries({ queryKey: ["bod_project_region", projectId] });
+    qc.invalidateQueries({ queryKey: ["bod_regions"] });
+    qc.invalidateQueries({ queryKey: ["bod_projects"] });
+    toast({ title: "Region tersimpan" });
+  };
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["project_tanks", projectId] });
