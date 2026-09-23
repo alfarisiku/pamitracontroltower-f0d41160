@@ -149,10 +149,12 @@ export function TankPanel({ projectId }: { projectId: string }) {
                 <div><label className={labelCls}>Progress Manual (%)</label>
                   <input type="number" step="0.01" defaultValue={t.manual_progress ?? ""} placeholder="kosong = ikut WBS"
                     onBlur={e => saveTank(t.id, { manual_progress: e.target.value === "" ? null : Number(e.target.value) })} className={inputCls} /></div>
-                <div><label className={labelCls}>Posisi X (%)</label>
-                  <input type="number" defaultValue={t.map_x} onBlur={e => saveTank(t.id, { map_x: Number(e.target.value) || 0 })} className={inputCls} /></div>
-                <div><label className={labelCls}>Posisi Y (%)</label>
-                  <input type="number" defaultValue={t.map_y} onBlur={e => saveTank(t.id, { map_y: Number(e.target.value) || 0 })} className={inputCls} /></div>
+                <div><label className={labelCls}>Plan (%)</label>
+                  <input type="number" step="0.01" defaultValue={(t as any).plan_percent ?? ""}
+                    onBlur={e => saveTank(t.id, { plan_percent: e.target.value === "" ? null : Number(e.target.value) })} className={inputCls} /></div>
+                <div><label className={labelCls}>Durasi (bulan)</label>
+                  <input type="number" defaultValue={(t as any).duration_months ?? ""}
+                    onBlur={e => saveTank(t.id, { duration_months: e.target.value === "" ? null : Number(e.target.value) })} className={inputCls} /></div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[1.5fr_auto] gap-2 items-end">
