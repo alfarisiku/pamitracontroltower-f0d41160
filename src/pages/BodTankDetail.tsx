@@ -10,7 +10,7 @@ const pct = (n: number) => `${Number(n || 0).toFixed(2).replace(".", ",")}%`;
 const dateID = (d?: string | null) => (d ? new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—");
 
 const BodTankDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, region } = useParams<{ id: string; region: string }>();
   const { data: projects = [] } = useBodProjects();
   const project = projects.find(p => p.id === id);
   const { data: tanks = [] } = useTanks(id);
@@ -35,7 +35,7 @@ const BodTankDetail = () => {
               <p className="text-xs text-muted-foreground">{project?.client ?? "—"} · {project?.location ?? "—"}</p>
             </div>
           </div>
-          <Link to="/bod" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-muted/70">
+          <Link to={region ? `/bod/${region}` : "/bod"} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted text-xs font-medium text-foreground hover:bg-muted/70">
             <ArrowLeft className="h-3.5 w-3.5" /> Portfolio
           </Link>
         </div>
