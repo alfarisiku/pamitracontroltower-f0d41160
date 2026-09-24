@@ -68,6 +68,7 @@ export type Database = {
           cost_impact: number
           created_at: string
           description: string
+          document_url: string | null
           id: string
           project_id: string
           schedule_impact_days: number
@@ -83,6 +84,7 @@ export type Database = {
           cost_impact?: number
           created_at?: string
           description?: string
+          document_url?: string | null
           id?: string
           project_id: string
           schedule_impact_days?: number
@@ -98,6 +100,7 @@ export type Database = {
           cost_impact?: number
           created_at?: string
           description?: string
+          document_url?: string | null
           id?: string
           project_id?: string
           schedule_impact_days?: number
@@ -838,6 +841,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          alias: string | null
           bod_region: string | null
           budget: number
           category: string | null
@@ -871,6 +875,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          alias?: string | null
           bod_region?: string | null
           budget?: number
           category?: string | null
@@ -904,6 +909,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          alias?: string | null
           bod_region?: string | null
           budget?: number
           category?: string | null

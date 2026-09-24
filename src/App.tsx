@@ -30,7 +30,7 @@ import BodTankDetail from "./pages/BodTankDetail";
 
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, staleTime: 60_000 } } });
 
 // Level 1 = admin (semua halaman), Level 2 = user proyek, Level 3 = publik.
 function AppRoutes() {

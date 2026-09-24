@@ -25,6 +25,7 @@ export type DbProject = {
   id: string;
   project_code: string;
   name: string;
+  alias?: string | null;
   client: string;
   status: string; // planning | execution | on-hold | completed | closed (+ legacy on-track/at-risk/delayed)
   phase: string;  // Production I | II | III | IV (+ legacy Engineering/Procurement/Construction/Commissioning)
@@ -228,6 +229,7 @@ export type DbAddendum = {
   approval_status: string;
   approved_by: string;
   approved_at: string | null;
+  document_url?: string | null;
   created_at: string;
   updated_at: string;
 };

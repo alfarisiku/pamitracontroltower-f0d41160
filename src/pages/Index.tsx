@@ -131,7 +131,7 @@ const Index = () => {
                             <tbody>
                               {rows.map((p) => (
                                 <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setSelectedProject(p)}>
-                                  <td className="py-2 px-3 font-medium text-foreground">{p.name}</td>
+                                  <td className="py-2 px-3 font-medium text-foreground">{p.name}{(p as any).alias && <div className="text-[10px] font-normal text-muted-foreground">{(p as any).alias}</div>}</td>
                                   <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
                                   <td className="py-2 px-3 text-muted-foreground">{p.client || "—"}</td>
                                   <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
@@ -181,7 +181,7 @@ const Index = () => {
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-2">
                             <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-mono-data font-bold">{p.project_code}</span>
-                            <span className="font-medium text-foreground truncate max-w-[180px]">{p.name}</span>
+                            <span className="font-medium text-foreground truncate max-w-[180px]">{p.name}{(p as any).alias && <span className="block text-[10px] font-normal text-muted-foreground">{(p as any).alias}</span>}</span>
                           </div>
                         </td>
                         <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
