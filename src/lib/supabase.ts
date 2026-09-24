@@ -25,6 +25,7 @@ export type DbProject = {
   id: string;
   project_code: string;
   name: string;
+  alias?: string | null;
   client: string;
   status: string; // planning | execution | on-hold | completed | closed (+ legacy on-track/at-risk/delayed)
   phase: string;  // Production I | II | III | IV (+ legacy Engineering/Procurement/Construction/Commissioning)

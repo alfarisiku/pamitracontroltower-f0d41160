@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { MENU_DEFS, DEFAULT_LEVEL2_MENUS } from "@/lib/menus";
+import { MENU_DEFS, DEFAULT_LEVEL2_MENUS, DATA_ENTRY_TABS, DE_PREFIX } from "@/lib/menus";
 import {
   Users, Shield, CheckCircle2, Edit3, UserX, UserCheck, Trash2,
   Search, RefreshCw, Lock, KeyRound, Plus, Mail,
@@ -383,6 +383,25 @@ const AccountManager = () => {
                       </label>
                     ))}
                   </div>
+                  {editMenus.includes("/data-entry") && (
+                    <div className="mt-3">
+                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Bagian Data Entry yang Boleh Diakses</label>
+                      <div className="grid grid-cols-2 gap-1 border border-border rounded-lg p-2">
+                        {DATA_ENTRY_TABS.map(t => {
+                          const v = DE_PREFIX + t.key;
+                          return (
+                            <label key={v} className="flex items-center gap-2 px-2 py-1 hover:bg-muted/30 cursor-pointer rounded">
+                              <input type="checkbox" checked={editMenus.includes(v)}
+                                onChange={() => setEditMenus(editMenus.includes(v) ? editMenus.filter(x => x !== v) : [...editMenus, v])}
+                                className="rounded border-border text-primary focus:ring-primary" />
+                              <span className="text-xs text-foreground">{t.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">Tidak dicentang sama sekali = semua bagian Data Entry boleh diakses.</p>
+                    </div>
+                  )}
                   <p className="text-[10px] text-muted-foreground mt-1">Kosongkan semua untuk memakai menu bawaan (Project Summary, Data Entry, Activity Log).</p>
                 </div>
               )}

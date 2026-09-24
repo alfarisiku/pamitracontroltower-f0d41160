@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/useProjects";
@@ -31,7 +31,8 @@ const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
 const DataEntry = () => {
   const { data: allProjects = [] } = useProjects();
-  const { isTeam, isAdmin, assignedProjectIds } = useAuth();
+  const { isTeam, isAdmin, assignedProjectIds, allowedMenus } = useAuth();
+  const deAllowed = (allowedMenus || []).filter(m => m.startsWith("de:")).map(m => m.slice(3));
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [excelOpen, setExcelOpen] = useState(false);
@@ -57,7 +58,11 @@ const DataEntry = () => {
     { key: "hr" as const,            label: "SDM (Staff/Manpower)", icon: Users,          adminOnly: false, group: "project" as const },
     { key: "tanks" as const,         label: "Tangki (BoD)",        icon: Layers,          adminOnly: false, group: "project" as const },
   ];
-  const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
+  const tabs = allTabs.filter(t => isAdmin || (deAllowed.length > 0 ? deAllowed.includes(t.key) : !t.adminOnly));
+  useEffect(() => {
+    if (activeTab !== "project-crud" && tabs.length > 0 && !tabs.some(t => t.key === activeTab)) setActiveTab(tabs[0].key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabs.map(t => t.key).join(",")]);
   const quickTabs = tabs.filter(t => t.group === "quick");
   const projectTabs = tabs.filter(t => t.group === "project");
 
