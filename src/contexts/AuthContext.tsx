@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -45,8 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // false selama peran & penugasan proyek belum selesai dibaca (mencegah user terlempar ke level publik)
   const [detailsReady, setDetailsReady] = useState(false);
 
-  const fetchProfileAndRole = async (userId: string) => {
-    setDetailsReady(false);
+  const loadedUserRef = useRef<string | null>(null);
+  const fetchProfileAndRole = async (userId: string, silent = false) => {
+    if (!silent) setDetailsReady(false);
+    loadedUserRef.current = userId;
     const [profileRes, roleRes, assignmentsRes] = await Promise.all([
       supabase.from("profiles").select("display_name, avatar_url, assigned_project_id, status, allowed_menus").eq("user_id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId).limit(1).single(),
@@ -69,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfileAndRole(user.id);
+    if (user) await fetchProfileAndRole(user.id, true);
   };
 
   useEffect(() => {
@@ -83,9 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        setUser(session.user);
-        setTimeout(() => fetchProfileAndRole(session.user.id), 0);
+        // Hindari re-render/loading ulang saat token di-refresh atau tab browser kembali aktif
+        setUser(prev => (prev?.id === session.user.id ? prev : session.user));
+        if (loadedUserRef.current !== session.user.id) {
+          setTimeout(() => fetchProfileAndRole(session.user.id), 0);
+        }
       } else {
+        loadedUserRef.current = null;
         setUser(null);
         setProfile(null);
         setRole(null);
@@ -96,8 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        setUser(session.user);
-        fetchProfileAndRole(session.user.id);
+        setUser(prev => (prev?.id === session.user.id ? prev : session.user));
+        if (loadedUserRef.current !== session.user.id) fetchProfileAndRole(session.user.id);
       }
       setLoading(false);
     });
@@ -134,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    loadedUserRef.current = null;
     localStorage.removeItem("auth_no_remember");
     sessionStorage.removeItem("auth_session_active");
     setUser(null);

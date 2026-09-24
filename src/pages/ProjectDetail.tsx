@@ -352,7 +352,7 @@ const ProjectDetail = () => {
               { key: "risks" as const, label: `Risks (${projectRisks.length})`, icon: AlertTriangle, publicOk: false },
               { key: "weekly-report" as const, label: "Weekly Report", icon: FileText, publicOk: false },
               { key: "media" as const, label: "Media", icon: Camera, publicOk: true },
-              { key: "addendum" as const, label: `Addendum (${addendums.length})`, icon: FileText, publicOk: true },
+              { key: "addendum" as const, label: `Kontrak (${addendums.length})`, icon: FileText, publicOk: true },
             ]).filter(t => (L3 ? L3_TABS.includes(t.key) : (!isClient || t.publicOk)))).map(tab => (
 
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -1995,11 +1995,11 @@ const ProjectDetail = () => {
           {activeTab === "addendum" && (
             <div className="glass-card rounded-lg shadow-card overflow-hidden">
               <div className="p-3 border-b border-border flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Contract Addendums</h3>
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Kontrak</h3>
                 <span className="text-[10px] text-muted-foreground">{addendums.length} entri</span>
               </div>
               {addendums.length === 0 ? (
-                <div className="p-8 text-center text-xs text-muted-foreground">Belum ada addendum untuk proyek ini.</div>
+                <div className="p-8 text-center text-xs text-muted-foreground">Belum ada kontrak untuk proyek ini.</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
@@ -2011,7 +2011,7 @@ const ProjectDetail = () => {
                         <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Cost Impact</th>
                         <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Schedule</th>
                         <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
-                        
+                        <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Dokumen</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2023,9 +2023,10 @@ const ProjectDetail = () => {
                           <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.cost_impact > 0 ? "text-accent" : a.cost_impact < 0 ? "text-success" : "text-muted-foreground"}`}>{a.cost_impact > 0 ? "+" : ""}{formatIDR((a.cost_impact || 0) * 1_000_000)}</td>
                           <td className={`py-2 px-3 text-right font-mono-data whitespace-nowrap ${a.schedule_impact_days > 0 ? "text-warning" : a.schedule_impact_days < 0 ? "text-success" : "text-muted-foreground"}`}>{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
                           <td className="py-2 px-3">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium capitalize ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : a.approval_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/30" : a.approval_status === "potential" ? "bg-primary/10 text-primary border-primary/30" : "bg-warning/15 text-warning border-warning/30"}`}>{a.approval_status === "potential" ? "Potensial" : a.approval_status}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium capitalize ${a.approval_status === "approved" ? "bg-success/15 text-success border-success/30" : a.approval_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/30" : a.approval_status === "potential" ? "bg-primary/10 text-primary border-primary/30" : "bg-warning/15 text-warning border-warning/30"}`}>"{a.approval_status === "potential" ? "Potensial" : a.approval_status}</span>
                           </td>
-                          
+                          <td className="py-2 px-3 whitespace-nowrap">{a.document_url ? <a href={a.document_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Buka Dokumen ↗</a> : <span className="text-muted-foreground">—</span>}</td>
+
                         </tr>
                       ))}
                     </tbody>

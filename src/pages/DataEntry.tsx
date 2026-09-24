@@ -53,7 +53,7 @@ const DataEntry = () => {
     { key: "risk" as const,          label: "Risk & Issue",        icon: AlertTriangle,   adminOnly: false, group: "project" as const },
     { key: "weekly-report" as const, label: "Weekly Report",       icon: FileText,        adminOnly: false, group: "project" as const },
     { key: "photos" as const,        label: "Weekly Photos",       icon: Camera,          adminOnly: false, group: "project" as const },
-    { key: "addendum" as const,      label: "Addendum",            icon: FileBarChart,    adminOnly: true,  group: "project" as const },
+    { key: "addendum" as const,      label: "Kontrak",             icon: FileBarChart,    adminOnly: true,  group: "project" as const },
     { key: "hr" as const,            label: "SDM (Staff/Manpower)", icon: Users,          adminOnly: false, group: "project" as const },
     { key: "tanks" as const,         label: "Tangki (BoD)",        icon: Layers,          adminOnly: false, group: "project" as const },
   ];

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileBarChart, Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { FileBarChart, Plus, Pencil, Trash2, Check, X, ExternalLink } from "lucide-react";
 import { supabase, formatIDR, logActivity, DbProject } from "@/lib/supabase";
 import { useAddendums } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
@@ -31,6 +31,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   const [addendumCost, setAddendumCost] = useState("");
   const [addendumDays, setAddendumDays] = useState("");
   const [addendumStatus, setAddendumStatus] = useState("potential");
+  const [addendumDoc, setAddendumDoc] = useState("");
 
   // Cost impact is stored in JUTA in DB (aligned with projects.budget unit).
   // UI accepts raw Rupiah for easier data entry; we convert on save/load.
@@ -52,13 +53,14 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         addendum_date: addendumDate || null,
         cost_impact: costJuta, schedule_impact_days: parseInt(addendumDays) || 0,
         approval_status: addendumStatus,
+        document_url: addendumDoc.trim() || null,
       });
       if (error) throw error;
       await logActivity(supabase, "addendum", "create", `Addendum ${addendumCode} created`, projectId);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Addendum ditambahkan" });
-      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays(""); setAddendumStatus("potential");
+      toast({ title: "✅ Berhasil", description: "Kontrak ditambahkan" });
+      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays(""); setAddendumStatus("potential"); setAddendumDoc("");
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -88,15 +90,15 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       await logActivity(supabase, "addendum", "approve", `Addendum approved (cost: ${formatIDR((costImpact || 0) * 1_000_000)}, schedule: +${scheduleDays}d)`, projectId, id);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Approved", description: "Addendum disetujui & proyek diupdate" });
+      toast({ title: "✅ Approved", description: "Kontrak disetujui & proyek diupdate" });
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
   };
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [edit, setEdit] = useState<{ addendum_code: string; description: string; addendum_date: string; cost_impact: string; schedule_impact_days: string; approval_status: string }>({
-    addendum_code: "", description: "", addendum_date: "", cost_impact: "", schedule_impact_days: "", approval_status: "potential",
+  const [edit, setEdit] = useState<{ addendum_code: string; description: string; addendum_date: string; cost_impact: string; schedule_impact_days: string; approval_status: string; document_url: string }>({
+    document_url: "", addendum_code: "", description: "", addendum_date: "", cost_impact: "", schedule_impact_days: "", approval_status: "potential",
   });
 
   const startEdit = (a: any) => {
@@ -108,6 +110,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       cost_impact: jutaToRupiah(a.cost_impact ?? 0),
       schedule_impact_days: String(a.schedule_impact_days ?? 0),
       approval_status: a.approval_status || "potential",
+      document_url: a.document_url || "",
     });
   };
   const cancelEdit = () => { setEditingId(null); };
@@ -123,12 +126,13 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         schedule_impact_days: parseInt(edit.schedule_impact_days) || 0,
         approval_status: edit.approval_status,
         approved_at: edit.approval_status === "approved" ? new Date().toISOString() : null,
+        document_url: edit.document_url.trim() || null,
       }).eq("id", id);
       if (error) throw error;
       await logActivity(supabase, "addendum", "update", `Addendum ${edit.addendum_code} updated`, projectId, id);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "✅ Berhasil", description: "Addendum diupdate" });
+      toast({ title: "✅ Berhasil", description: "Kontrak diupdate" });
       setEditingId(null);
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
@@ -144,7 +148,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       await logActivity(supabase, "addendum", "delete", `Addendum ${code} deleted`, projectId, id);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
-      toast({ title: "🗑️ Dihapus", description: `Addendum ${code} dihapus` });
+      toast({ title: "🗑️ Dihapus", description: `Kontrak ${code} dihapus` });
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -153,28 +157,29 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   return (
     <div className="space-y-5 mb-5">
       <div className="glass-card rounded-lg shadow-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><FileBarChart className="h-4 w-4 text-primary" /> New Contract Addendum</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><FileBarChart className="h-4 w-4 text-primary" /> Kontrak Baru</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-          <div><label className={labelCls}>Addendum ID</label><input value={addendumCode} onChange={e => setAddendumCode(e.target.value)} className={inputCls} placeholder="ADD-001" /></div>
+          <div><label className={labelCls}>ID Kontrak</label><input value={addendumCode} onChange={e => setAddendumCode(e.target.value)} className={inputCls} placeholder="KTR-001" /></div>
           <div><label className={labelCls}>Description</label><input value={addendumDesc} onChange={e => setAddendumDesc(e.target.value)} className={inputCls} placeholder="Perubahan scope" /></div>
-          <div><label className={labelCls}>Addendum Date</label><input type="date" value={addendumDate} onChange={e => setAddendumDate(e.target.value)} className={inputCls} /></div>
+          <div><label className={labelCls}>Tanggal Kontrak</label><input type="date" value={addendumDate} onChange={e => setAddendumDate(e.target.value)} className={inputCls} /></div>
           <div>
             <label className={labelCls}>Cost Impact (Rp)</label>
             <input type="number" value={addendumCost} onChange={e => setAddendumCost(e.target.value)} className={inputCls} placeholder="50000000" />
             {addendumCost && <p className="text-[10px] text-muted-foreground mt-0.5">≈ {previewRp(addendumCost)}</p>}
           </div>
           <div><label className={labelCls}>Schedule Impact (Days)</label><input type="number" value={addendumDays} onChange={e => setAddendumDays(e.target.value)} className={inputCls} placeholder="30" /></div>
+          <div className="sm:col-span-2 lg:col-span-6"><label className={labelCls}>Link Dokumen Kontrak (Google Drive / URL)</label><input value={addendumDoc} onChange={e => setAddendumDoc(e.target.value)} className={inputCls} placeholder="https://drive.google.com/..." /></div>
           <div><label className={labelCls}>Status</label>
             <select value={addendumStatus} onChange={e => setAddendumStatus(e.target.value)} className={inputCls}>
               {ADDENDUM_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
         </div>
-        <button onClick={handleAddAddendum} disabled={saving || !addendumCode} className="mt-3 flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Add Addendum"}</button>
+        <button onClick={handleAddAddendum} disabled={saving || !addendumCode} className="mt-3 flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Tambah Kontrak"}</button>
       </div>
       {addendums.length > 0 && (
         <div className="glass-card rounded-lg shadow-card overflow-hidden">
-          <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Addendum List</h3></div>
+          <div className="p-3 border-b border-border"><h3 className="text-sm font-semibold text-foreground">Daftar Kontrak</h3></div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead><tr className="bg-muted/50 border-b border-border">
@@ -194,7 +199,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                       <>
                         <td className="py-1.5 px-2"><input value={edit.addendum_code} onChange={e => setEdit(s => ({ ...s, addendum_code: e.target.value }))} className={inputCls} /></td>
                         <td className="py-1.5 px-2"><input type="date" value={edit.addendum_date} onChange={e => setEdit(s => ({ ...s, addendum_date: e.target.value }))} className={inputCls} /></td>
-                        <td className="py-1.5 px-2"><input value={edit.description} onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} className={inputCls} /></td>
+                        <td className="py-1.5 px-2 space-y-1"><input value={edit.description} onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} className={inputCls} /><input value={edit.document_url} onChange={e => setEdit(s => ({ ...s, document_url: e.target.value }))} className={inputCls} placeholder="Link dokumen (https://...)" /></td>
                         <td className="py-1.5 px-2">
                           <input type="number" value={edit.cost_impact} onChange={e => setEdit(s => ({ ...s, cost_impact: e.target.value }))} className={`${inputCls} text-right`} placeholder="Rupiah utuh" />
                           {edit.cost_impact && <p className="text-[9px] text-muted-foreground mt-0.5 text-right">≈ {previewRp(edit.cost_impact)}</p>}
@@ -216,7 +221,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                       <>
                         <td className="py-2 px-3 font-mono-data text-primary whitespace-nowrap">{a.addendum_code}</td>
                         <td className="py-2 px-3 whitespace-nowrap text-foreground">{a.addendum_date ? new Date(a.addendum_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
-                        <td className="py-2 px-3 text-foreground">{a.description}</td>
+                        <td className="py-2 px-3 text-foreground">{a.description}{(a as any).document_url && <a href={(a as any).document_url} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center gap-1 text-primary hover:underline text-[10px]"><ExternalLink className="h-3 w-3" /> Dokumen</a>}</td>
                         <td className="py-2 px-3 text-right font-mono-data text-accent whitespace-nowrap">{a.cost_impact > 0 ? "+" : ""}{formatIDR((a.cost_impact || 0) * 1_000_000)}</td>
                         <td className="py-2 px-3 text-right font-mono-data whitespace-nowrap">{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
                         <td className="py-2 px-3">
