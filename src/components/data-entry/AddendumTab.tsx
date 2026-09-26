@@ -10,7 +10,7 @@ const labelCls = "text-[10px] text-muted-foreground uppercase mb-1 block";
 
 export const ADDENDUM_STATUSES = [
   { value: "potential", label: "Potensial" },
-  { value: "pending", label: "Pending" },
+  { value: "on_progress", label: "On Progress" },
   { value: "approved", label: "Approved" },
   { value: "rejected", label: "Rejected" },
 ];
@@ -32,6 +32,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   const [addendumDays, setAddendumDays] = useState("");
   const [addendumStatus, setAddendumStatus] = useState("potential");
   const [addendumDoc, setAddendumDoc] = useState("");
+  const [addendumNotes, setAddendumNotes] = useState("");
 
   // Cost impact is stored in JUTA in DB (aligned with projects.budget unit).
   // UI accepts raw Rupiah for easier data entry; we convert on save/load.
@@ -54,13 +55,14 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         cost_impact: costJuta, schedule_impact_days: parseInt(addendumDays) || 0,
         approval_status: addendumStatus,
         document_url: addendumDoc.trim() || null,
+        notes: addendumNotes.trim() || null,
       });
       if (error) throw error;
       await logActivity(supabase, "addendum", "create", `Addendum ${addendumCode} created`, projectId);
       queryClient.invalidateQueries({ queryKey: ["addendums"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       toast({ title: "✅ Berhasil", description: "Kontrak ditambahkan" });
-      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays(""); setAddendumStatus("potential"); setAddendumDoc("");
+      setAddendumCode(""); setAddendumDesc(""); setAddendumDate(""); setAddendumCost(""); setAddendumDays(""); setAddendumStatus("potential"); setAddendumDoc(""); setAddendumNotes("");
     } catch (e: any) {
       toast({ title: "❌ Error", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -97,8 +99,8 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
   };
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [edit, setEdit] = useState<{ addendum_code: string; description: string; addendum_date: string; cost_impact: string; schedule_impact_days: string; approval_status: string; document_url: string }>({
-    document_url: "", addendum_code: "", description: "", addendum_date: "", cost_impact: "", schedule_impact_days: "", approval_status: "potential",
+  const [edit, setEdit] = useState<{ addendum_code: string; description: string; addendum_date: string; cost_impact: string; schedule_impact_days: string; approval_status: string; document_url: string; notes: string }>({
+    document_url: "", notes: "", addendum_code: "", description: "", addendum_date: "", cost_impact: "", schedule_impact_days: "", approval_status: "potential",
   });
 
   const startEdit = (a: any) => {
@@ -111,6 +113,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
       schedule_impact_days: String(a.schedule_impact_days ?? 0),
       approval_status: a.approval_status || "potential",
       document_url: a.document_url || "",
+      notes: a.notes || "",
     });
   };
   const cancelEdit = () => { setEditingId(null); };
@@ -127,6 +130,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
         approval_status: edit.approval_status,
         approved_at: edit.approval_status === "approved" ? new Date().toISOString() : null,
         document_url: edit.document_url.trim() || null,
+        notes: edit.notes.trim() || null,
       }).eq("id", id);
       if (error) throw error;
       await logActivity(supabase, "addendum", "update", `Addendum ${edit.addendum_code} updated`, projectId, id);
@@ -169,6 +173,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
           </div>
           <div><label className={labelCls}>Schedule Impact (Days)</label><input type="number" value={addendumDays} onChange={e => setAddendumDays(e.target.value)} className={inputCls} placeholder="30" /></div>
           <div className="sm:col-span-2 lg:col-span-6"><label className={labelCls}>Link Dokumen Kontrak (Google Drive / URL)</label><input value={addendumDoc} onChange={e => setAddendumDoc(e.target.value)} className={inputCls} placeholder="https://drive.google.com/..." /></div>
+          <div className="sm:col-span-2 lg:col-span-6"><label className={labelCls}>Notes Pembaruan</label><textarea value={addendumNotes} onChange={e => setAddendumNotes(e.target.value)} className={inputCls} rows={2} placeholder="Contoh: Dokumen sedang routing tanda tangan / berada di client" /></div>
           <div><label className={labelCls}>Status</label>
             <select value={addendumStatus} onChange={e => setAddendumStatus(e.target.value)} className={inputCls}>
               {ADDENDUM_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -188,7 +193,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                 <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Description</th>
                 <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Cost Impact</th>
                 <th className="text-right py-2 px-3 text-[10px] uppercase text-muted-foreground">Schedule</th>
-                <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status</th>
+                <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Status / Notes</th>
                 <th className="text-left py-2 px-3 text-[10px] uppercase text-muted-foreground">Action</th>
               </tr></thead>
               <tbody>{addendums.map(a => {
@@ -199,7 +204,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                       <>
                         <td className="py-1.5 px-2"><input value={edit.addendum_code} onChange={e => setEdit(s => ({ ...s, addendum_code: e.target.value }))} className={inputCls} /></td>
                         <td className="py-1.5 px-2"><input type="date" value={edit.addendum_date} onChange={e => setEdit(s => ({ ...s, addendum_date: e.target.value }))} className={inputCls} /></td>
-                        <td className="py-1.5 px-2 space-y-1"><input value={edit.description} onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} className={inputCls} /><input value={edit.document_url} onChange={e => setEdit(s => ({ ...s, document_url: e.target.value }))} className={inputCls} placeholder="Link dokumen (https://...)" /></td>
+                        <td className="py-1.5 px-2 space-y-1"><input value={edit.description} onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} className={inputCls} /><input value={edit.document_url} onChange={e => setEdit(s => ({ ...s, document_url: e.target.value }))} className={inputCls} placeholder="Link dokumen (https://...)" /><textarea value={edit.notes} onChange={e => setEdit(s => ({ ...s, notes: e.target.value }))} className={inputCls} rows={2} placeholder="Notes pembaruan" /></td>
                         <td className="py-1.5 px-2">
                           <input type="number" value={edit.cost_impact} onChange={e => setEdit(s => ({ ...s, cost_impact: e.target.value }))} className={`${inputCls} text-right`} placeholder="Rupiah utuh" />
                           {edit.cost_impact && <p className="text-[9px] text-muted-foreground mt-0.5 text-right">≈ {previewRp(edit.cost_impact)}</p>}
@@ -226,6 +231,7 @@ export function AddendumTab({ projectId, projects }: { projectId: string; projec
                         <td className="py-2 px-3 text-right font-mono-data whitespace-nowrap">{a.schedule_impact_days > 0 ? "+" : ""}{a.schedule_impact_days}d</td>
                         <td className="py-2 px-3">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${statusCls(a.approval_status)}`}>{statusLabel(a.approval_status)}</span>
+                          {a.notes && <p className="mt-1 max-w-[220px] whitespace-pre-wrap text-[10px] leading-relaxed text-muted-foreground">{a.notes}</p>}
                         </td>
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-1 flex-wrap">

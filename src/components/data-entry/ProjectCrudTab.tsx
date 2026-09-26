@@ -34,7 +34,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
   });
 
   const [editForm, setEditForm] = useState({
-    project_code: "", name: "", alias: "", client: "", manager: "", location: "",
+    project_code: "", name: "", client: "", manager: "", location: "",
     budget: "", spent: "", rap: "", contract_value: "", co_value: "", profit_margin_target: "10", tkdn_percentage: "0",
     start_date: "", end_date: "", description: "", category: "Production I",
     map_x: "", map_y: "", status: "on-track", phase: "Engineering", progress: "",
@@ -46,7 +46,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
       const p = projects.find(proj => proj.id === editProjectId);
       if (p) {
         setEditForm({
-          project_code: p.project_code || "", name: p.name || "", alias: (p as any).alias || "", client: p.client || "",
+          project_code: p.project_code || "", name: p.name || "", client: p.client || "",
           manager: p.manager || "", location: p.location || "",
           budget: String(p.budget || 0), spent: String(p.spent || 0),
           rap: String(p.rap || p.budget || 0),
@@ -105,7 +105,7 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
     setSaving(true);
     try {
       const { error } = await supabase.from("projects").update({
-        project_code: editForm.project_code, name: editForm.name, alias: editForm.alias.trim() || null, client: editForm.client,
+        project_code: editForm.project_code, name: editForm.name, client: editForm.client,
         manager: editForm.manager, location: editForm.location,
         budget: Math.round(Number(editForm.rap) || 0), spent: parseInt(editForm.spent) || 0,
         rap: Math.round(Number(editForm.rap) || 0),
@@ -191,7 +191,6 @@ export function ProjectCrudTab({ projects }: { projects: DbProject[] }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <div><label className={labelCls}>Project Code</label><input value={ef.project_code} onChange={e => set("project_code", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Project Name</label><input value={ef.name} onChange={e => set("name", e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Alias (tampil di publik)</label><input value={ef.alias} onChange={e => set("alias", e.target.value)} className={inputCls} placeholder="mis. Tangki IT Surabaya" /></div>
           <div><label className={labelCls}>Client</label><input value={ef.client} onChange={e => set("client", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Project Manager</label><input value={ef.manager} onChange={e => set("manager", e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Location</label><input value={ef.location} onChange={e => set("location", e.target.value)} className={inputCls} /></div>

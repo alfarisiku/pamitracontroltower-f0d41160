@@ -70,6 +70,7 @@ export type Database = {
           description: string
           document_url: string | null
           id: string
+          notes: string | null
           project_id: string
           schedule_impact_days: number
           scope_change: string | null
@@ -86,6 +87,7 @@ export type Database = {
           description?: string
           document_url?: string | null
           id?: string
+          notes?: string | null
           project_id: string
           schedule_impact_days?: number
           scope_change?: string | null
@@ -102,6 +104,7 @@ export type Database = {
           description?: string
           document_url?: string | null
           id?: string
+          notes?: string | null
           project_id?: string
           schedule_impact_days?: number
           scope_change?: string | null

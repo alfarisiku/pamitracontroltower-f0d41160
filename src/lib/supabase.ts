@@ -230,6 +230,7 @@ export type DbAddendum = {
   approved_by: string;
   approved_at: string | null;
   document_url?: string | null;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 };
