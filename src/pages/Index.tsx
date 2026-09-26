@@ -17,9 +17,11 @@ const Index = () => {
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
   const { data: projects = [], isLoading } = useProjects();
   const navigate = useNavigate();
-  const { level: demoLevel, isAdmin } = useDemoLevel();
+  const { isAdmin } = useDemoLevel();
   const { user, profile, assignedProjectIds } = useAuth();
-  const L3 = demoLevel === 3;
+  // Halaman awal selalu memakai komposisi publik. Setelah login, sidebar tetap
+  // muncul berdasarkan hak akun sehingga pengguna dapat masuk ke area kerjanya.
+  const publicOverview = true;
   const noProjectAssigned = !!user && !isAdmin && profile?.status === "active" && assignedProjectIds.length === 0;
 
   const [openClients, setOpenClients] = useState<string[]>([]);
@@ -68,7 +70,7 @@ const Index = () => {
           <div className="mb-1">
             <h2 className="text-sm font-semibold text-foreground mb-3">Overview Proyek</h2>
           </div>
-          {!L3 && (
+          {!publicOverview && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
               <KPICard title="Total Projects" value={projects.length} subtitle={`${active} aktif`} icon={Briefcase} variant="primary" />
               <KPICard title="Proyek Aktif" value={active} subtitle="Sedang berjalan" icon={Clock} variant="accent" />
@@ -78,11 +80,11 @@ const Index = () => {
           )}
 
           {/* Map + Distribusi Production */}
-          <div className={`grid grid-cols-1 ${L3 ? "" : "lg:grid-cols-4"} gap-3 mb-5`}>
-            <div className={L3 ? "" : "lg:col-span-3"}>
-              <IndonesiaMap projects={projects} onSelectProject={setSelectedProject} hideMoney={L3} neutralStatus={L3} />
+          <div className={`grid grid-cols-1 ${publicOverview ? "" : "lg:grid-cols-4"} gap-3 mb-5`}>
+            <div className={publicOverview ? "" : "lg:col-span-3"}>
+              <IndonesiaMap projects={projects} onSelectProject={setSelectedProject} hideMoney={publicOverview} neutralStatus={publicOverview} />
             </div>
-            {!L3 && (
+            {!publicOverview && (
               <div>
                 <PhaseChart projects={projects} />
               </div>
@@ -94,12 +96,12 @@ const Index = () => {
             <div className="p-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Daftar Proyek</h2>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {L3
+                {publicOverview
                   ? "Klik nama klien untuk melihat proyeknya"
                   : <>Klik proyek untuk overview singkat · Klik <ExternalLink className="inline h-3 w-3" /> untuk detail lengkap</>}
               </p>
             </div>
-            {L3 ? (
+            {publicOverview ? (
               <div className="divide-y divide-border">
                 {clientGroups.map(([client, rows]) => {
                   const open = openClients.includes(client);
@@ -120,7 +122,7 @@ const Index = () => {
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="border-y border-border bg-muted/30">
-                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Project</th>
+                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Kode / Project</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Client</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Finish</th>
@@ -131,7 +133,10 @@ const Index = () => {
                             <tbody>
                               {rows.map((p) => (
                                 <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setSelectedProject(p)}>
-                                  <td className="py-2 px-3 font-medium text-foreground">{p.name}{(p as any).alias && <div className="text-[10px] font-normal text-muted-foreground">{(p as any).alias}</div>}</td>
+                                  <td className="py-2 px-3 font-medium text-foreground">
+                                    <span className="mr-2 inline-flex rounded bg-primary/15 px-1.5 py-0.5 font-mono-data text-[10px] font-bold text-primary">{p.project_code}</span>
+                                    {p.name}
+                                  </td>
                                   <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
                                   <td className="py-2 px-3 text-muted-foreground">{p.client || "—"}</td>
                                   <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
@@ -181,7 +186,7 @@ const Index = () => {
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-2">
                             <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-mono-data font-bold">{p.project_code}</span>
-                            <span className="font-medium text-foreground truncate max-w-[180px]">{p.name}{(p as any).alias && <span className="block text-[10px] font-normal text-muted-foreground">{(p as any).alias}</span>}</span>
+                            <span className="font-medium text-foreground truncate max-w-[180px]">{p.name}</span>
                           </div>
                         </td>
                         <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
@@ -214,7 +219,7 @@ const Index = () => {
       </main>
 
       {selectedProject && (
-        <ProjectOverviewModal project={selectedProject} onClose={() => setSelectedProject(null)} />
+        <ProjectOverviewModal project={selectedProject} onClose={() => setSelectedProject(null)} publicView />
       )}
     </div>
   );
