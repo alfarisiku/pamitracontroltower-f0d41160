@@ -219,7 +219,7 @@ const Index = () => {
       </main>
 
       {selectedProject && (
-        <ProjectOverviewModal project={selectedProject} onClose={() => setSelectedProject(null)} publicView />
+        <ProjectOverviewModal project={selectedProject} onClose={() => setSelectedProject(null)} />
       )}
     </div>
   );
