@@ -1,20 +1,34 @@
 import { useState, useEffect } from "react";
-import { DbProject, resolveImageUrl } from "@/lib/supabase";
-import { formatRupiah } from "@/lib/supabase";
+import { DbProject, resolveImageUrl, formatRupiah, formatIDR, BILLING_STATUS_CLASS, BILLING_STATUSES } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
-import { X, MapPin, Calendar, User, Play, Camera, Video, Cctv, DollarSign, Target } from "lucide-react";
+import { X, MapPin, Calendar, User, Camera, FileText, ShieldAlert, Receipt, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAddendums, useAllAlerts } from "@/hooks/useProjects";
+import { useBillings } from "@/components/data-entry/BillingPanel";
 
 import { getStatusMeta } from "@/lib/supabase";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
 
-type MediaTab = "weekly" | "video" | "cctv";
+type OverviewTab = "photos" | "contracts" | "risks" | "bal";
+
+const contractStatusLabel = (status: string) => {
+  if (status === "potential") return "Potensial";
+  if (status === "pending" || status === "on_progress") return "On Progress";
+  if (status === "approved") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return status;
+};
+
+const billingStatusLabel = (status: string) => BILLING_STATUSES.find(item => item.value === status)?.label || status;
 
 export function ProjectOverviewModal({ project, onClose }: { project: DbProject; onClose: () => void }) {
   const { isClient } = useAuth();
-  const [activeMedia, setActiveMedia] = useState<MediaTab>("weekly");
+  const [activeTab, setActiveTab] = useState<OverviewTab>("photos");
   const [weeklyPhotos, setWeeklyPhotos] = useState<any[]>([]);
+  const { data: contracts = [] } = useAddendums(project.id);
+  const { data: risks = [] } = useAllAlerts(project.id);
+  const { data: billings = [] } = useBillings(project.id);
   const { level: demoLevel } = useDemoLevel();
   const L3 = demoLevel === 3;
   const st = getStatusMeta(project.status);
@@ -28,10 +42,11 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
       .then(({ data }) => setWeeklyPhotos(data || []));
   }, [project.id]);
 
-  const mediaTabs: { key: MediaTab; label: string; icon: typeof Camera; available: boolean }[] = [
-    { key: "weekly", label: "Weekly Photos", icon: Camera, available: true },
-    { key: "video", label: "Video", icon: Video, available: !!project.video_url },
-    { key: "cctv", label: "CCTV Live", icon: Cctv, available: !!project.cctv_url },
+  const overviewTabs: { key: OverviewTab; label: string; icon: typeof Camera; count?: number }[] = [
+    { key: "photos", label: "Foto", icon: Camera, count: weeklyPhotos.length },
+    { key: "contracts", label: "Kontrak", icon: FileText, count: contracts.length },
+    { key: "risks", label: "Risk", icon: ShieldAlert, count: risks.length },
+    { key: "bal", label: "BAL", icon: Receipt, count: billings.length },
   ];
 
   return (
@@ -139,18 +154,18 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
           )}
 
 
-          {/* Media Tabs - Weekly Photos first */}
+          {/* Project overview tabs */}
           <div>
-            <div className="flex items-center gap-1 mb-3 border-b border-border pb-2">
-              {mediaTabs.filter(t => t.available).map((tab) => (
-                <button key={tab.key} onClick={() => setActiveMedia(tab.key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeMedia === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
-                  <tab.icon className="h-3.5 w-3.5" />{tab.label}
+            <div className="flex items-center gap-1 mb-3 border-b border-border pb-2 overflow-x-auto">
+              {overviewTabs.map((tab) => (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                  className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeTab === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
+                  <tab.icon className="h-3.5 w-3.5" />{tab.label}<span className="opacity-70">({tab.count || 0})</span>
                 </button>
               ))}
             </div>
 
-            {activeMedia === "weekly" && (
+            {activeTab === "photos" && (
               <div>
                 {weeklyPhotos.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">Belum ada foto weekly untuk proyek ini.</p>
@@ -170,26 +185,39 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
               </div>
             )}
 
-            {activeMedia === "video" && project.video_url && (
-              <div className="w-full aspect-video rounded-lg overflow-hidden border border-border">
-                <iframe src={project.video_url} title={`Video ${project.name}`} className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            {activeTab === "contracts" && (
+              <div className="space-y-2">
+                {contracts.length === 0 ? <p className="py-4 text-center text-xs text-muted-foreground">Belum ada data kontrak.</p> : contracts.map(contract => (
+                  <div key={contract.id} className="rounded-lg border border-border p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div><p className="font-mono-data text-xs font-semibold text-primary">{contract.addendum_code}</p><p className="mt-0.5 text-xs text-foreground">{contract.description}</p></div>
+                      <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{contractStatusLabel(contract.approval_status)}</span>
+                    </div>
+                    {contract.notes && <p className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">{contract.notes}</p>}
+                    {contract.document_url && <a href={contract.document_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"><ExternalLink className="h-3 w-3" /> Buka Dokumen</a>}
+                  </div>
+                ))}
               </div>
             )}
 
-            {activeMedia === "cctv" && project.cctv_url && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
-                  </span>
-                  <span className="text-xs font-medium text-destructive">LIVE</span>
-                </div>
-                <div className="w-full aspect-video rounded-lg overflow-hidden border border-border">
-                  <iframe src={project.cctv_url} title={`CCTV ${project.name}`} className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-                </div>
+            {activeTab === "risks" && (
+              <div className="space-y-2">
+                {risks.length === 0 ? <p className="py-4 text-center text-xs text-muted-foreground">Belum ada data risk.</p> : risks.map(risk => (
+                  <div key={risk.id} className="rounded-lg border border-border p-3">
+                    <div className="flex items-start justify-between gap-3"><p className="text-xs font-semibold text-foreground">{risk.title}</p><span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${risk.severity === "critical" || risk.severity === "high" ? "border-destructive/30 bg-destructive/10 text-destructive" : risk.severity === "medium" ? "border-warning/30 bg-warning/10 text-warning" : "border-border bg-muted text-muted-foreground"}`}>{risk.severity}</span></div>
+                    {risk.description && <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{risk.description}</p>}
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground"><span>Status: <strong className="text-foreground">{risk.current_status}</strong></span><span>PIC: <strong className="text-foreground">{risk.pic || risk.risk_owner || "—"}</strong></span><span>Progress: <strong className="text-foreground">{risk.completion_percentage}%</strong></span></div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "bal" && (
+              <div className="overflow-x-auto rounded-lg border border-border">
+                {billings.length === 0 ? <p className="py-4 text-center text-xs text-muted-foreground">Belum ada data BAL.</p> : <table className="w-full text-xs">
+                  <thead className="bg-muted/50"><tr>{["BAL", "Deskripsi", "Progress", "Nominal", "Status"].map(label => <th key={label} className="px-3 py-2 text-left text-[10px] uppercase text-muted-foreground">{label}</th>)}</tr></thead>
+                  <tbody>{billings.map(row => <tr key={row.id} className="border-t border-border"><td className="whitespace-nowrap px-3 py-2 font-mono-data font-medium text-primary">{row.termin_code}</td><td className="px-3 py-2 text-foreground">{row.description || "—"}</td><td className="whitespace-nowrap px-3 py-2 font-mono-data text-muted-foreground">{row.plan_progress_pct}%</td><td className="whitespace-nowrap px-3 py-2 font-mono-data text-foreground">{formatIDR(row.plan_amount)}</td><td className="px-3 py-2"><span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${BILLING_STATUS_CLASS[row.status] || "border-border text-muted-foreground"}`}>{billingStatusLabel(row.status)}</span></td></tr>)}</tbody>
+                </table>}
               </div>
             )}
           </div>
