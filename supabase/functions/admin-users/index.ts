@@ -45,14 +45,16 @@ Deno.serve(async (req) => {
     }
 
     if (action === "update_credentials") {
-      const { user_id, email, password } = body;
+      const { user_id, email, password, display_name } = body;
       if (!user_id) return json({ error: "user_id wajib diisi" }, 400);
-      const payload: Record<string, string> = {};
+      const payload: Record<string, unknown> = {};
       if (email) payload.email = email;
       if (password) payload.password = password;
+      if (display_name) payload.user_metadata = { display_name };
       if (Object.keys(payload).length === 0) return json({ error: "Tidak ada perubahan" }, 400);
       const { error } = await admin.auth.admin.updateUserById(user_id, { ...payload, email_confirm: true });
       if (error) throw error;
+      if (display_name) await admin.from("profiles").update({ display_name }).eq("user_id", user_id);
       return json({ ok: true });
     }
 
