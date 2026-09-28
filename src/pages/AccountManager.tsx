@@ -32,6 +32,7 @@ const AccountManager = () => {
 
   // Edit modal
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editProjects, setEditProjects] = useState<string[]>([]);
@@ -95,6 +96,7 @@ const AccountManager = () => {
 
   const openEdit = (u: UserRow) => {
     setEditingUser(u);
+    setEditName(u.display_name);
     setEditEmail(u.email === "—" ? "" : u.email);
     setEditPassword("");
     setEditProjects(u.assignedProjectIds);
@@ -103,22 +105,20 @@ const AccountManager = () => {
 
   const saveUser = async () => {
     if (!editingUser) return;
-    if (editPassword && editPassword.length < 6) {
-      toast({ title: "Kata sandi terlalu pendek", description: "Minimal 6 karakter.", variant: "destructive" });
-      return;
-    }
     if (!editingUser.isAdmin && editProjects.length === 0) {
       toast({ title: "Proyek belum dipilih", description: "Pilih minimal 1 proyek agar akun bisa mengakses data.", variant: "destructive" });
       return;
     }
     setBusy(true);
     try {
-      if ((editEmail && editEmail !== editingUser.email) || editPassword) {
+      const nameChanged = editName.trim() && editName.trim() !== editingUser.display_name;
+      if ((editEmail && editEmail !== editingUser.email) || editPassword || nameChanged) {
         await callAdmin({
           action: "update_credentials",
           user_id: editingUser.user_id,
           email: editEmail && editEmail !== editingUser.email ? editEmail : undefined,
           password: editPassword || undefined,
+          display_name: nameChanged ? editName.trim() : undefined,
         });
       }
       if (!editingUser.isAdmin) {
@@ -159,10 +159,6 @@ const AccountManager = () => {
   const createUser = async () => {
     if (!newUser.email || !newUser.password) {
       toast({ title: "Lengkapi data", description: "Email dan password wajib diisi.", variant: "destructive" });
-      return;
-    }
-    if (newUser.password.length < 6) {
-      toast({ title: "Kata sandi terlalu pendek", description: "Minimal 6 karakter.", variant: "destructive" });
       return;
     }
     if (newProjects.length === 0) {
@@ -347,6 +343,12 @@ const AccountManager = () => {
               <div>
                 <h3 className="text-lg font-bold text-foreground">Ubah Akun</h3>
                 <p className="text-sm text-muted-foreground">{editingUser.display_name}</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nama</label>
+                <input value={editName} onChange={e => setEditName(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground" />
               </div>
 
               <div>

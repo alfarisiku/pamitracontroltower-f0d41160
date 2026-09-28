@@ -124,7 +124,7 @@ const Login = () => {
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1.5">Password</label>
               <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
+                <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required
                   className="w-full px-4 py-3 text-sm bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary pr-10"
                   placeholder="••••••••" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}

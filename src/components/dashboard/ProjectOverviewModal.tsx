@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DbProject, resolveImageUrl, formatRupiah, formatIDR, BILLING_STATUS_CLASS, BILLING_STATUSES } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import { X, MapPin, Calendar, User, Camera, FileText, ShieldAlert, Receipt, ExternalLink } from "lucide-react";
@@ -36,11 +37,17 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
   const contractValue = project.contract_value || project.budget;
   const margin = contractValue > 0 && project.rap > 0 ? Math.round(((contractValue - project.rap) / contractValue) * 100) : 0;
 
-  useEffect(() => {
-    supabase.from("project_photos").select("*").eq("project_id", project.id)
-      .order("uploaded_at", { ascending: false }).limit(6)
-      .then(({ data }) => setWeeklyPhotos(data || []));
-  }, [project.id]);
+  // Foto di-cache agar popup yang dibuka ulang tampil instan.
+  const { data: photoData } = useQuery({
+    queryKey: ["overview_photos", project.id],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("project_photos").select("id, photo_url, caption, week_label, uploaded_at").eq("project_id", project.id)
+        .order("uploaded_at", { ascending: false }).limit(6);
+      return data || [];
+    },
+  });
+  useEffect(() => { setWeeklyPhotos(photoData || []); }, [photoData]);
 
   const overviewTabs: { key: OverviewTab; label: string; icon: typeof Camera; count?: number }[] = [
     { key: "photos", label: "Foto", icon: Camera, count: weeklyPhotos.length },
@@ -173,7 +180,7 @@ export function ProjectOverviewModal({ project, onClose }: { project: DbProject;
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {weeklyPhotos.map(p => (
                       <div key={p.id} className="rounded-lg overflow-hidden border border-border">
-                        <img src={p.photo_url} alt={p.caption || "Weekly photo"} className="w-full h-28 object-cover" />
+                        <img src={p.photo_url} alt={p.caption || "Weekly photo"} loading="lazy" decoding="async" className="w-full h-28 object-cover bg-muted" />
                         <div className="p-1.5">
                           {p.week_label && <p className="text-[9px] text-primary font-medium">{p.week_label}</p>}
                           {p.caption && <p className="text-[9px] text-muted-foreground truncate">{p.caption}</p>}
