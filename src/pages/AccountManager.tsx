@@ -32,6 +32,7 @@ const AccountManager = () => {
 
   // Edit modal
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editProjects, setEditProjects] = useState<string[]>([]);
