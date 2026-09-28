@@ -163,9 +163,13 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   };
 
   // Ganti nama curve (termasuk baseline) — semua baris data ikut berpindah nama.
+  // Popup prompt() diblokir di sebagian browser/iframe, jadi pakai input inline.
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
   const handleRenameCurve = async () => {
-    const name = prompt(`Ganti nama curve "${curveType}" menjadi:`, curveType)?.trim();
-    if (!name || name === curveType) return;
+    if (!renaming) { setRenameValue(curveType); setRenaming(true); return; }
+    const name = renameValue.trim();
+    if (!name || name === curveType) { setRenaming(false); return; }
     if (curveTypes.includes(name)) {
       toast({ title: "Nama sudah dipakai", description: `Curve "${name}" sudah ada.`, variant: "destructive" });
       return;
@@ -185,6 +189,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
       queryClient.invalidateQueries({ queryKey: ["projects_primary_curve"] });
       queryClient.invalidateQueries({ queryKey: ["activity_logs"] });
       setCurveType(name);
+      setRenaming(false);
       toast({ title: "✅ Nama curve diperbarui" });
     } catch (e: any) {
       toast({ title: "❌ Gagal ganti nama", description: e.message, variant: "destructive" });
@@ -271,10 +276,18 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
               {ct === "baseline" ? "Baseline" : ct}
             </button>
           ))}
+          {renaming && (
+            <input autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") handleRenameCurve(); if (e.key === "Escape") setRenaming(false); }}
+              className={inputCls + " w-32"} placeholder="Nama baru" />
+          )}
           <button onClick={handleRenameCurve} disabled={busyCurve}
             className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium border border-border text-foreground hover:bg-muted disabled:opacity-50">
-            <Pencil className="h-3 w-3" /> Ganti Nama
+            <Pencil className="h-3 w-3" /> {renaming ? "Simpan Nama" : "Ganti Nama"}
           </button>
+          {renaming && (
+            <button onClick={() => setRenaming(false)} className="px-2 py-1.5 rounded text-[10px] border border-border text-muted-foreground hover:bg-muted">Batal</button>
+          )}
           <button onClick={handleSetPrimary} disabled={busyCurve || primaryCurve === curveType}
             className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-40">
             <Star className="h-3 w-3" /> {primaryCurve === curveType ? "Acuan Progres" : "Jadikan Acuan Progres"}
