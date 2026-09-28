@@ -22,6 +22,8 @@ const Index = () => {
   // Halaman awal selalu memakai komposisi publik. Setelah login, sidebar tetap
   // muncul berdasarkan hak akun sehingga pengguna dapat masuk ke area kerjanya.
   const publicOverview = true;
+  // Level 3 (belum login) tidak boleh membuka popup proyek.
+  const openProject = (p: DbProject) => { if (user) setSelectedProject(p); };
   const noProjectAssigned = !!user && !isAdmin && profile?.status === "active" && assignedProjectIds.length === 0;
 
   const [openClients, setOpenClients] = useState<string[]>([]);
@@ -82,7 +84,7 @@ const Index = () => {
           {/* Map + Distribusi Production */}
           <div className={`grid grid-cols-1 ${publicOverview ? "" : "lg:grid-cols-4"} gap-3 mb-5`}>
             <div className={publicOverview ? "" : "lg:col-span-3"}>
-              <IndonesiaMap projects={projects} onSelectProject={setSelectedProject} hideMoney={publicOverview} neutralStatus={publicOverview} />
+              <IndonesiaMap projects={projects} onSelectProject={openProject} hideMoney={publicOverview} neutralStatus={publicOverview} />
             </div>
             {!publicOverview && (
               <div>
@@ -124,6 +126,7 @@ const Index = () => {
                               <tr className="border-y border-border bg-muted/30">
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Kode / Project</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
+                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Client</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Finish</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress Actual</th>
@@ -132,12 +135,13 @@ const Index = () => {
                             </thead>
                             <tbody>
                               {rows.map((p) => (
-                                <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setSelectedProject(p)}>
+                                <tr key={p.id} className={`border-b border-border/30 hover:bg-muted/20 transition-colors ${user ? "cursor-pointer" : ""}`} onClick={() => openProject(p)}>
                                   <td className="py-2 px-3 font-medium text-foreground">
                                     <span className="mr-2 inline-flex rounded bg-primary/15 px-1.5 py-0.5 font-mono-data text-[10px] font-bold text-primary">{p.project_code}</span>
                                     {p.name}
                                   </td>
                                   <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
+                                  <td className="py-2 px-3"><span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${getStatusMeta(p.status).className} bg-card`}>{getStatusMeta(p.status).label}</span></td>
                                   <td className="py-2 px-3 text-muted-foreground">{p.client || "—"}</td>
                                   <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
                                   <td className="py-2 px-3">
@@ -181,7 +185,7 @@ const Index = () => {
                   {projects.map((p, i) => {
                     const st = getStatusMeta(p.status);
                     return (
-                      <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setSelectedProject(p)}>
+                      <tr key={p.id} className={`border-b border-border/30 hover:bg-muted/20 transition-colors ${user ? "cursor-pointer" : ""}`} onClick={() => openProject(p)}>
                         <td className="py-2 px-3 font-mono-data text-muted-foreground">{i + 1}</td>
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-2">
