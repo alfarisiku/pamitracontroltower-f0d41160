@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AccessProvider } from "@/contexts/AccessContext";
 
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PageViewTracker } from "@/components/PageViewTracker";
 import Login from "./pages/Login";
 import PendingApproval from "./pages/PendingApproval";
 import Index from "./pages/Index";
@@ -77,6 +78,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AccessProvider>
+            <PageViewTracker />
             <AppRoutes />
           </AccessProvider>
         </AuthProvider>
