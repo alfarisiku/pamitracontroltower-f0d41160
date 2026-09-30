@@ -15,12 +15,15 @@ Deno.serve(async (req) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+  void anonKey;
   const authHeader = req.headers.get("Authorization") ?? "";
-  const caller = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
-  const { data: userRes } = await caller.auth.getUser();
-  if (!userRes?.user) return json({ error: "Unauthorized" }, 401);
-
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
   const admin = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+  const { data: userRes, error: authErr } = token ? await admin.auth.getUser(token) : { data: null, error: null };
+  if (!userRes?.user) {
+    console.log("auth failed", authErr?.message);
+    return json({ error: "Sesi login berakhir, silakan login ulang" }, 401);
+  }
 
   // Only administrators may use this endpoint
   const { data: isAdmin } = await admin.rpc("has_role", { _user_id: userRes.user.id, _role: "admin" });
