@@ -24,7 +24,8 @@ export function ActivityLogDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { data: logs = [] } = useActivityLogs(20);
+  const { data: allLogs = [] } = useActivityLogs(60);
+  const logs = allLogs.filter((l) => l.action !== "view").slice(0, 20);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
