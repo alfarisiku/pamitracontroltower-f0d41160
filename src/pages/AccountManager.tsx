@@ -44,7 +44,13 @@ const AccountManager = () => {
   const [newProjects, setNewProjects] = useState<string[]>([]);
 
   const callAdmin = async (body: Record<string, unknown>) => {
-    const { data, error } = await supabase.functions.invoke("admin-users", { body });
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) throw new Error("Sesi login berakhir, silakan login ulang");
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body,
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (error) {
       // Ambil pesan asli dari server bila tersedia
       let detail = error.message;
