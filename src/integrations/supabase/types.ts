@@ -845,6 +845,7 @@ export type Database = {
       projects: {
         Row: {
           alias: string | null
+          baseline_label: string | null
           bod_region: string | null
           budget: number
           category: string | null
@@ -879,6 +880,7 @@ export type Database = {
         }
         Insert: {
           alias?: string | null
+          baseline_label?: string | null
           bod_region?: string | null
           budget?: number
           category?: string | null
@@ -913,6 +915,7 @@ export type Database = {
         }
         Update: {
           alias?: string | null
+          baseline_label?: string | null
           bod_region?: string | null
           budget?: number
           category?: string | null
