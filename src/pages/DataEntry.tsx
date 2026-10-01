@@ -23,6 +23,7 @@ import { BillingPanel } from "@/components/data-entry/BillingPanel";
 import { HrPanel } from "@/components/data-entry/HrPanel";
 import { ExcelSyncPanel } from "@/components/data-entry/ExcelSyncPanel";
 import { TankPanel } from "@/components/data-entry/TankPanel";
+import { MasterExcelPanel } from "@/components/data-entry/MasterExcelPanel";
 
 type ActiveTab = "regular" | "billing" | "wbs" | "milestones" | "risk" | "photos" | "weekly-report" | "procurement" | "finance" | "scurve" | "project-crud" | "addendum" | "hr" | "tanks";
 
@@ -36,6 +37,7 @@ const DataEntry = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular");
   const [updateProjectId, setUpdateProjectId] = useState<string>("");
   const [excelOpen, setExcelOpen] = useState(false);
+  const [masterOpen, setMasterOpen] = useState(false);
 
   const projects = isAdmin
     ? allProjects
@@ -88,6 +90,14 @@ const DataEntry = () => {
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-foreground rounded-lg text-xs font-medium hover:bg-muted/80 border border-border"><Share2 className="h-3.5 w-3.5" /> Share</button>
               {isAdmin && (
                 <button
+                  onClick={() => setMasterOpen(o => !o)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${masterOpen ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border hover:bg-muted"}`}
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> Master Excel
+                </button>
+              )}
+              {isAdmin && (
+                <button
                   onClick={() => setActiveTab("project-crud")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${activeTab === "project-crud" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border hover:bg-muted"}`}
                 >
@@ -96,6 +106,10 @@ const DataEntry = () => {
               )}
             </div>
           </div>
+
+          {isAdmin && masterOpen && <MasterExcelPanel />}
+
+
 
 
           <div className="flex items-center gap-2 mb-5 border-b border-border pb-2 overflow-x-auto">
