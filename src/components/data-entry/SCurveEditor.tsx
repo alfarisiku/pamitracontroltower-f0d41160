@@ -166,8 +166,13 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
   // Popup prompt() diblokir di sebagian browser/iframe, jadi pakai input inline.
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  const [baselineLabel, setBaselineLabel] = useState<string>("Baseline");
+  useEffect(() => {
+    (supabase as any).from("projects").select("baseline_label").eq("id", projectId).maybeSingle()
+      .then(({ data }: any) => setBaselineLabel(data?.baseline_label || "Baseline"));
+  }, [projectId]);
   const handleRenameCurve = async () => {
-    if (!renaming) { setRenameValue(curveType); setRenaming(true); return; }
+    if (!renaming) { setRenameValue(curveType === "baseline" ? baselineLabel : curveType); setRenaming(true); return; }
     const name = renameValue.trim();
     if (!name || name === curveType) { setRenaming(false); return; }
     if (curveTypes.includes(name)) {
@@ -176,6 +181,16 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
     }
     setBusyCurve(true);
     try {
+      if (curveType === "baseline") {
+        // Baseline: hanya ganti nama tampilan, data periode & persen tidak disentuh.
+        const { error } = await (supabase as any).from("projects").update({ baseline_label: name }).eq("id", projectId);
+        if (error) throw error;
+        await logActivity(supabase, "s_curve", "update", `Nama Baseline diganti → ${name}`, projectId);
+        setBaselineLabel(name);
+        setRenaming(false);
+        toast({ title: "✅ Nama curve diperbarui" });
+        return;
+      }
       const { error } = await supabase.from("s_curve_data")
         .update({ curve_type: name }).eq("project_id", projectId).eq("curve_type", curveType);
       if (error) throw error;
@@ -273,7 +288,7 @@ export function SCurveEditor({ projectId }: { projectId: string }) {
             <button key={ct} onClick={() => setCurveType(ct)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${curveType === ct ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border border-border hover:bg-muted/80"}`}>
               {ct === primaryCurve && <Star className="h-3 w-3 fill-current" />}
-              {ct === "baseline" ? "Baseline" : ct}
+              {ct === "baseline" ? baselineLabel : ct}
             </button>
           ))}
           {renaming && (
