@@ -33,7 +33,7 @@ const Index = () => {
 
   const [openClients, setOpenClients] = useState<string[]>([]);
   const clientGroups = Object.entries(
-    projects.reduce<Record<string, DbProject[]>>((acc, p) => {
+    listProjects.reduce<Record<string, DbProject[]>>((acc, p) => {
       const key = p.client || "Lainnya";
       (acc[key] ||= []).push(p);
       return acc;
@@ -89,7 +89,7 @@ const Index = () => {
           {/* Map + Distribusi Production */}
           <div className={`grid grid-cols-1 ${publicOverview ? "" : "lg:grid-cols-4"} gap-3 mb-5`}>
             <div className={publicOverview ? "" : "lg:col-span-3"}>
-              <IndonesiaMap projects={projects} onSelectProject={openProject} hideMoney={publicOverview} neutralStatus={publicOverview} />
+              <IndonesiaMap projects={listProjects} onSelectProject={openProject} hideMoney={publicOverview} neutralStatus={publicOverview} hideProgress={level3} hideStatus={level3} />
             </div>
             {!publicOverview && (
               <div>
