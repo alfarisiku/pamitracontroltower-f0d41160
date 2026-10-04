@@ -12,6 +12,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { DbProject, getStatusMeta } from "@/lib/supabase";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAccess } from "@/contexts/AccessContext";
 
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
@@ -19,6 +20,10 @@ const Index = () => {
   const navigate = useNavigate();
   const { isAdmin } = useDemoLevel();
   const { user, profile, assignedProjectIds } = useAuth();
+  const { level } = useAccess();
+  // Level 3 (publik): tanpa progress %, tanpa status, dan proyek planning disembunyikan.
+  const level3 = level === 3;
+  const listProjects = level3 ? projects.filter((p) => p.status !== "planning") : projects;
   // Halaman awal selalu memakai komposisi publik. Setelah login, sidebar tetap
   // muncul berdasarkan hak akun sehingga pengguna dapat masuk ke area kerjanya.
   const publicOverview = true;
