@@ -133,7 +133,7 @@ const Index = () => {
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
                                 {!level3 && <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>}
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Client</th>
-                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Finish</th>
+                                {!level3 && <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Finish</th>}
                                 {!level3 && <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress Actual</th>}
                                 <th className="text-center py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Detail</th>
                               </tr>
@@ -148,7 +148,7 @@ const Index = () => {
                                   <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
                                   {!level3 && <td className="py-2 px-3"><span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${getStatusMeta(p.status).className} bg-card`}>{getStatusMeta(p.status).label}</span></td>}
                                   <td className="py-2 px-3 text-muted-foreground">{p.client || "—"}</td>
-                                  <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                  {!level3 && <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>}
                                   {!level3 && (
                                     <td className="py-2 px-3">
                                       <div className="flex items-center gap-2 min-w-[110px]">
