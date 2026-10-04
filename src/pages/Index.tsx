@@ -131,10 +131,10 @@ const Index = () => {
                               <tr className="border-y border-border bg-muted/30">
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Kode / Project</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
-                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
+                                {!level3 && <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>}
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Client</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Finish</th>
-                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress Actual</th>
+                                {!level3 && <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress Actual</th>}
                                 <th className="text-center py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Detail</th>
                               </tr>
                             </thead>
