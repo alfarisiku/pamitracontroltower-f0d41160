@@ -30,7 +30,7 @@ function createIcon(status: ProjectStatus) {
   });
 }
 
-function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = false, neutralStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; navigate: (path: string) => void; hideMoney?: boolean; neutralStatus?: boolean }) {
+function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = false, neutralStatus = false, hideProgress = false, hideStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; navigate: (path: string) => void; hideMoney?: boolean; neutralStatus?: boolean; hideProgress?: boolean; hideStatus?: boolean }) {
   const map = useMap();
 
   useEffect(() => {
@@ -66,9 +66,9 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = f
           <p style="font-size:10px;font-family:monospace;color:hsl(215,80%,48%)">${project.project_code}</p>
           <p style="font-size:13px;font-weight:600;margin:2px 0">${project.name}</p>
           <p style="font-size:11px;color:#888;margin-bottom:6px">${project.location}</p>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${neutralStatus ? "hsl(150,60%,40%)" : statusColors[project.status]}20;color:${neutralStatus ? "hsl(150,60%,40%)" : statusColors[project.status]}">${neutralStatus ? "On Progress" : statusLabels[project.status]}</span>
-            <span style="font-size:12px;font-family:monospace;font-weight:700">${project.progress}%</span>
+          <div style=${"{"}display:${"\""}flex${"\""};align-items:center;justify-content:space-between;margin-bottom:4px${"}"}>
+            ${hideStatus || neutralStatus ? "" : `<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${statusColors[project.status]}20;color:${statusColors[project.status]}">${statusLabels[project.status]}</span>`}
+            ${hideProgress ? "" : `<span style="font-size:12px;font-family:monospace;font-weight:700">${project.progress}%</span>`}
           </div>
           ${hideMoney ? "" : `<p style="font-size:10px;color:#888">${formatRupiah(project.budget)}</p>`}
           <div style="display:flex;gap:6px;margin-top:8px">
