@@ -12,6 +12,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { DbProject, getStatusMeta } from "@/lib/supabase";
 import { useDemoLevel } from "@/contexts/DemoLevelContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAccess } from "@/contexts/AccessContext";
 
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<DbProject | null>(null);
@@ -19,6 +20,10 @@ const Index = () => {
   const navigate = useNavigate();
   const { isAdmin } = useDemoLevel();
   const { user, profile, assignedProjectIds } = useAuth();
+  const { level } = useAccess();
+  // Level 3 (publik): tanpa progress %, tanpa status, dan proyek planning disembunyikan.
+  const level3 = level === 3;
+  const listProjects = level3 ? projects.filter((p) => p.status !== "planning") : projects;
   // Halaman awal selalu memakai komposisi publik. Setelah login, sidebar tetap
   // muncul berdasarkan hak akun sehingga pengguna dapat masuk ke area kerjanya.
   const publicOverview = true;
@@ -28,7 +33,7 @@ const Index = () => {
 
   const [openClients, setOpenClients] = useState<string[]>([]);
   const clientGroups = Object.entries(
-    projects.reduce<Record<string, DbProject[]>>((acc, p) => {
+    listProjects.reduce<Record<string, DbProject[]>>((acc, p) => {
       const key = p.client || "Lainnya";
       (acc[key] ||= []).push(p);
       return acc;
@@ -84,7 +89,7 @@ const Index = () => {
           {/* Map + Distribusi Production */}
           <div className={`grid grid-cols-1 ${publicOverview ? "" : "lg:grid-cols-4"} gap-3 mb-5`}>
             <div className={publicOverview ? "" : "lg:col-span-3"}>
-              <IndonesiaMap projects={projects} onSelectProject={openProject} hideMoney={publicOverview} neutralStatus={publicOverview} />
+              <IndonesiaMap projects={listProjects} onSelectProject={openProject} hideMoney={publicOverview} neutralStatus={publicOverview} hideProgress={level3} hideStatus={level3} />
             </div>
             {!publicOverview && (
               <div>
@@ -126,10 +131,10 @@ const Index = () => {
                               <tr className="border-y border-border bg-muted/30">
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Kode / Project</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Lokasi</th>
-                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>
+                                {!level3 && <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Status</th>}
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Client</th>
                                 <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Finish</th>
-                                <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress Actual</th>
+                                {!level3 && <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Progress Actual</th>}
                                 <th className="text-center py-2 px-3 font-medium text-muted-foreground text-[10px] uppercase tracking-wider">Detail</th>
                               </tr>
                             </thead>
@@ -141,15 +146,17 @@ const Index = () => {
                                     {p.name}
                                   </td>
                                   <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
-                                  <td className="py-2 px-3"><span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${getStatusMeta(p.status).className} bg-card`}>{getStatusMeta(p.status).label}</span></td>
+                                  {!level3 && <td className="py-2 px-3"><span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${getStatusMeta(p.status).className} bg-card`}>{getStatusMeta(p.status).label}</span></td>}
                                   <td className="py-2 px-3 text-muted-foreground">{p.client || "—"}</td>
                                   <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                                  <td className="py-2 px-3">
-                                    <div className="flex items-center gap-2 min-w-[110px]">
-                                      <Progress value={Number(p.progress) || 0} className="h-1 flex-1" />
-                                      <span className="font-mono-data text-muted-foreground w-12 text-right">{(Number(p.progress) || 0).toFixed(2)}%</span>
-                                    </div>
-                                  </td>
+                                  {!level3 && (
+                                    <td className="py-2 px-3">
+                                      <div className="flex items-center gap-2 min-w-[110px]">
+                                        <Progress value={Number(p.progress) || 0} className="h-1 flex-1" />
+                                        <span className="font-mono-data text-muted-foreground w-12 text-right">{(Number(p.progress) || 0).toFixed(2)}%</span>
+                                      </div>
+                                    </td>
+                                  )}
                                   <td className="py-2 px-3 text-center">
                                     <button onClick={(e) => { e.stopPropagation(); navigate(`/project/${p.id}`); }} className="p-1 rounded hover:bg-primary/10 transition-colors" title="Lihat detail">
                                       <ExternalLink className="h-3.5 w-3.5 text-primary" />

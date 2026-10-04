@@ -30,7 +30,7 @@ function createIcon(status: ProjectStatus) {
   });
 }
 
-function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = false, neutralStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; navigate: (path: string) => void; hideMoney?: boolean; neutralStatus?: boolean }) {
+function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = false, neutralStatus = false, hideProgress = false, hideStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; navigate: (path: string) => void; hideMoney?: boolean; neutralStatus?: boolean; hideProgress?: boolean; hideStatus?: boolean }) {
   const map = useMap();
 
   useEffect(() => {
@@ -67,8 +67,8 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = f
           <p style="font-size:13px;font-weight:600;margin:2px 0">${project.name}</p>
           <p style="font-size:11px;color:#888;margin-bottom:6px">${project.location}</p>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${neutralStatus ? "hsl(150,60%,40%)" : statusColors[project.status]}20;color:${neutralStatus ? "hsl(150,60%,40%)" : statusColors[project.status]}">${neutralStatus ? "On Progress" : statusLabels[project.status]}</span>
-            <span style="font-size:12px;font-family:monospace;font-weight:700">${project.progress}%</span>
+            ${hideStatus ? "" : `<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${neutralStatus ? "hsl(150,60%,40%)" : statusColors[project.status]}20;color:${neutralStatus ? "hsl(150,60%,40%)" : statusColors[project.status]}">${neutralStatus ? "On Progress" : statusLabels[project.status]}</span>`}
+            ${hideProgress ? "" : `<span style="font-size:12px;font-family:monospace;font-weight:700">${project.progress}%</span>`}
           </div>
           ${hideMoney ? "" : `<p style="font-size:10px;color:#888">${formatRupiah(project.budget)}</p>`}
           <div style="display:flex;gap:6px;margin-top:8px">
@@ -103,12 +103,12 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = f
       delete (window as any).__mapSelectProject;
       delete (window as any).__mapNavProject;
     };
-  }, [projects, onSelectProject, navigate]);
+  }, [projects, onSelectProject, navigate, hideMoney, neutralStatus, hideProgress, hideStatus]);
 
   return null;
 }
 
-export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neutralStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; hideMoney?: boolean; neutralStatus?: boolean }) {
+export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neutralStatus = false, hideProgress = false, hideStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; hideMoney?: boolean; neutralStatus?: boolean; hideProgress?: boolean; hideStatus?: boolean }) {
   const navigate = useNavigate();
 
   return (
@@ -119,7 +119,7 @@ export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neu
           <p className="text-xs text-muted-foreground">{projects.length} proyek tersebar di Indonesia</p>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
-          {(["planning","execution","on-hold","completed","closed"]).map((s) => (
+          {!hideStatus && (["planning","execution","on-hold","completed","closed"]).map((s) => (
             <div key={s} className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full" style={{ background: statusColors[s] }} />
               <span className="text-muted-foreground">{statusLabels[s]}</span>
@@ -157,7 +157,7 @@ export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neu
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MarkerClusterGroup projects={projects} onSelectProject={onSelectProject} navigate={navigate} hideMoney={hideMoney} neutralStatus={neutralStatus} />
+          <MarkerClusterGroup projects={projects} onSelectProject={onSelectProject} navigate={navigate} hideMoney={hideMoney} neutralStatus={neutralStatus} hideProgress={hideProgress} hideStatus={hideStatus} />
         </MapContainer>
       </div>
     </div>
