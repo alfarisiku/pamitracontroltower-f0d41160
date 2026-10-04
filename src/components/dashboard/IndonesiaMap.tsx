@@ -108,7 +108,7 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = f
   return null;
 }
 
-export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neutralStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; hideMoney?: boolean; neutralStatus?: boolean }) {
+export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neutralStatus = false, hideProgress = false, hideStatus = false }: { projects: DbProject[]; onSelectProject: (p: DbProject) => void; hideMoney?: boolean; neutralStatus?: boolean; hideProgress?: boolean; hideStatus?: boolean }) {
   const navigate = useNavigate();
 
   return (
@@ -119,7 +119,7 @@ export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neu
           <p className="text-xs text-muted-foreground">{projects.length} proyek tersebar di Indonesia</p>
         </div>
         <div className="flex items-center gap-3 text-[10px]">
-          {(["planning","execution","on-hold","completed","closed"]).map((s) => (
+          {!hideStatus && (["planning","execution","on-hold","completed","closed"]).map((s) => (
             <div key={s} className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full" style={{ background: statusColors[s] }} />
               <span className="text-muted-foreground">{statusLabels[s]}</span>
@@ -157,7 +157,7 @@ export function IndonesiaMap({ projects, onSelectProject, hideMoney = false, neu
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MarkerClusterGroup projects={projects} onSelectProject={onSelectProject} navigate={navigate} hideMoney={hideMoney} neutralStatus={neutralStatus} />
+          <MarkerClusterGroup projects={projects} onSelectProject={onSelectProject} navigate={navigate} hideMoney={hideMoney} neutralStatus={neutralStatus} hideProgress={hideProgress} hideStatus={hideStatus} />
         </MapContainer>
       </div>
     </div>
