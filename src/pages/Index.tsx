@@ -146,15 +146,17 @@ const Index = () => {
                                     {p.name}
                                   </td>
                                   <td className="py-2 px-3 text-muted-foreground truncate max-w-[160px]">{p.location || "—"}</td>
-                                  <td className="py-2 px-3"><span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${getStatusMeta(p.status).className} bg-card`}>{getStatusMeta(p.status).label}</span></td>
+                                  {!level3 && <td className="py-2 px-3"><span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${getStatusMeta(p.status).className} bg-card`}>{getStatusMeta(p.status).label}</span></td>}
                                   <td className="py-2 px-3 text-muted-foreground">{p.client || "—"}</td>
                                   <td className="py-2 px-3 text-muted-foreground">{new Date(p.end_date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                                  <td className="py-2 px-3">
-                                    <div className="flex items-center gap-2 min-w-[110px]">
-                                      <Progress value={Number(p.progress) || 0} className="h-1 flex-1" />
-                                      <span className="font-mono-data text-muted-foreground w-12 text-right">{(Number(p.progress) || 0).toFixed(2)}%</span>
-                                    </div>
-                                  </td>
+                                  {!level3 && (
+                                    <td className="py-2 px-3">
+                                      <div className="flex items-center gap-2 min-w-[110px]">
+                                        <Progress value={Number(p.progress) || 0} className="h-1 flex-1" />
+                                        <span className="font-mono-data text-muted-foreground w-12 text-right">{(Number(p.progress) || 0).toFixed(2)}%</span>
+                                      </div>
+                                    </td>
+                                  )}
                                   <td className="py-2 px-3 text-center">
                                     <button onClick={(e) => { e.stopPropagation(); navigate(`/project/${p.id}`); }} className="p-1 rounded hover:bg-primary/10 transition-colors" title="Lihat detail">
                                       <ExternalLink className="h-3.5 w-3.5 text-primary" />
