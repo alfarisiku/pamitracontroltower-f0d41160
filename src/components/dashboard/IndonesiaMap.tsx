@@ -103,7 +103,7 @@ function MarkerClusterGroup({ projects, onSelectProject, navigate, hideMoney = f
       delete (window as any).__mapSelectProject;
       delete (window as any).__mapNavProject;
     };
-  }, [projects, onSelectProject, navigate]);
+  }, [projects, onSelectProject, navigate, hideMoney, neutralStatus, hideProgress, hideStatus]);
 
   return null;
 }
